@@ -1,1 +1,1 @@
-# SpinGlassNetwors.jl
+# SpinGlassNetworks.jl
