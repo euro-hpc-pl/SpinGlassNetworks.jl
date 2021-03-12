@@ -1,0 +1,24 @@
+name = "SpinGlassNetworks"
+uuid = "b7f6bd3e-55dc-4da6-96a9-ef9dbec6ac19"
+authors = ["Krzysztof Domino <kdomino@iitis.pl>", "Anna Maria Dziubyna <annamariadziubyna@gmail.com>", "Bartłomiej Gardas <bartek.gardas@gmail.com>", "Konrad Jałowiecki <dexter2206@gmail.com>", "Łukasz Pawela <lukasz.pawela@gmail.com>", "Marek M. Rams <marekrams@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
+
+[compat]
+CSV = "0.8"
+DocStringExtensions = "0.8"
+LightGraphs = "1.3"
+MetaGraphs = "0.6"
+
+[extras]
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Logging", "Test"]
