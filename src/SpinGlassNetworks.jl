@@ -8,6 +8,7 @@ module SpinGlassNetworks
 
     import Base.Prehashed
 
+    export unique_neighbors
     
     function unique_neighbors(ig::MetaGraph, i::Int)
         nbrs = neighbors(ig::MetaGraph, i::Int)
