@@ -1,13 +1,9 @@
 export ising_graph
-export energy, rank_vec
-export Spectrum, cluster, rank, nodes, basis_size
+export rank_vec
+export cluster, rank, nodes, basis_size
 
 const Instance = Union{String, Dict}
 
-struct Spectrum
-    energies::Vector{Float64}
-    states::Vector{Vector{Int}}
-end
 
 unique_nodes(ising_tuples) = sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 
@@ -100,24 +96,4 @@ function inter_cluster_edges(ig::MetaGraph, cl1::MetaGraph, cl2::MetaGraph)
         @inbounds J[indexin(src(e), verts1)[1], indexin(dst(e), verts2)[1]] = get_prop(ig, e, :J)
     end
     outer_edges, J
-end
-
-"""
-$(TYPEDSIGNATURES)
-
-Calculate the Ising energy
-```math
-E = -\\sum_<i,j> s_i J_{ij} * s_j - \\sum_j h_i s_j.
-```
-"""
-
-energy(σ::Vector, J::Matrix, η::Vector=σ) = dot(σ, J, η)
-energy(σ::Vector, h::Vector) = dot(h, σ)
-energy(σ::Vector, ig::MetaGraph) = energy(σ, get_prop(ig, :J)) + energy(σ, get_prop(ig, :h))
-
-
-# Please don't make the below another energy method.
-# There is already so much mess going on :)
-function inter_cluster_energy(cl1_states, J::Matrix, cl2_states)
-    hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end

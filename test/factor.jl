@@ -1,7 +1,8 @@
 using MetaGraphs
 using LightGraphs
-using GraphPlot
 using CSV
+
+enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
 
 @testset "split_into_clusters correctly assings vertices to clusters" begin
    rule = Dict(
@@ -112,7 +113,6 @@ ig = ising_graph(instance)
 
 fg = factor_graph(
     ig,
-    energy=energy,
     spectrum=full_spectrum,
     cluster_assignment_rule=super_square_lattice((m, n, t)),
 )

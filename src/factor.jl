@@ -29,7 +29,6 @@ end
 function factor_graph(
     ig::MetaGraph,
     num_states_cl::Int;
-    energy::Function=energy,
     spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, Int} # e.g. square lattice
 )
@@ -37,7 +36,6 @@ function factor_graph(
     factor_graph(
         ig,
         ns,
-        energy=energy,
         spectrum=spectrum,
         cluster_assignment_rule=cluster_assignment_rule
     )
@@ -46,7 +44,6 @@ end
 function factor_graph(
     ig::MetaGraph,
     num_states_cl::Dict{Int, Int}=Dict{Int, Int}();
-    energy::Function=energy,
     spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, Int} # e.g. square lattice
 )
