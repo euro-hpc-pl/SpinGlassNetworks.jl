@@ -1,18 +1,14 @@
 using SpinGlassNetworks
+using LabelledGraphs
 using LightGraphs
 using MetaGraphs
 using Logging
-
-disable_logging(LogLevel(1))
-
 using Test
 
-my_tests = []
-push!(my_tests,
-      "ising.jl",
-      "factor.jl",
-)
+Base.:(==)(e1::LabelledEdge, e2::LabelledEdge) = src(e1) == src(e2) && dst(e1) == dst(e2)
 
-for my_test in my_tests
+my_tests = ["ising.jl", "factor.jl"]
+
+for my_test ∈ my_tests
     include(my_test)
 end

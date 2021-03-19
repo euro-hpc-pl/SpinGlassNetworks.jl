@@ -1,5 +1,7 @@
 using CSV
 using LinearAlgebra
+using LabelledGraphs
+
 
 function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng = zeros(1,n)
@@ -20,7 +22,7 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng
 end
 
-function _energy(ig::MetaGraph, config::Array)
+function _energy(ig::LabelledGraph, config::Array)
     s = size(config, 1)
     eng = zeros(s)
     for i ∈ 1:s
@@ -60,14 +62,14 @@ for (instance, source) ∈ (
     expected_num_vertices = 3
     expected_biases = [0.1, 0.5, 0.0]
     expected_couplings = Dict(
-        Edge(1, 2) => -0.3,
-        Edge(1, 3) => -2.0,
-        Edge(2, 3) => 1.0
+        LabelledEdge(1, 2) => -0.3,
+        LabelledEdge(1, 4) => -2.0,
+        LabelledEdge(2, 4) => 1.0
     )
     expected_J_matrix = [
         [0 -0.3 -2.0];
+        [0 0 1.0];
         [0 0 0];
-        [0 1.0 0];
     ]
 
     ig = ising_graph(instance)
@@ -78,23 +80,19 @@ for (instance, source) ∈ (
 
     @testset "has collection of edges comprising all interactions from instance" begin
         # This test uses the fact that edges iterates in the lex ordering.
-        @test collect(edges(ig)) == [Edge(e...) for e in [(1, 2), (1, 3), (2, 3)]]
+        @test collect(edges(ig)) == [LabelledEdge(e...) for e in [(1, 2), (1, 4), (2, 4)]]
     end
 
-    @testset "stores biases both as property of vertices and its own property" begin
-        @test get_prop(ig, :h) == expected_biases
-        @test collect(map(v -> get_prop(ig, v, :h), vertices(ig))) == expected_biases
+    @testset "stores biases as property of vertices" begin
+        @test biases(ig) == expected_biases
     end
 
     @testset "stores couplings both as property of edges and its own property" begin
-        @test get_prop(ig, :J) == expected_J_matrix
-        @test all(
-            map(e -> expected_couplings[e] == get_prop(ig, e, :J), edges(ig))
-        )
+        @test couplings(ig) == expected_J_matrix
     end
 
     @testset "has default rank stored for each active vertex" begin
-        @test get_prop(ig, :rank) == Dict(1 => 2, 2 => 2, 3 => 2)
+        @test get_prop(ig, :rank) == Dict(1 => 2, 2 => 2, 4 => 2)
     end
 end
 end
@@ -109,29 +107,25 @@ end
     )
     expected_J_matrix = [
         [0 0.3 2.0 ];
+        [0 0 -1.0];
         [0 0 0];
-        [0 -1.0 0];
     ]
 
     ig = ising_graph(
         "$(@__DIR__)/instances/example.txt",
-        -1,
-        Dict(1 => 3, 4 => 4)
+        sgn=-1,
+        rank_override=Dict(1 => 3, 4 => 4)
     )
 
     @testset "has rank overriden by rank_override dict" begin
         # TODO: update default value of 2 once original implementation
         # is also updated.
-        @test get_prop(ig, :rank) == Dict(1 => 3, 2 => 2, 3 => 4)
+        @test get_prop(ig, :rank) == Dict(1 => 3, 2 => 2, 4 => 4)
     end
 
     @testset "has coefficients multiplied by given sign" begin
-        @test get_prop(ig, :h) == expected_biases
-        @test collect(map(v -> get_prop(ig, v, :h), vertices(ig))) == expected_biases
-        @test get_prop(ig, :J) == expected_J_matrix
-        @test all(
-            map(e -> expected_couplings[e] == get_prop(ig, e, :J), edges(ig))
-        )
+        @test biases(ig) == expected_biases
+        @test couplings(ig) == expected_J_matrix
     end
 end
 
@@ -163,45 +157,45 @@ end
 
     @testset "Naive brute force for +/-1" begin
         k = 2^N
-    
+
         sp = brute_force(ig, num_states=k)
-    
+
         s = 5
-    
+
         @test sp.energies ≈ energy.(sp.states, Ref(ig))
-    
+
         β = rand(Float64)
         ρ = gibbs_tensor(ig, β)
-    
+
         @test size(ρ) == Tuple(fill(2, N))
-    
+
         r = exp.(-β .* sp.energies)
         R = r ./ sum(r)
-    
+
         @test sum(R) ≈ 1
         @test sum(ρ) ≈ 1
-    
+
         @test [ ρ[idx.(σ)...] for σ ∈ sp.states ] ≈ R
     end
-    
+
     @testset "Naive brute force for general spins" begin
         L = 4
         instance = "$(@__DIR__)/instances/$(L)_001.txt"
-    
+
         ig = ising_graph(instance)
-    
+
         set_prop!(ig, :rank, [3,2,5,4])
         rank = get_prop(ig, :rank)
-    
+
         all = prod(rank)
         sp = brute_force(ig, num_states=all)
-    
+
         β = rand(Float64)
         ρ = exp.(-β .* sp.energies)
-    
+
         ϱ = ρ ./ sum(ρ)
         ϱ̃ = gibbs_tensor(ig, β)
-    
+
         @test [ ϱ̃[idx.(σ)...] for σ ∈ sp.states ] ≈ ϱ
     end
 
@@ -225,44 +219,44 @@ end
         m = 3
         n = 4
         t = 3
-        
+
         β = 1
-        
+
         instance = "$(@__DIR__)/instances/pathological/test_$(m)_$(n)_$(t).txt"
-        
+
         ising = CSV.File(instance, types=[Int, Int, Float64], header=0, comment = "#")
         ig = ising_graph(instance)
-        
+
         conf = [
             -1 1 1 -1 -1 -1 1 1 1 -1 1 1 -1 1 -1 1;
             -1 1 1 -1 -1 -1 1 1 1 -1 1 1 -1 1 -1 -1;
             -1 1 1 -1 -1 1 1 1 1 -1 1 1 -1 1 -1 1;
             -1 1 1 -1 -1 1 1 1 1 -1 1 1 -1 1 -1 -1]
-        
+
         eng = _energy(ig, conf)
-        
+
         couplings = Dict()
         for (i, j, v) ∈ ising
             push!(couplings, (i, j) => v)
         end
-        
+
         cedges = Dict()
         push!(cedges, (1, 2) => [(1, 4), (1, 5), (1, 6)])
         push!(cedges, (1, 5) => [(1, 13)])
-        
+
         push!(cedges, (2, 3) => [(4, 7), (5, 7), (6, 8), (6, 9)])
         push!(cedges, (2, 6) => [(6, 16), (6, 18), (5, 16)])
-        
+
         push!(cedges, (5, 6) => [(13, 16), (13, 18)])
-        
+
         push!(cedges, (6, 10) => [(18, 28)])
         push!(cedges, (10, 11) => [(28, 31), (28, 32), (28, 33), (29, 31), (29, 32), (29, 33), (30, 31), (30, 32), (30, 33)])
-        
+
         push!(cedges, (2, 2) => [(4, 5), (4, 6), (5, 6), (6, 6)])
         push!(cedges, (3, 3) => [(7, 8), (7, 9)])
         push!(cedges, (6, 6) => [(16, 18), (16, 16)])
         push!(cedges, (10, 10) => [(28, 29), (28, 30), (29, 30)])
-        
+
         config = Dict()
         push!(config, 1 => [-1, -1, -1, -1])
         push!(config, 2 => [0, 0, 0, 0])
@@ -300,17 +294,15 @@ end
         push!(config, 34 => [0, 0, 0, 0])
         push!(config, 35 => [0, 0, 0, 0])
         push!(config, 36 => [0, 0, 0, 0])
-        
+
         num_config = length(config[1])
         exact_energy = _energy(config, couplings, cedges, num_config)
-        
+
         low_energies = [-16.4, -16.4, -16.4, -16.4, -16.1, -16.1, -16.1, -16.1, -15.9, -15.9, -15.9, -15.9, -15.9, -15.9, -15.6, -15.6, -15.6, -15.6, -15.6, -15.6, -15.4, -15.4]
-        
+
         for i ∈ 1:num_config
             @test exact_energy[i] == low_energies[i] == eng[i]
         end
-        
+
     end
 end
-
-

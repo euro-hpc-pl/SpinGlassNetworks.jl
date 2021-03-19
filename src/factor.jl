@@ -1,37 +1,27 @@
 export factor_graph, rank_reveal, projectors, split_into_clusters
 
 
-function split_into_clusters(vertices, assignment_rule)
-    # TODO: check how to do this in functional-style
-    clusters = Dict(
-        i => [] for i in values(assignment_rule)
-    )
-    for v in vertices
-        push!(clusters[assignment_rule[v]], v)
-    end
-    clusters
-end
-
-function split_into_clusters(ig::MetaGraph, assignment_rule)
+function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(
-        i => Int[] for i in values(assignment_rule)
+        i => T[] for i in values(assignment_rule)
     )
 
-    for (i, v) in enumerate(nodes(ig))
-        push!(cluster_id_to_verts[assignment_rule[v]], i)
+    for v in vertices(ig)
+        push!(cluster_id_to_verts[assignment_rule[v]], v)
     end
 
-    return Dict(
-        i => cluster(ig, verts) for (i, verts) ∈ cluster_id_to_verts
+    Dict(
+        i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts
     )
 end
+
 
 function factor_graph(
-    ig::MetaGraph,
+    ig::IsingGraph,
     num_states_cl::Int;
     spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, Int} # e.g. square lattice
-)
+    cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
+) where {T}
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
     factor_graph(
         ig,
@@ -42,42 +32,45 @@ function factor_graph(
 end
 
 function factor_graph(
-    ig::MetaGraph,
-    num_states_cl::Dict{Int, Int}=Dict{Int, Int}();
+    ig::IsingGraph,
+    num_states_cl::Dict{T, Int};
     spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, Int} # e.g. square lattice
-)
+    cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
+) where {T}
     L = maximum(values(cluster_assignment_rule))
-    fg = MetaDiGraph(L)
+    fg = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
-        set_prop!(fg, v, :cluster, cl)
         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
-        set_prop!(fg, v, :spectrum, sp)
-        set_prop!(fg, v, :loc_en, vec(sp.energies))
-        set_prop!(fg, v, :loc_dim, length(vec(sp.energies)))
+        set_props!(fg, v, Dict(:cluster => cl, :spectrum => sp))
     end
 
-    for i ∈ 1:L, j ∈ i+1:L
-        v, w = get_prop(fg, i, :cluster), get_prop(fg, j, :cluster)
+    for (i, v) ∈ enumerate(vertices(fg)), w ∈ vertices(fg)[i+1:end]
+        cl1, cl2 = get_prop(fg, v, :cluster), get_prop(fg, w, :cluster)
 
-        outer_edges, J = inter_cluster_edges(ig, v, w)
+        outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
             en = inter_cluster_energy(
-                get_prop(fg, i, :spectrum).states, J, get_prop(fg, j, :spectrum).states
+                get_prop(fg, v, :spectrum).states, J, get_prop(fg, w, :spectrum).states
             )
-
             pl, en = rank_reveal(en, :PE)
             en, pr = rank_reveal(en, :EP)
-
-            add_edge!(
-                fg, i, j,
-                Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
+            add_edge!(fg, v, w)
+            set_props!(
+                fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
             )
         end
     end
     fg
+end
+
+function factor_graph(
+    ig::IsingGraph;
+    spectrum::Function=full_spectrum,
+    cluster_assignment_rule::Dict{Int, T}
+) where {T}
+    factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
 function rank_reveal(energy, order=:PE)

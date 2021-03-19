@@ -1,6 +1,7 @@
 module SpinGlassNetworks
+    using LabelledGraphs
     using LightGraphs
-    using MetaGraphs
+    using MetaGraphs # TODO: remove that
     using CSV
     using DocStringExtensions
     using LinearAlgebra
@@ -9,23 +10,21 @@ module SpinGlassNetworks
     import Base.Prehashed
 
     export unique_neighbors
-    
-    function unique_neighbors(ig::MetaGraph, i::Int)
-        nbrs = neighbors(ig::MetaGraph, i::Int)
-        filter(j -> j > i, nbrs)
-    end
+
+
+    unique_neighbors(ig::LabelledGraph, i::Int) = filter(j -> j > i, neighbors(ig, i))
 
     @generated function unique_dims(A::AbstractArray{T,N}, dim::Integer) where {T,N}
         quote
             1 <= dim <= $N || return copy(A)
             hashes = zeros(UInt, axes(A, dim))
-    
+
             # Compute hash for each row
             k = 0
             @nloops $N i A d->(if d == dim; k = i_d; end) begin
                 @inbounds hashes[k] = hash(hashes[k], hash((@nref $N A i)))
             end
-    
+
             # Collect index of first row for each hash
             uniquerow = similar(Array{Int}, axes(A, dim))
             firstrow = Dict{Prehashed,Int}()
@@ -33,7 +32,7 @@ module SpinGlassNetworks
                 uniquerow[k] = get!(firstrow, Prehashed(hashes[k]), k)
             end
             uniquerows = collect(values(firstrow))
-    
+
             # Check for collisions
             collided = falses(axes(A, dim))
             @inbounds begin
@@ -48,7 +47,7 @@ module SpinGlassNetworks
                     end
                 end
             end
-    
+
             if any(collided)
                 nowcollided = similar(BitArray, axes(A, dim))
                 while any(collided)
@@ -61,7 +60,7 @@ module SpinGlassNetworks
                     for v ∈ values(firstrow)
                         push!(uniquerows, v)
                     end
-    
+
                     # Check for collisions
                     fill!(nowcollided, false)
                     @nloops $N i A d->begin
@@ -80,14 +79,14 @@ module SpinGlassNetworks
                     (collided, nowcollided) = (nowcollided, collided)
                 end
             end
-    
+
             (@nref $N A d->d == dim ? sort!(uniquerows) : (axes(A, d))), indexin(uniquerow, uniquerows)
         end
     end
 
     include("states.jl")
+    include("ising.jl")
     include("spectrum.jl")
     include("lattice.jl")
-    include("ising.jl")
     include("factor.jl")
 end # module
