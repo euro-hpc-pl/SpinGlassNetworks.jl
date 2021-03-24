@@ -12,9 +12,9 @@ Calculates Gibbs state of a classical Ising Hamiltonian
 
 Calculates matrix elements (probabilities) of \$\\rho\$
 ```math
-\$\\bra{\\σ}\\rho\\ket{\\sigma}\$
+\\bra{\\sigma}\\rho\\ket{\\sigma}
 ```
-for all possible configurations \$\\σ\$.
+for all possible configurations \$\\sigma\$.
 """
 function gibbs_tensor(ig::MetaGraph, β=Float64=1.0)
     states = collect.(all_states(rank_vec(ig)))
@@ -28,7 +28,7 @@ $(TYPEDSIGNATURES)
 
 Calculate the Ising energy
 ```math
-E = -\\sum_<i,j> s_i J_{ij} * s_j - \\sum_j h_i s_j.
+E = -\\sum_{<i,j>} s_i J_{ij} s_j - \\sum_j h_i s_j.
 ```
 """
 energy(σ::Vector, J::Matrix, η::Vector=σ) = dot(σ, J, η)
@@ -47,7 +47,6 @@ Calculates \$k\$ lowest energy states
 together with the coresponding energies
 of a classical Ising Hamiltonian
 """
-
 function brute_force(ig::MetaGraph; sorted=true, num_states::Int=1)
     if nv(ig) == 0 return Spectrum(zeros(1), []) end
     ig_rank = rank_vec(ig)
