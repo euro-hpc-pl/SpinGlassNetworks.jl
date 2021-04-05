@@ -62,6 +62,17 @@ function brute_force(ig::MetaGraph; sorted=true, num_states::Int=1)
     end
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+Return the low energy spectrum
+
+# Details
+
+Calculates \$k\$ lowest energy states
+together with the coresponding energies
+of a classical Ising Hamiltonian
+"""
 full_spectrum(ig::MetaGraph; num_states::Int=1) = brute_force(ig, sorted=false, num_states=num_states)
 
 struct Spectrum

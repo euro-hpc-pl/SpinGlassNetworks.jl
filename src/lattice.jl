@@ -1,6 +1,11 @@
 export super_square_lattice
 
- function super_square_lattice(size::NTuple{5, Int})
+"""
+$(TYPEDSIGNATURES)
+
+Creates square lattice used eg. as an assignment rule.
+"""
+function super_square_lattice(size::NTuple{5, Int})
     m, um, n, un, t = size
     new = LinearIndices((1:n, 1:m))
     old = LinearIndices((1:t, 1:un, 1:n, 1:um, 1:m))
@@ -11,6 +16,12 @@ export super_square_lattice
     )
 end
 
+
+"""
+$(TYPEDSIGNATURES)
+
+Creates square lattice used eg. as an assignment rule.
+"""
 function super_square_lattice(size::NTuple{3, Int})
     m, n, t = size
     super_square_lattice((m, 1, n, 1, t))

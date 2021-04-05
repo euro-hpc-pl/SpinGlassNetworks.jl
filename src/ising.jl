@@ -68,10 +68,32 @@ function ising_graph(
     ig
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+Returns an Array with nodes of graph.
+"""
 nodes(ig::MetaGraph) = collect(get_prop.(Ref(ig), vertices(ig), :node))
+
+"""
+$(TYPEDSIGNATURES)
+
+Returns an Array with ranks of graph.
+"""
 rank_vec(ig::MetaGraph) = collect(values(get_prop(ig, :rank)))
+
+"""
+$(TYPEDSIGNATURES)
+
+Returns size of graph's basis.
+"""
 basis_size(ig::MetaGraph) = prod(prod(rank_vec(ig)))
 
+"""
+$(TYPEDSIGNATURES)
+
+Creates cluster of ising graph induced by vertices verts.
+"""
 function cluster(ig::MetaGraph, verts)
     sub_ig, vmap = induced_subgraph(ig, collect(verts))
 
