@@ -7,11 +7,10 @@ Creates square lattice used eg. as an assignment rule.
 """
 function super_square_lattice(size::NTuple{5, Int})
     m, um, n, un, t = size
-    new = LinearIndices((1:n, 1:m))
     old = LinearIndices((1:t, 1:un, 1:n, 1:um, 1:m))
 
     Dict(
-            old[k, uj, j, ui, i] => new[j, i]
+            old[k, uj, j, ui, i] => (i, j)
             for i=1:m, ui=1:um, j=1:n, uj=1:un, k=1:t
     )
 end

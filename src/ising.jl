@@ -1,11 +1,13 @@
-export ising_graph
-export rank_vec
-export cluster, rank, nodes, basis_size
+using LabelledGraphs
+
+export ising_graph, rank_vec, cluster, rank, nodes, basis_size, biases, couplings, IsingGraph
 
 const Instance = Union{String, Dict}
 
 
 unique_nodes(ising_tuples) = sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
+
+const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}
 
 """
 $(TYPEDSIGNATURES)
@@ -17,7 +19,7 @@ Create the Ising spin glass model.
 Store extra information
 """
 function ising_graph(
-    instance::Instance,
+    instance::Instance;
     sgn::Number=1.0,
     rank_override::Dict{Int, Int}=Dict{Int, Int}()
 )
@@ -28,94 +30,67 @@ function ising_graph(
         ising = [ (i, j, J) for ((i, j), J) ∈ instance ]
     end
 
-    original_nodes = unique_nodes(ising)
-    L = length(original_nodes)
-    nodes_to_vertices = Dict(w => i for (i, w) ∈ enumerate(original_nodes))
+    nodes = unique_nodes(ising)
+    L = length(nodes)
+    nodes_to_vertices = Dict(w => i for (i, w) ∈ enumerate(nodes))
 
-    ig = MetaGraph(length(original_nodes))
+    ig = LabelledGraph{MetaGraph}(nodes)
 
-    foreach(args -> set_prop!(ig, args[1], :node, args[2]), enumerate(original_nodes))
+    set_prop!.(Ref(ig), vertices(ig), :h, 0)
+    foreach(v -> set_prop!(ig, v, :rank, get(rank_override, v, 2)), vertices(ig))
 
-    J = zeros(L, L)
-    h = zeros(L)
-
-    # setup the model (J_ij, h_i)
-    for (_i, _j, v) ∈ ising
-        i, j = nodes_to_vertices[_i], nodes_to_vertices[_j]
+    for (i, j, v) ∈ ising
         v *= sgn
 
         if i == j
-            h[i] = v
+            set_prop!(ig, i, :h, v)
         else
-            add_edge!(ig, i, j, :J, v) || throw(ArgumentError("Duplicate Egde ($i, $j)"))
-            J[i, j] = v
+            add_edge!(ig, i, j) || throw(ArgumentError("Duplicate Egde ($i, $j)"))
+            set_prop!(ig, i, j, :J, v)
         end
     end
 
-    foreach(i -> set_prop!(ig, i, :h, h[i]), vertices(ig))
 
     set_prop!(
         ig,
         :rank,
         Dict{Int, Int}(
-            v => get(rank_override, w, 2) for (w, v) in nodes_to_vertices
+            v => get(rank_override, v, 2) for v in vertices(ig)
         )
     )
 
-    set_prop!(ig, :J, J)
-    set_prop!(ig, :h, h)
-    set_prop!(ig, :nodes_map, nodes_to_vertices)
     ig
 end
 
-"""
-$(TYPEDSIGNATURES)
+rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
+basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
+biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
-Returns an Array with nodes of graph.
-"""
-nodes(ig::MetaGraph) = collect(get_prop.(Ref(ig), vertices(ig), :node))
-
-"""
-$(TYPEDSIGNATURES)
-
-Returns an Array with ranks of graph.
-"""
-rank_vec(ig::MetaGraph) = collect(values(get_prop(ig, :rank)))
-
-"""
-$(TYPEDSIGNATURES)
-
-Returns size of graph's basis.
-"""
-basis_size(ig::MetaGraph) = prod(prod(rank_vec(ig)))
-
-"""
-$(TYPEDSIGNATURES)
-
-Creates cluster of ising graph induced by vertices verts.
-"""
-function cluster(ig::MetaGraph, verts)
-    sub_ig, vmap = induced_subgraph(ig, collect(verts))
-
-    h = get_prop.(Ref(sub_ig), vertices(sub_ig), :h)
-    rank = getindex.(Ref(get_prop(ig, :rank)), vmap)
-    J = get_prop(ig, :J)[vmap, vmap]
-
-    set_props!(sub_ig, Dict(:rank => rank, :J => J, :h => h, :vmap => vmap))
-    sub_ig
+function couplings(ig::IsingGraph)
+    J = zeros(nv(ig), nv(ig))
+    for edge in edges(ig)
+        i, j = ig.reverse_label_map[src(edge)], ig.reverse_label_map[dst(edge)]
+        J[i, j] = get_prop(ig, edge, :J)
+    end
+    J
 end
 
-function inter_cluster_edges(ig::MetaGraph, cl1::MetaGraph, cl2::MetaGraph)
-    verts1, verts2 = get_prop(cl1, :vmap), get_prop(cl2, :vmap)
-    outer_edges = filter_edges(
-        ig,
-        (_, e) -> (src(e) ∈ verts1 && dst(e) ∈ verts2) ||
-            (src(e) ∈ verts1 && dst(e) ∈ verts2)
-    )
+cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
+
+function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
+    verts1, verts2 = vertices(cl1), vertices(cl2)
+
+    outer_edges = [
+        LabelledEdge(i, j)
+        for i ∈ vertices(cl1), j ∈ vertices(cl2)
+        if has_edge(ig, i, j)
+    ]
+
     J = zeros(nv(cl1), nv(cl2))
     # FIXME: don't use indexin
     for e ∈ outer_edges
-        @inbounds J[indexin(src(e), verts1)[1], indexin(dst(e), verts2)[1]] = get_prop(ig, e, :J)
+        i, j = cl1.reverse_label_map[src(e)], cl2.reverse_label_map[dst(e)]
+        @inbounds J[i, j] = get_prop(ig, e, :J)
     end
     outer_edges, J
 end

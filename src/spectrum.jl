@@ -16,7 +16,7 @@ Calculates matrix elements (probabilities) of \$\\rho\$
 ```
 for all possible configurations \$\\sigma\$.
 """
-function gibbs_tensor(ig::MetaGraph, β=Float64=1.0)
+function gibbs_tensor(ig::IsingGraph, β=Float64=1.0)
     states = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy.(states, Ref(ig)))
     ρ ./ sum(ρ)
@@ -33,7 +33,7 @@ E = -\\sum_{<i,j>} s_i J_{ij} s_j - \\sum_j h_i s_j.
 """
 energy(σ::Vector, J::Matrix, η::Vector=σ) = dot(σ, J, η)
 energy(σ::Vector, h::Vector) = dot(h, σ)
-energy(σ::Vector, ig::MetaGraph) = energy(σ, get_prop(ig, :J)) + energy(σ, get_prop(ig, :h))
+energy(σ::Vector, ig::IsingGraph) = energy(σ, couplings(ig)) + energy(σ, biases(ig))
 
 
 """
@@ -47,7 +47,8 @@ Calculates \$k\$ lowest energy states
 together with the coresponding energies
 of a classical Ising Hamiltonian
 """
-function brute_force(ig::MetaGraph; sorted=true, num_states::Int=1)
+
+function brute_force(ig::IsingGraph; sorted=true, num_states::Int=1)
     if nv(ig) == 0 return Spectrum(zeros(1), []) end
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
@@ -73,7 +74,7 @@ Calculates \$k\$ lowest energy states
 together with the coresponding energies
 of a classical Ising Hamiltonian
 """
-full_spectrum(ig::MetaGraph; num_states::Int=1) = brute_force(ig, sorted=false, num_states=num_states)
+full_spectrum(ig::IsingGraph; num_states::Int=1) = brute_force(ig, sorted=false, num_states=num_states)
 
 struct Spectrum
     energies::Vector{Float64}
