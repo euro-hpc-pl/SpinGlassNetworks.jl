@@ -1,4 +1,4 @@
-export factor_graph, rank_reveal, projectors, split_into_clusters
+export factor_graph, rank_reveal, projectors, split_into_clusters, decode_factor_graph_state
 
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
@@ -90,4 +90,14 @@ function rank_reveal(energy, order=:PE)
     end
 
     order == :PE ? (P, E) : (E, P)
+end
+
+
+function decode_factor_graph_state(fg, state::Vector{Int})
+    all_spins = vcat([vertices(get_prop(fg, v, :cluster)) for v ∈ vertices(fg)]...)
+    spin_perm = sortperm(all_spins)
+
+    vcat(
+        [get_prop(fg, v, :spectrum).states[i] for (i, v) ∈ zip(state, vertices(fg))]...
+    )[spin_perm]
 end

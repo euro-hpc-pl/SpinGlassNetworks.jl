@@ -174,3 +174,30 @@ end
    @test E * Pr ≈ E_old
    @test Pl * E * Pr ≈ energy
 end
+
+
+function create_example_factor_graph()
+   J12 = -1.0
+   h1 = 0.5
+   h2 = 0.75
+
+   
+   D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
+   ig = ising_graph(D)
+
+   factor_graph(
+      ig,
+      Dict((1, 1) => 2, (1, 2) => 2),
+      spectrum = full_spectrum,
+      cluster_assignment_rule = Dict(1 => (1, 1), 2 => (1, 2)),
+  )
+end
+
+const fg_state_to_spin = [
+   ([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])
+]
+
+@testset "Test decoding solution $(state) to spins gives $(spin_values) results" for (state, spin_values) ∈ fg_state_to_spin
+   fg = create_example_factor_graph()
+   @test decode_factor_graph_state(fg, state) == spin_values
+end
