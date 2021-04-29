@@ -197,7 +197,103 @@ const fg_state_to_spin = [
    ([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])
 ]
 
-@testset "Test decoding solution $(state) to spins gives $(spin_values) results" for (state, spin_values) ∈ fg_state_to_spin
+@testset "Decoding solution gives correct spin assignment" begin
    fg = create_example_factor_graph()
-   @test decode_factor_graph_state(fg, state) == spin_values
+   for (state, spin_values) ∈ fg_state_to_spin   
+      @test decode_factor_graph_state(fg, state) == spin_values
+   end
+end
+
+"""
+Instance below looks like this:
+
+1 -- 2 -- 3
+|    |    |
+4 -- 5 -- 6
+|    |    |
+7 -- 8 -- 9
+
+And we group the following spins together: [1, 2, 4, 5], [3, 6], [7, 8], [9].
+"""
+function create_larger_example_factor_graph()
+   instance = Dict(
+      (1, 1) => 0.5,
+      (2, 2) => 0.25,
+      (3, 3) => 0.3,
+      (4, 4) => 0.1,
+      (5, 5) => 0.0,
+      (6, 6) => -2.0,
+      (7, 7) => -1.0,
+      (8, 8) => 2.0,
+      (9, 9) => 3.1,
+      (1, 2) => -1.0,
+      (2, 3) => 1.0,
+      (4, 5) => 0.5,
+      (5, 6) => -0.3,
+      (7, 8) => 0.1,
+      (8, 9) => 2.2,
+      (1, 4) => -1.7,
+      (4, 7) => 1.2,
+      (2, 5) => 0.2,
+      (5, 8) => 0.3,
+      (3, 6) => 1.1,
+      (6, 9) => 0.7
+   )
+
+   ig = ising_graph(instance)
+
+   assignment_rule = Dict(
+      1 => (1, 1),
+      2 => (1, 1),
+      4 => (1, 1),
+      5 => (1, 1),
+      3 => (1, 2),
+      6 => (1, 2),
+      7 => (2, 1),
+      8 => (2, 1),
+      9 => (2, 2)
+   )
+
+   fg = factor_graph(
+      ig,
+      Dict{NTuple{2, Int}, Int}(),
+      spectrum = full_spectrum,
+      cluster_assignment_rule = assignment_rule,
+   )
+   
+   ig, fg
+end
+
+function factor_graph_energy(fg, state)
+   # This is highly inefficient, but simple, which makes it suitable for testing.
+   # If such a function is needed elsewhere, we need to implement it properly.
+   total_en = 0.0
+
+   # Collect local terms from each cluster
+   for (s, v) ∈ zip(state, vertices(fg))
+      total_en += get_prop(fg, v, :spectrum).energies[s]
+   end
+
+   # Collect inter-cluster terms
+   for edge ∈ edges(fg)
+      i, j = fg.reverse_label_map[src(edge)], fg.reverse_label_map[dst(edge)]
+      pl, en, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :en), get_prop(fg, edge, :pr)
+      edge_energy = pl * en * pr
+      total_en += edge_energy[state[i], state[j]]
+   end
+
+   total_en
+end
+
+
+@testset "Decoding solution gives spins configuration with corresponding energies" begin
+   ig, fg = create_larger_example_factor_graph()
+
+   # Corresponding bases sizes for each cluster are 16, 4, 4, 2.
+   all_states = [[i, j, k, l] for i ∈ 1:16 for j ∈ 1:4 for k ∈ 1:4 for l ∈ 1:2]
+
+   for state ∈ all_states
+      spins = decode_factor_graph_state(fg, state)
+      @test factor_graph_energy(fg, state) ≈ energy(spins, ig)
+   end
 end
