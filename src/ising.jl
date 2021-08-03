@@ -94,4 +94,4 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     outer_edges, J
 end
 
-function prune(ig::IsingGraph) = ig[ig.labels[findall(!iszero, degree(ig))]]
+prune(ig::IsingGraph) = ig[ig.labels[findall(!iszero, degree(ig))]]
