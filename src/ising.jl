@@ -87,10 +87,11 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     ]
 
     J = zeros(nv(cl1), nv(cl2))
-    # FIXME: don't use indexin
     for e ∈ outer_edges
         i, j = cl1.reverse_label_map[src(e)], cl2.reverse_label_map[dst(e)]
         @inbounds J[i, j] = get_prop(ig, e, :J)
     end
     outer_edges, J
 end
+
+function prune(ig::IsingGraph) = ig[ig.labels[findall(!iszero, degree(ig))]]
