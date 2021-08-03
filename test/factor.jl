@@ -200,7 +200,9 @@ const fg_state_to_spin = [
 @testset "Decoding solution gives correct spin assignment" begin
    fg = create_example_factor_graph()
    for (state, spin_values) ∈ fg_state_to_spin   
-      @test decode_factor_graph_state(fg, state) == spin_values
+      d = decode_factor_graph_state(fg, state)
+      states = collect(values(d))[collect(keys(d))]
+      @test states == spin_values
    end
 end
 
@@ -293,7 +295,11 @@ end
    all_states = [[i, j, k, l] for i ∈ 1:16 for j ∈ 1:4 for k ∈ 1:4 for l ∈ 1:2]
 
    for state ∈ all_states
-      spins = decode_factor_graph_state(fg, state)
+      d = decode_factor_graph_state(fg, state)
+      spins = zeros(length(d))
+      for (k, v) ∈ d
+         spins[k] = 1
+      end
       @test factor_graph_energy(fg, state) ≈ energy(spins, ig)
    end
 end
