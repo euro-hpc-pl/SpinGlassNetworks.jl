@@ -94,10 +94,14 @@ end
 
 
 function decode_factor_graph_state(fg, state::Vector{Int})
-    all_spins = vcat([vertices(get_prop(fg, v, :cluster)) for v ∈ vertices(fg)]...)
-    spin_perm = sortperm(all_spins)
-
-    vcat(
-        [get_prop(fg, v, :spectrum).states[i] for (i, v) ∈ zip(state, vertices(fg))]...
-    )[spin_perm]
+    ret = Dict{Int, Int}()
+    for (i, vert) ∈ zip(state, vertices(fg))
+        spins = get_prop(fg, vert, :cluster).labels
+        states = get_prop(fg, vert, :spectrum).states
+        if length(states) > 0
+            curr_state = states[i]
+            merge!(ret, Dict(k => v for (k, v) ∈ zip(spins, curr_state)))
+        end
+    end
+    ret
 end
