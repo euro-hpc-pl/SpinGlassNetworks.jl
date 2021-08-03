@@ -298,7 +298,7 @@ end
       d = decode_factor_graph_state(fg, state)
       spins = zeros(length(d))
       for (k, v) ∈ d
-         spins[k] = 1
+         spins[k] = v
       end
       @test factor_graph_energy(fg, state) ≈ energy(spins, ig)
    end
