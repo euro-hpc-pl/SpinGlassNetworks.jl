@@ -94,4 +94,10 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     outer_edges, J
 end
 
-prune(ig::IsingGraph) = ig[ig.labels[findall(!iszero, degree(ig))]]
+function prune(ig::IsingGraph) 
+    idx = findall(!iszero, degree(ig))
+    gg = ig[ig.labels[idx]]
+    gg.labels = vertices(gg.inner_graph)
+    gg.reverse_label_map = Dict(i => i for i=1:nv(gg.inner_graph))
+    gg
+end
