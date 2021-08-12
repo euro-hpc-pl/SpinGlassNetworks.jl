@@ -320,10 +320,21 @@ end
 
         ig = ising_graph(instance)
         ng = prune(ig)
-        @test ig === ng
+        @test nv(ig) == nv(ng)
     end
 
-    @testset "All vertices of degree zero" begin
+    @testset "All vertices of degree zero with no local fields" begin
+        instance = Dict(
+            (1, 1) => 0.0,
+            (2, 2) => 0.0,
+        )
+
+        ig = ising_graph(instance)
+        ng = prune(ig)
+        @test nv(ng) == 0
+    end
+
+    @testset "All vertices of degree zero, but with local fields" begin
         instance = Dict(
             (1, 1) => 0.1,
             (2, 2) => 0.5,
@@ -331,10 +342,10 @@ end
 
         ig = ising_graph(instance)
         ng = prune(ig)
-        @test ig === ng
+        @test nv(ng) == 2
     end
 
-    @testset "Some vertices of degree zero" begin
+    @testset "Some vertices of degree zero, but nonzero field" begin
         instance = Dict(
                 (1, 1) => 0.1,
                 (2, 2) => 0.5,
@@ -347,7 +358,24 @@ end
         ig = ising_graph(instance)
         ng = prune(ig)
 
-        @test nv(ng) < nv(ig)
+        @test nv(ng) == nv(ig)
+        @test vertices(ng) == collect(1:nv(ng))
+    end
+
+    @testset "Some vertices of degree zero and zero field" begin
+        instance = Dict(
+                (1, 1) => 0.1,
+                (2, 2) => 0.5,
+                (1, 4) => -2.0,
+                (4, 2) => 1.0,
+                (1, 2) => -0.3,
+                (5, 5) => 0.0
+            )
+
+        ig = ising_graph(instance)
+        ng = prune(ig)
+
+        @test nv(ng) == nv(ig) - 1
         @test vertices(ng) == collect(1:nv(ng))
     end
 end

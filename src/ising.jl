@@ -95,13 +95,12 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
 end
 
 function prune(ig::IsingGraph) 
-    idx = findall(!iszero, degree(ig))
+    to_keep = vcat(
+        findall(!iszero, degree(ig)),
+        findall(x->iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol=1e-14), vertices(ig))
+    )
 
-    if length(idx) == nv(ig) || length(idx) == 0
-        return ig
-    end
-
-    gg = ig[ig.labels[idx]]
+    gg = ig[ig.labels[to_keep]]
     labels = collect(vertices(gg.inner_graph))
     reverse_label_map = Dict(i => i for i=1:nv(gg.inner_graph))
     LabelledGraph(labels, gg.inner_graph, reverse_label_map)
