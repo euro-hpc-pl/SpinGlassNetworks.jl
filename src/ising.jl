@@ -96,6 +96,11 @@ end
 
 function prune(ig::IsingGraph) 
     idx = findall(!iszero, degree(ig))
+
+    if length(idx) == nv(ig) || length(idx) == 0
+        return ig
+    end
+
     gg = ig[ig.labels[idx]]
     labels = collect(vertices(gg.inner_graph))
     reverse_label_map = Dict(i => i for i=1:nv(gg.inner_graph))
