@@ -306,3 +306,48 @@ end
 
     end
 end
+
+@testset "Pruning" begin
+
+    @testset "No vertices of degree zero" begin
+        instance = Dict(
+            (1, 1) => 0.1,
+            (2, 2) => 0.5,
+            (1, 4) => -2.0,
+            (4, 2) => 1.0,
+            (1, 2) => -0.3,
+        )
+
+        ig = ising_graph(instance)
+        ng = prune(ig)
+        @test ig === ng
+    end
+
+    @testset "All vertices of degree zero" begin
+        instance = Dict(
+            (1, 1) => 0.1,
+            (2, 2) => 0.5,
+        )
+
+        ig = ising_graph(instance)
+        ng = prune(ig)
+        @test ig === ng
+    end
+
+    @testset "Some vertices of degree zero" begin
+        instance = Dict(
+                (1, 1) => 0.1,
+                (2, 2) => 0.5,
+                (1, 4) => -2.0,
+                (4, 2) => 1.0,
+                (1, 2) => -0.3,
+                (5, 5) => 0.1
+            )
+
+        ig = ising_graph(instance)
+        ng = prune(ig)
+
+        @test nv(ng) < nv(ig)
+        @test vertices(ng) == collect(1:nv(ng))
+    end
+end

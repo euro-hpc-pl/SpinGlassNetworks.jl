@@ -1,6 +1,6 @@
 using LabelledGraphs
 
-export ising_graph, rank_vec, cluster, rank, nodes, basis_size, biases, couplings, IsingGraph
+export ising_graph, rank_vec, cluster, rank, nodes, basis_size, biases, couplings, IsingGraph, prune
 
 const Instance = Union{String, Dict}
 
@@ -87,10 +87,22 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     ]
 
     J = zeros(nv(cl1), nv(cl2))
-    # FIXME: don't use indexin
     for e ∈ outer_edges
         i, j = cl1.reverse_label_map[src(e)], cl2.reverse_label_map[dst(e)]
         @inbounds J[i, j] = get_prop(ig, e, :J)
     end
     outer_edges, J
+end
+
+function prune(ig::IsingGraph) 
+    idx = findall(!iszero, degree(ig))
+
+    if length(idx) == nv(ig) || length(idx) == 0
+        return ig
+    end
+
+    gg = ig[ig.labels[idx]]
+    labels = collect(vertices(gg.inner_graph))
+    reverse_label_map = Dict(i => i for i=1:nv(gg.inner_graph))
+    LabelledGraph(labels, gg.inner_graph, reverse_label_map)
 end
