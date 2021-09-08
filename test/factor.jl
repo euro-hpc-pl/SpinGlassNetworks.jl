@@ -114,7 +114,15 @@ end
             energy[ii, jj] = eij
          end
       end
-      @test energy ≈ pl * (en * pr)
+      println("pl", pl)
+      println("proj(pl) ", proj(pl, :PE))
+      println("en", en)
+      println("pr", pr)
+      println("proj(pr) ", proj(pr, :EP))
+
+      #@test energy ≈ pl * (en * pr)
+      @test energy ≈ proj(pl, :PE) * (en * proj(pr, :EP))
+      println("-----------")
    end
 
    @testset "each cluster comprises expected cells" begin
@@ -137,7 +145,11 @@ end
 
 @testset "Rank reveal correctly decomposes energy row-wise" begin
    energy = [[1 2 3]; [0 -1 0]; [1 2 3]]
-   P, E = rank_reveal(energy, :PE)
+   PP, E = rank_reveal(energy, :PE)
+   P = proj(PP, :PE)
+   println("P ", P)
+   println("E ", E)
+   @test length(PP) == 3
    @test size(P) == (3, 2)
    @test size(E) == (2, 3)
    @test P * E ≈ energy
@@ -145,7 +157,11 @@ end
 
 @testset "Rank reveal correctly decomposes energy column-wise" begin
    energy = [[1, 2, 3] [0, -1, 1] [1, 2, 3]]
-   E, P = rank_reveal(energy, :EP)
+   E, PP = rank_reveal(energy, :EP)
+   P = proj(PP, :EP)
+   println("E ", E)
+   println("P ", P)
+   @test length(PP) == 3
    @test size(P) == (2, 3)
    @test size(E) == (3, 2)
    @test E * P ≈ energy
@@ -163,12 +179,16 @@ end
       [0.0  -0.5  -0.5  -1.0   1.0   0.5   0.5   0.0];
       [-1.0   0.5  -1.5   0.0   0.0   1.5  -0.5   1.0]
    ]
-   Pl, E_old = rank_reveal(energy, :PE)
+   PPl, E_old = rank_reveal(energy, :PE)
+   Pl = proj(PPl, :PE)
+   @test length(PPl) == 8
    @test size(Pl) == (8, 8)
    @test size(E_old) == (8, 8)
    @test Pl * E_old ≈ energy
 
-   E, Pr = rank_reveal(E_old, :EP)
+   E, PPr = rank_reveal(E_old, :EP)
+   Pr = proj(PPr, :EP)
+   @test length(PPr) == 8
    @test size(Pr) == (8, 8)
    @test size(E) == (8, 8)
    @test E * Pr ≈ E_old
@@ -280,7 +300,7 @@ function factor_graph_energy(fg, state)
    for edge ∈ edges(fg)
       i, j = fg.reverse_label_map[src(edge)], fg.reverse_label_map[dst(edge)]
       pl, en, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :en), get_prop(fg, edge, :pr)
-      edge_energy = pl * en * pr
+      edge_energy = proj(pl, :PE) * en * proj(pr, :EP)
       total_en += edge_energy[state[i], state[j]]
    end
 
