@@ -1,4 +1,4 @@
-export factor_graph, rank_reveal, projectors, split_into_clusters, decode_factor_graph_state, proj
+export factor_graph, rank_reveal, projectors, split_into_clusters, decode_factor_graph_state, decode_projector
 
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
@@ -72,6 +72,7 @@ function factor_graph(
 ) where {T}
     factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
+
 #=
 function rank_reveal(energy, order=:PE)
     @assert order ∈ (:PE, :EP)
@@ -102,7 +103,7 @@ function rank_reveal(energy, order=:PE)
 end
 
 
-function proj(idx, order=:PE)
+function decode_projector(idx, order=:PE)
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2
     if order == :PE
