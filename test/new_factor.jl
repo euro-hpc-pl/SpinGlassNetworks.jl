@@ -10,7 +10,7 @@
     L = n * m * t
     states_to_keep = 20
 
-    instance = "$(@__DIR__)/instances/pathological/test_$(m)_$(n)_$(t).txt"
+    instance = "$(@__DIR__)/instances/pathological/cross_$(m)_$(n)_dd.txt"
     ig = ising_graph(instance)
 
     fg = factor_graph(

@@ -72,6 +72,11 @@ end
 
 # Please don't make the below another energy method.
 # There is already so much mess going on :)
+#function inter_cluster_energy(cl1_states, J::Matrix, cl2_states)
+#    hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
+#end
+
 function inter_cluster_energy(cl1_states, J::Matrix, cl2_states)
+    
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end
