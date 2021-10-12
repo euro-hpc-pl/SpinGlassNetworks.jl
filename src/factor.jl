@@ -46,14 +46,34 @@ function factor_graph(
     end
 
     for (i, v) ∈ enumerate(vertices(fg)), w ∈ vertices(fg)[i+1:end]
+    
+        println("------------------------------------")
+        println("----------------")
+        println("----------------")
+
+        println("v ", v)
+        println("w ", w)
+        println("----------------")
+
         cl1, cl2 = get_prop(fg, v, :cluster), get_prop(fg, w, :cluster)
 
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
+        println("outer edges ", outer_edges)
+        println("----------------")
+        println("J ", J)
+        println("----------------")
+        println("states v ", get_prop(fg, v, :spectrum).states)
+        println("----------------")
+        println("states w ", get_prop(fg, w, :spectrum).states)
+        println("----------------")
+
 
         if !isempty(outer_edges)
             en = inter_cluster_energy(
                 get_prop(fg, v, :spectrum).states, J, get_prop(fg, w, :spectrum).states
             )
+            println("energy ", en)
+            println("----------------")
             pl, en = rank_reveal(en, :PE)
             en, pr = rank_reveal(en, :EP)
             add_edge!(fg, v, w)
