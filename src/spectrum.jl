@@ -77,6 +77,9 @@ end
 #end
 
 function inter_cluster_energy(cl1_states, J::Matrix, cl2_states)
-    
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
+end
+
+function inter_cluster_energy(cl1_states, J, cl2_states)
+    (hcat(collect.(cl1_states)...)' * J)' .* unique(hcat(collect.(cl2_states)...))
 end
