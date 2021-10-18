@@ -31,6 +31,7 @@ function factor_graph(
     )
 end
 
+
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Dict{T, Int};
@@ -46,16 +47,52 @@ function factor_graph(
     end
 
     for (i, v) ∈ enumerate(vertices(fg)), w ∈ vertices(fg)[i+1:end]
+
         cl1, cl2 = get_prop(fg, v, :cluster), get_prop(fg, w, :cluster)
 
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
+            ind1 = any(i -> i != 0, J, dims=2)
+            ind2 = any(i -> i != 0, J, dims=1)
+            ind1 = reshape(ind1, length(ind1))
+            ind2 = reshape(ind2, length(ind2))
+            JJ = J[ind1, ind2]
+            # println("J = ", J)
+            # println("JJ = ", JJ)
+            states_v = get_prop(fg, v, :spectrum).states
+            states_w = get_prop(fg, w, :spectrum).states
+            reduced_states_v = [s[ind1] for s in states_v] 
+            reduced_states_w = [s[ind2] for s in states_w] 
+
+            println("rv = ", reduced_states_v)
+            println("rw = ", reduced_states_w)
+
+            pl, unique_states_v = rank_reveal(reduced_states_v, :PE)
+            pr, unique_states_w = rank_reveal(reduced_states_w, :PE)
+            println("uv = ", unique_states_v, pl)
+            println("uw = ", unique_states_w, pr)
+
+            # println("statesv ", statesv)
+            # println("statesw ", statesw)
+            
+            eng = inter_cluster_energy(
+            unique_states_v, JJ, unique_states_w
+            )
+            println("en ", eng)
+
+            println("states v ", get_prop(fg, v, :spectrum).states)
+            println("states w ", get_prop(fg, w, :spectrum).states)
+
             en = inter_cluster_energy(
                 get_prop(fg, v, :spectrum).states, J, get_prop(fg, w, :spectrum).states
             )
+            #println("energy ", en)
+            #println("----------------")
             pl, en = rank_reveal(en, :PE)
             en, pr = rank_reveal(en, :EP)
+            println("energy_rank_reveal ", en)
+            println("----------------")
             add_edge!(fg, v, w)
             set_props!(
                 fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
@@ -64,6 +101,7 @@ function factor_graph(
     end
     fg
 end
+
 
 function factor_graph(
     ig::IsingGraph;
