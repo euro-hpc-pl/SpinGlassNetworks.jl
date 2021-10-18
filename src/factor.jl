@@ -31,97 +31,6 @@ function factor_graph(
     )
 end
 
-#=
-function factor_graph(
-    ig::IsingGraph,
-    num_states_cl::Dict{T, Int};
-    spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
-) where {T}
-    L = maximum(values(cluster_assignment_rule))
-    fg = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
-
-    for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
-        #num_states=get(num_states_cl, v, basis_size(cl))
-        sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
-        set_props!(fg, v, Dict(:cluster => cl, :spectrum => sp))
-    end
-
-    for (i, v) ∈ enumerate(vertices(fg)), w ∈ vertices(fg)[i+1:end]
-
-        cl1, cl2 = get_prop(fg, v, :cluster), get_prop(fg, w, :cluster)
-
-        outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
-        #println("states v ", get_prop(fg, v, :spectrum).states)
-        #println("----------------")
-        #println("states w ", get_prop(fg, w, :spectrum).states)
-        #println("----------------")
-
-
-        if !isempty(outer_edges)
-            states_v = get_prop(fg, v, :spectrum).states
-            states_w = get_prop(fg, w, :spectrum).states
-
-            statesv_unique = []
-            statesw_unique = []
-            m = length(get_prop(fg, v, :spectrum).states[1]) 
-            n = length(get_prop(fg, w, :spectrum).states[1])
-            println("m, n ", m, n)
-
-            println("J ", J)
-
-            for (j, val) in enumerate(outer_edges)
-                src =  val.src
-                dst =  val.dst
-
-                src_m = mod(src, m) != 0 ? mod(src, m) : m
-                dst_m = mod(dst, n) != 0 ? mod(dst, n) : n
-                s = unique([states_v[i][src_m] for (i, v) in enumerate(states_v)])
-                statesv_unique = push!(statesv_unique, s)
-                println("unique v ", statesv_unique)
-                t = unique([states_w[i][dst_m] for (i,v) in enumerate(states_w)])
-                statesw_unique = push!(statesw_unique, t)
-                println("unique w ", statesw_unique)
-
-
-                #JJ[j,j] = J[src_m, dst_m]
-                #JJ[j,:] = J[src_m, dst_m]
-                #println("JJ ", JJ)
-                #en = inter_cluster_energy(
-                #statesv_unique, JJ, statesw_unique
-                #)
-                #println("en ", en)
-            end
-            JJ = J[J .!=0]            
-            println("JJ", JJ)
-            #eng = inter_cluster_energy(
-            #statesv_unique, JJ, statesw_unique
-            #)
-            #println("en ", eng)
-            println("states v ", get_prop(fg, v, :spectrum).states)
-            println("states w ", get_prop(fg, w, :spectrum).states)
-
-            en = inter_cluster_energy(
-                get_prop(fg, v, :spectrum).states, J, get_prop(fg, w, :spectrum).states
-            )
-            #println("energy ", en)
-            #println("----------------")
-            pl, en = rank_reveal(en, :PE)
-            en, pr = rank_reveal(en, :EP)
-            println("energy_rank_reveal ", en)
-            println("----------------")
-            add_edge!(fg, v, w)
-            set_props!(
-                fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
-            )
-        end
-    end
-    fg
-end
-=#
-
-
-
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Dict{T, Int};
@@ -143,22 +52,31 @@ function factor_graph(
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
-            JJ = J[J .!=0]     
-            a = length(JJ) 
-
-            #a = length(JJ) != 1 ? length(JJ) : 2
-            #src_m = mod(src, m) != 0 ? mod(src, m) : m
-      
-            println("JJ", JJ)
+            ind1 = any(i -> i != 0, J, dims=2)
+            ind2 = any(i -> i != 0, J, dims=1)
+            ind1 = reshape(ind1, length(ind1))
+            ind2 = reshape(ind2, length(ind2))
+            JJ = J[ind1, ind2]
+            # println("J = ", J)
+            # println("JJ = ", JJ)
             states_v = get_prop(fg, v, :spectrum).states
             states_w = get_prop(fg, w, :spectrum).states
-            statesv = unique([s[1:a] for s in states_v]) 
-            statesw = unique([s[1:a] for s in states_w]) 
-            println("statesv ", statesv)
-            println("statesw ", statesw)
+            reduced_states_v = [s[ind1] for s in states_v] 
+            reduced_states_w = [s[ind2] for s in states_w] 
+
+            println("rv = ", reduced_states_v)
+            println("rw = ", reduced_states_w)
+
+            pl, unique_states_v = rank_reveal(reduced_states_v, :PE)
+            pr, unique_states_w = rank_reveal(reduced_states_w, :PE)
+            println("uv = ", unique_states_v, pl)
+            println("uw = ", unique_states_w, pr)
+
+            # println("statesv ", statesv)
+            # println("statesw ", statesw)
             
             eng = inter_cluster_energy(
-            statesv, JJ, statesw
+            unique_states_v, JJ, unique_states_w
             )
             println("en ", eng)
 
