@@ -116,7 +116,7 @@ end
       end
 
       #@test energy ≈ pl * (en * pr)
-      @test energy ≈ decode_projector(pl, :PE) * (en * decode_projector(pr, :EP))
+      @test energy ≈ decode_projector!(pl, :PE) * (en * decode_projector!(pr, :EP))
    end
 
    @testset "each cluster comprises expected cells" begin
@@ -140,7 +140,7 @@ end
 @testset "Rank reveal correctly decomposes energy row-wise" begin
    energy = [[1 2 3]; [0 -1 0]; [1 2 3]]
    PP, E = rank_reveal(energy, :PE)
-   P = decode_projector(PP, :PE)
+   P = decode_projector!(PP, :PE)
    @test length(PP) == 3
    @test size(P) == (3, 2)
    @test size(E) == (2, 3)
@@ -150,7 +150,7 @@ end
 @testset "Rank reveal correctly decomposes energy column-wise" begin
    energy = [[1, 2, 3] [0, -1, 1] [1, 2, 3]]
    E, PP = rank_reveal(energy, :EP)
-   P = decode_projector(PP, :EP)
+   P = decode_projector!(PP, :EP)
    @test length(PP) == 3
    @test size(P) == (2, 3)
    @test size(E) == (3, 2)
@@ -170,14 +170,14 @@ end
       [-1.0   0.5  -1.5   0.0   0.0   1.5  -0.5   1.0]
    ]
    PPl, E_old = rank_reveal(energy, :PE)
-   Pl = decode_projector(PPl, :PE)
+   Pl = decode_projector!(PPl, :PE)
    @test length(PPl) == 8
    @test size(Pl) == (8, 8)
    @test size(E_old) == (8, 8)
    @test Pl * E_old ≈ energy
 
    E, PPr = rank_reveal(E_old, :EP)
-   Pr = decode_projector(PPr, :EP)
+   Pr = decode_projector!(PPr, :EP)
    @test length(PPr) == 8
    @test size(Pr) == (8, 8)
    @test size(E) == (8, 8)
@@ -290,7 +290,7 @@ function factor_graph_energy(fg, state)
    for edge ∈ edges(fg)
       i, j = fg.reverse_label_map[src(edge)], fg.reverse_label_map[dst(edge)]
       pl, en, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :en), get_prop(fg, edge, :pr)
-      edge_energy = decode_projector(pl, :PE) * en * decode_projector(pr, :EP)
+      edge_energy = decode_projector!(pl, :PE) * en * decode_projector!(pr, :EP)
       total_en += edge_energy[state[i], state[j]]
    end
 
