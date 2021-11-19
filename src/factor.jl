@@ -38,9 +38,7 @@ function factor_graph(
     end
 
     for (i, v) ∈ enumerate(vertices(fg)), w ∈ vertices(fg)[i+1:end]
-
         cl1, cl2 = get_prop(fg, v, :cluster), get_prop(fg, w, :cluster)
-
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
@@ -72,7 +70,9 @@ end
 function factor_graph(
     ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
 ) where {T}
-    factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
+    factor_graph(
+      ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule
+    )
 end
 
 function rank_reveal(energy, order=:PE)
