@@ -1,7 +1,4 @@
-export all_states, local_basis
-export gibbs_tensor
-export brute_force, full_spectrum, energy
-export Spectrum
+export all_states, local_basis, gibbs_tensor, brute_force, full_spectrum, energy, Spectrum
 
 """
 $(TYPEDSIGNATURES)
@@ -21,7 +18,6 @@ function gibbs_tensor(ig::IsingGraph, β=Float64=1.0)
     ρ = exp.(-β .* energy.(states, Ref(ig)))
     ρ ./ sum(ρ)
 end
-
 
 """
 $(TYPEDSIGNATURES)
@@ -63,15 +59,15 @@ function brute_force(ig::IsingGraph; sorted=true, num_states::Int=1)
     end
 end
 
-full_spectrum(ig::IsingGraph; num_states::Int=1) = brute_force(ig, sorted=false, num_states=num_states)
+function full_spectrum(ig::IsingGraph; num_states::Int=1)
+    brute_force(ig, sorted=false, num_states=num_states)
+end
 
 struct Spectrum
     energies::Vector{Float64}
     states::Vector{Vector{Int}}
 end
 
-# Please don't make the below another energy method.
-# There is already so much mess going on :)
 function inter_cluster_energy(cl1_states, J::Matrix, cl2_states)
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end

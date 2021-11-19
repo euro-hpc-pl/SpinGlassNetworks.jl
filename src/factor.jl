@@ -1,5 +1,5 @@
-export factor_graph, rank_reveal, projectors, split_into_clusters, decode_factor_graph_state, decode_projector!
-
+export factor_graph, rank_reveal, projectors, split_into_clusters
+export decode_factor_graph_state, decode_projector!
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(
@@ -15,27 +15,18 @@ function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S,
     )
 end
 
-
 function factor_graph(
-    ig::IsingGraph,
-    num_states_cl::Int;
-    spectrum::Function=full_spectrum,
+    ig::IsingGraph, num_states_cl::Int; spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
 ) where {T}
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
     factor_graph(
-        ig,
-        ns,
-        spectrum=spectrum,
-        cluster_assignment_rule=cluster_assignment_rule
+        ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule
     )
 end
 
-
 function factor_graph(
-    ig::IsingGraph,
-    num_states_cl::Dict{T, Int};
-    spectrum::Function=full_spectrum,
+    ig::IsingGraph, num_states_cl::Dict{T, Int}; spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
 ) where {T}
     L = maximum(values(cluster_assignment_rule))
@@ -61,15 +52,13 @@ function factor_graph(
 
             states_v = get_prop(fg, v, :spectrum).states
             states_w = get_prop(fg, w, :spectrum).states
-            reduced_states_v = [s[ind1] for s in states_v] 
-            reduced_states_w = [s[ind2] for s in states_w] 
+            reduced_states_v = [s[ind1] for s in states_v]
+            reduced_states_w = [s[ind2] for s in states_w]
 
             pl, unique_states_v = rank_reveal(reduced_states_v, :PE)
             pr, unique_states_w = rank_reveal(reduced_states_w, :PE)
-            
-            en = inter_cluster_energy(
-            unique_states_v, JJ, unique_states_w
-            )
+
+            en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
 
             add_edge!(fg, v, w)
             set_props!(
@@ -80,25 +69,19 @@ function factor_graph(
     fg
 end
 
-
 function factor_graph(
-    ig::IsingGraph;
-    spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T}
+    ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
 ) where {T}
     factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
-
 
 function rank_reveal(energy, order=:PE)
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2
     E, idx = unique_dims(energy, dim)
     P = identity.(idx)
-
     order == :PE ? (P, E) : (E, P)
 end
-
 
 function decode_projector!(idx, order=:PE)
     @assert order ∈ (:PE, :EP)
@@ -109,12 +92,9 @@ function decode_projector!(idx, order=:PE)
         P = zeros(maximum(idx), size(idx, 1))
     end
 
-    for (i, elements) ∈ enumerate(eachslice(P, dims=dim))
-        elements[idx[i]] = 1
-    end
+    for (i, elements) ∈ enumerate(eachslice(P, dims=dim)) elements[idx[i]] = 1 end
     P
 end
-
 
 function decode_factor_graph_state(fg, state::Vector{Int})
     ret = Dict{Int, Int}()
