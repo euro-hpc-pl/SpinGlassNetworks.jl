@@ -2,17 +2,9 @@ export factor_graph, rank_reveal, projectors, split_into_clusters
 export decode_factor_graph_state, decode_projector!
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
-    cluster_id_to_verts = Dict(
-        i => T[] for i in values(assignment_rule)
-    )
-
-    for v in vertices(ig)
-        push!(cluster_id_to_verts[assignment_rule[v]], v)
-    end
-
-    Dict(
-        i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts
-    )
+    cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
+    for v in vertices(ig) push!(cluster_id_to_verts[assignment_rule[v]], v) end
+    Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
 end
 
 function factor_graph(
@@ -20,9 +12,7 @@ function factor_graph(
     cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
 ) where {T}
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
-    factor_graph(
-        ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule
-    )
+    factor_graph(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
 function factor_graph(
@@ -55,7 +45,6 @@ function factor_graph(
 
             pl, unique_states_v = rank_reveal(reduced_states_v, :PE)
             pr, unique_states_w = rank_reveal(reduced_states_w, :PE)
-
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
 
             add_edge!(fg, v, w)

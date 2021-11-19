@@ -53,7 +53,6 @@ function ising_graph(
     )
     ig
 end
-
 rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
@@ -91,7 +90,6 @@ function prune(ig::IsingGraph)
             vertices(ig)
         )
     )
-
     gg = ig[ig.labels[to_keep]]
     labels = collect(vertices(gg.inner_graph))
     reverse_label_map = Dict(i => i for i=1:nv(gg.inner_graph))
