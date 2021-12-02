@@ -26,7 +26,7 @@ function ising_graph(
     if instance isa String
         ising = CSV.File(instance, types = [Int, Int, Float64], header=0, comment = "#")
     else
-        ising = [ (i, j, J) for ((i, j), J) ∈ instance ]
+        ising = [(i, j, J) for ((i, j), J) ∈ instance]
     end
 
     nodes = unique_nodes(ising)

@@ -8,7 +8,9 @@ function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S,
 end
 
 function factor_graph(
-    ig::IsingGraph, num_states_cl::Int; spectrum::Function=full_spectrum,
+    ig::IsingGraph,
+    num_states_cl::Int;
+    spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
 ) where {T}
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
@@ -16,8 +18,10 @@ function factor_graph(
 end
 
 function factor_graph(
-    ig::IsingGraph, num_states_cl::Dict{T, Int}; spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
+    ig::IsingGraph,
+    num_states_cl::Dict{T, Int};
+    spectrum::Function=full_spectrum,
+    cluster_assignment_rule::Dict{Int, T}
 ) where {T}
     L = maximum(values(cluster_assignment_rule))
     fg = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))

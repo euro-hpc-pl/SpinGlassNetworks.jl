@@ -13,7 +13,7 @@ Calculates matrix elements (probabilities) of \$\\rho\$
 ```
 for all possible configurations \$\\σ\$.
 """
-function gibbs_tensor(ig::IsingGraph, β=Float64=1.0)
+function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     states = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy.(states, Ref(ig)))
     ρ ./ sum(ρ)
