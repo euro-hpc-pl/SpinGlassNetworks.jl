@@ -84,7 +84,6 @@ module SpinGlassNetworks
         end
     end
 
-    include("states.jl")
     include("ising.jl")
     include("spectrum.jl")
     include("lattice.jl")
