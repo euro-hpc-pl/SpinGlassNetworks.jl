@@ -4,7 +4,7 @@ using SpinGlassNetworks
 function bench(instance::String)
     m = 2
     n = 2
-    t = 3
+    t = 24
     max_cl_states = 100
 
     @time ig = ising_graph(instance)
