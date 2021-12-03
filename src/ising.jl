@@ -11,7 +11,7 @@ function unique_nodes(ising_tuples)
 end
 
 function ising_graph(
-    instance::Instance; sgn::Number=1.0, rank_override::Dict{Int, Int}=Dict{Int, Int}()
+    instance::Instance; sgn::Real=1.0, rank_override::Dict{Int, Int}=Dict{Int, Int}()
 )
     # load the Ising instance
     if instance isa String
