@@ -1,5 +1,5 @@
 export factor_graph, rank_reveal, projectors, split_into_clusters
-export decode_factor_graph_state, decode_projector!
+export decode_factor_graph_state
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
@@ -74,20 +74,6 @@ function rank_reveal(energy, order=:PE)
     E, idx = unique_dims(energy, dim)
     P = identity.(idx)
     order == :PE ? (P, E) : (E, P)
-end
-
-# to be removed
-function decode_projector!(idx, order=:PE)
-    @assert order ∈ (:PE, :EP)
-    dim = order == :PE ? 1 : 2
-    if order == :PE
-        P = zeros(size(idx, 1), maximum(idx))
-    else
-        P = zeros(maximum(idx), size(idx, 1))
-    end
-
-    for (i, elements) ∈ enumerate(eachslice(P, dims=dim)) elements[idx[i]] = 1 end
-    P
 end
 
 function decode_factor_graph_state(fg, state::Vector{Int})
