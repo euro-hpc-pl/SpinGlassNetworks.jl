@@ -1,11 +1,14 @@
 
+using SpinGlassNetworks
+
 function bench(instance::String)
-    m = 3
-    n = 4
+    m = 2
+    n = 2
     t = 3
     max_cl_states = 100
 
     @time ig = ising_graph(instance)
+
     @time fg = factor_graph(
         ig,
         max_cl_states,
@@ -14,4 +17,4 @@ function bench(instance::String)
     )
 end
 
-bench("$(@__DIR__)/instances/pegasus_droplets/2_2_3_00.txt")
+bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt")
