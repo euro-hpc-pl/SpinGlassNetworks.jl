@@ -49,8 +49,8 @@ function brute_force(ig::IsingGraph; sorted=true, num_states::Int=1)
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
 
-    σ = collect.(all_states(ig_rank))
-    energies = energy.(σ, Ref(ig))
+    @time σ = collect.(all_states(ig_rank))
+    @time energies = energy.(σ, Ref(ig))
     if sorted
         perm = partialsortperm(vec(energies), 1:num_states)
         return Spectrum(energies[perm], σ[perm])
