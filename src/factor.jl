@@ -12,7 +12,7 @@ function factor_graph(
     num_states_cl::Int;
     spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
-) where {T}
+) where T
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
     factor_graph(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
@@ -22,7 +22,7 @@ function factor_graph(
     num_states_cl::Dict{T, Int};
     spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T}
-) where {T}
+) where T
     L = maximum(values(cluster_assignment_rule))
     fg = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
 
@@ -62,7 +62,7 @@ end
 
 function factor_graph(
     ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
-) where {T}
+) where T
     factor_graph(
       ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule
     )
@@ -76,6 +76,7 @@ function rank_reveal(energy, order=:PE)
     order == :PE ? (P, E) : (E, P)
 end
 
+# to be removed
 function decode_projector!(idx, order=:PE)
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2

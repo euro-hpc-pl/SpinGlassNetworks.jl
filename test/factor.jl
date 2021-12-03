@@ -115,8 +115,8 @@ end
          end
       end
 
-      #@test energy ≈ pl * (en * pr)
-      @test energy ≈ decode_projector!(pl, :PE) * (en * decode_projector!(pr, :EP))
+      @test energy ≈ pl * (en * pr)
+      #@test energy ≈ decode_projector!(pl, :PE) * (en * decode_projector!(pr, :EP))
    end
 
    @testset "each cluster comprises expected cells" begin
@@ -191,7 +191,7 @@ function create_example_factor_graph()
    h1 = 0.5
    h2 = 0.75
 
-   
+
    D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
    ig = ising_graph(D)
 
@@ -209,7 +209,7 @@ const fg_state_to_spin = [
 
 @testset "Decoding solution gives correct spin assignment" begin
    fg = create_example_factor_graph()
-   for (state, spin_values) ∈ fg_state_to_spin   
+   for (state, spin_values) ∈ fg_state_to_spin
       d = decode_factor_graph_state(fg, state)
       states = collect(values(d))[collect(keys(d))]
       @test states == spin_values
@@ -272,7 +272,7 @@ function create_larger_example_factor_graph()
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
-   
+
    ig, fg
 end
 

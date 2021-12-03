@@ -10,15 +10,6 @@ function unique_nodes(ising_tuples)
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 end
 
-"""
-$(TYPEDSIGNATURES)
-
-Create the Ising spin glass model.
-
-# Details
-
-Store extra information
-"""
 function ising_graph(
     instance::Instance; sgn::Number=1.0, rank_override::Dict{Int, Int}=Dict{Int, Int}()
 )
@@ -61,7 +52,7 @@ function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
     for edge in edges(ig)
         i, j = ig.reverse_label_map[src(edge)], ig.reverse_label_map[dst(edge)]
-        J[i, j] = get_prop(ig, edge, :J)
+        @inbounds J[i, j] = get_prop(ig, edge, :J)
     end
     J
 end
@@ -86,7 +77,7 @@ function prune(ig::IsingGraph)
     to_keep = vcat(
         findall(!iszero, degree(ig)),
         findall(
-            x->iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol=1e-14),
+            x -> iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol=1e-14),
             vertices(ig)
         )
     )
