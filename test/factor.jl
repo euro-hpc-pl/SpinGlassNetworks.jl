@@ -115,8 +115,8 @@ end
          end
       end
 
-      @test energy ≈ pl * (en * pr)
-      #@test energy ≈ decode_projector!(pl, :PE) * (en * decode_projector!(pr, :EP))
+      #@test energy ≈ pl * (en * pr)
+      @test energy ≈ decode_projector!(pl, :PE) * (en * decode_projector!(pr, :EP))
    end
 
    @testset "each cluster comprises expected cells" begin
