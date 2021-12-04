@@ -8,7 +8,8 @@ function bench(instance::String)
 
     ig = ising_graph(instance)
     cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
-    @time sp = brute_force(cl[1, 1], num_states=100)
+    @time brute_force(cl[1, 1], num_states=100)
+    nothing
 end
 
 bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
