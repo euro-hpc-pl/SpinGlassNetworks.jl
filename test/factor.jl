@@ -114,9 +114,7 @@ end
             energy[ii, jj] = eij
          end
       end
-
-      #@test energy ≈ pl * (en * pr)
-      @test energy ≈ decode_projector!(pl, :PE) * (en * decode_projector!(pr, :EP))
+      @test energy ≈ en[pl, pr]
    end
 
    @testset "each cluster comprises expected cells" begin
@@ -136,61 +134,10 @@ end
    end
 end
 
-
-@testset "Rank reveal correctly decomposes energy row-wise" begin
-   energy = [[1 2 3]; [0 -1 0]; [1 2 3]]
-   PP, E = rank_reveal(energy, :PE)
-   P = decode_projector!(PP, :PE)
-   @test length(PP) == 3
-   @test size(P) == (3, 2)
-   @test size(E) == (2, 3)
-   @test P * E ≈ energy
-end
-
-@testset "Rank reveal correctly decomposes energy column-wise" begin
-   energy = [[1, 2, 3] [0, -1, 1] [1, 2, 3]]
-   E, PP = rank_reveal(energy, :EP)
-   P = decode_projector!(PP, :EP)
-   @test length(PP) == 3
-   @test size(P) == (2, 3)
-   @test size(E) == (3, 2)
-   @test E * P ≈ energy
-end
-
-@testset "Rank reveal correctly decomposes energy into projector, energy, projector" begin
-   #energy = [[1 2 3]; [0 -1 0]; [1 2 3]]
-   energy = [
-      [1.0  -0.5   1.5   0.0   0.0  -1.5   0.5  -1.0];
-      [0.0   0.5   0.5   1.0  -1.0  -0.5  -0.5   0.0];
-      [0.5   0.0   1.0   0.5  -0.5  -1.0   0.0  -0.5];
-      [-0.5   1.0   0.0   1.5  -1.5   0.0  -1.0   0.5];
-      [0.5  -1.0   0.0  -1.5   1.5   0.0   1.0  -0.5];
-      [-0.5   0.0  -1.0  -0.5   0.5   1.0   0.0   0.5];
-      [0.0  -0.5  -0.5  -1.0   1.0   0.5   0.5   0.0];
-      [-1.0   0.5  -1.5   0.0   0.0   1.5  -0.5   1.0]
-   ]
-   PPl, E_old = rank_reveal(energy, :PE)
-   Pl = decode_projector!(PPl, :PE)
-   @test length(PPl) == 8
-   @test size(Pl) == (8, 8)
-   @test size(E_old) == (8, 8)
-   @test Pl * E_old ≈ energy
-
-   E, PPr = rank_reveal(E_old, :EP)
-   Pr = decode_projector!(PPr, :EP)
-   @test length(PPr) == 8
-   @test size(Pr) == (8, 8)
-   @test size(E) == (8, 8)
-   @test E * Pr ≈ E_old
-   @test Pl * E * Pr ≈ energy
-end
-
-
 function create_example_factor_graph()
    J12 = -1.0
    h1 = 0.5
    h2 = 0.75
-
 
    D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
    ig = ising_graph(D)
@@ -290,7 +237,7 @@ function factor_graph_energy(fg, state)
    for edge ∈ edges(fg)
       i, j = fg.reverse_label_map[src(edge)], fg.reverse_label_map[dst(edge)]
       pl, en, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :en), get_prop(fg, edge, :pr)
-      edge_energy = decode_projector!(pl, :PE) * en * decode_projector!(pr, :EP)
+      edge_energy = en[pl, pr]
       total_en += edge_energy[state[i], state[j]]
    end
 
