@@ -22,6 +22,9 @@ function kernel(J, energies, σ)
     s1 = copy(s) 
     for k=1:L
         @inbounds σ[k, s] = s1%2
+        if s1 == 1
+            break
+        end
         s1 = div(s1, 2)
     end
     for k=1:L
