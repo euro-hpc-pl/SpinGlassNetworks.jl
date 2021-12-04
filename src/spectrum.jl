@@ -25,38 +25,6 @@ function Spectrum(ig::IsingGraph)
     Spectrum(energies, states)
 end
 
-#=
-function _kernel(
-    energies, states, J, h
-)
-    L = size(J, 1)
-
-    i = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    σ = 2 .* digits(i, base=2, pad=L) .- 1
-    @inbounds energies[i] = dot(σ, J, σ) + dot(h, σ)
-    @inbounds states[i] = σ
-    nothing
-end
-
-function CUDASpectrum(ig::IsingGraph)
-    L = nv(ig)
-    N = 2^L
-
-    en_d = CUDA.zeros(Float64, N)
-    st_d = CUDA.Vector{Vector{Int}}(undef, N)
-    J_d, h_d = CUDA.zeros(L, L), CUDA.zeros(L)
-
-    copyto!(couplings(ig), J_d)
-    copyto!(biases(ig), h_d)
-
-    nb = ceil(Int, N/256)
-    CUDA.@sync begin
-        @cuda threads=N blocks=nb _kernel(en_d, st_d, J_d, h_d)
-    end
-    Spectrum(Array(en_d), Array(st_d))
-end
-=#
-
 function energy(
     σ::AbstractArray{Vector{Int}}, J::Matrix{<:Real}, h::Vector{<:Real}
 )
