@@ -23,6 +23,9 @@ function kernel(J, energies, σ)
     s1 = copy(s)
     for k=1:L
         @inbounds σ[k, s] = s1%2
+        if s1 == 1
+            break
+        end
         s1 = div(s1, 2)
     end
 
@@ -52,6 +55,8 @@ function bench2(instance::String)
         J_dev = CUDA.CuArray(J)
         @cuda threads=1024 blocks=(2^(L-10)) kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
+        # perm = sortperm(energies_cpu)
+        sortperm(energies)
     end
     # @time @cuda threads=1024 blocks=4 kernel(J, energies)
     energies_cpu
