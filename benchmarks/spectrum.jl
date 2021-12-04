@@ -53,6 +53,8 @@ function bench2(instance::String)
         J_dev = CUDA.CuArray(J)
         @cuda threads=1024 blocks=(2^(L-10)) kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
+        # perm = sortperm(energies_cpu)
+        sortperm(energies)
     end
     # @time @cuda threads=1024 blocks=4 kernel(J, energies)
     nothing
