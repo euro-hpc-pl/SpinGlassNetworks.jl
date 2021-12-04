@@ -175,7 +175,7 @@ end
         @test sum(R) ≈ 1
         @test sum(ρ) ≈ 1
 
-        @test [ ρ[idx.(σ)...] for σ ∈ sp.states ] ≈ R
+        @test [ρ[idx.(σ)...] for σ ∈ sp.states] ≈ R
     end
 
     @testset "Naive brute force for general spins" begin
@@ -188,7 +188,7 @@ end
         rank = get_prop(ig, :rank)
 
         all = prod(rank)
-        sp = brute_force(ig, num_states=all)
+        sp = full_spectrum(ig, num_states=all)
 
         β = rand(Float64)
         ρ = exp.(-β .* sp.energies)
@@ -196,7 +196,7 @@ end
         ϱ = ρ ./ sum(ρ)
         ϱ̃ = gibbs_tensor(ig, β)
 
-        @test [ ϱ̃[idx.(σ)...] for σ ∈ sp.states ] ≈ ϱ
+        @test [ϱ̃[idx.(σ)...] for σ ∈ sp.states] ≈ ϱ
     end
 
     @testset "Reading from Dict" begin
@@ -250,7 +250,12 @@ end
         push!(cedges, (5, 6) => [(13, 16), (13, 18)])
 
         push!(cedges, (6, 10) => [(18, 28)])
-        push!(cedges, (10, 11) => [(28, 31), (28, 32), (28, 33), (29, 31), (29, 32), (29, 33), (30, 31), (30, 32), (30, 33)])
+        push!(
+            cedges,
+            (10, 11) => [(28, 31), (28, 32), (28, 33), (29, 31), (29, 32),
+                         (29, 33),(30, 31), (30, 32), (30, 33)
+                        ]
+        )
 
         push!(cedges, (2, 2) => [(4, 5), (4, 6), (5, 6), (6, 6)])
         push!(cedges, (3, 3) => [(7, 8), (7, 9)])
