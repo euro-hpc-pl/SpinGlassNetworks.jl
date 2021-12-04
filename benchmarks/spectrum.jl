@@ -1,6 +1,7 @@
 
 using SpinGlassNetworks, LightGraphs
 using CUDA, LinearAlgebra
+
 function bench(instance::String)
     m = 2
     n = 2
@@ -8,8 +9,8 @@ function bench(instance::String)
 
     ig = ising_graph(instance)
     cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
-    @time brute_force(cl[1, 1], num_states=100)
-    nothing
+    @time sp = brute_force(cl[1, 1], num_states=100)
+    sp
 end
 
 function kernel(J, energies, σ)
@@ -19,18 +20,19 @@ function kernel(J, energies, σ)
     j = threadIdx().x
 
     s = (i - 1) * blockDim().x + j
-    s1 = copy(s) 
+    s1 = copy(s)
     for k=1:L
         @inbounds σ[k, s] = s1%2
         s1 = div(s1, 2)
     end
+
     for k=1:L
         @inbounds energies[s] += J[k, k] * σ[k, s]
         for l=(k+1):L
             @inbounds energies[s] += J[k, l] * σ[k, s] * σ[l, s]
         end
     end
-    
+
     return
 end
 
@@ -52,9 +54,11 @@ function bench2(instance::String)
         energies_cpu = Array(energies)
     end
     # @time @cuda threads=1024 blocks=4 kernel(J, energies)
-    nothing
+    energies_cpu
 end
 
-# bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+en = bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+#bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+
+minimum(sp.energies) ≈ minimum(sort(en))

@@ -6,7 +6,6 @@ module SpinGlassNetworks
     using DocStringExtensions
     using LinearAlgebra
     using Base.Cartesian
-    using CUDA
 
     import Base.Prehashed
 
