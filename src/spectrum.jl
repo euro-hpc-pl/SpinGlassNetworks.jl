@@ -9,6 +9,45 @@ struct Spectrum
     states::Vector{Vector{Int}}
 end
 
+#=
+function _kernel(
+    energies, states, J, h
+)
+    L = size(J, 1)
+
+    σ = CUDA.zeros(Int, L)
+    for i = 1:L σ[i] = -1 end
+
+    en = 0.0
+    for i = 1:L
+        en += h[i] #σ[i] * h[i]
+        for j = 1:L en += J[i, j] end #σ[i] * J[i, j] * σ[j] end
+    end
+
+    idx = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    energies[idx] = en
+    states[idx] = σ
+    return
+end
+
+function CUDASpectrum(ig::IsingGraph)
+    L = nv(ig)
+    N = 2^L
+
+    en = CUDA.zeros(Float64, N)
+    st = CUDA.Vector{Vector{Int}}(undef, N)
+    J = CUDA.zeros(L, L)
+    h = CUDA.zeros(L)
+
+    copyto!(couplings(ig), J)
+    copyto!(biases(ig), h)
+
+    nb = ceil(Int, N / 256)
+    @cuda threads=N blocks=nb _kernel(en, st, J, h)
+    Spectrum(Array(en), Array(st))
+end
+=#
+
 function Spectrum(ig::IsingGraph)
     L = nv(ig)
     N = 2^L
