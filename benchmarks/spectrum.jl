@@ -1,6 +1,7 @@
 
 using SpinGlassNetworks, LightGraphs
 using CUDA, LinearAlgebra
+using Bits
 
 function bench(instance::String)
     m = 2
@@ -11,6 +12,12 @@ function bench(instance::String)
     cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
     @time sp = brute_force(cl[1, 1], num_states=100)
     sp
+end
+
+function my_digits(d::Int, L::Int)
+    σ = zeros(Int, L)
+    for i=1:L if tstbit(d, i) @inbounds σ[k] = 1 end end
+    σ
 end
 
 function kernel(J, energies, σ)
@@ -47,6 +54,8 @@ function bench2(instance::String)
     ig = ising_graph(instance)
     cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
     J = couplings(cl[1, 1]) + Diagonal(biases(cl[1, 1]))
+
+
     L = nv(cl[1, 1])
     N = 2^L
     @time begin
@@ -63,7 +72,13 @@ function bench2(instance::String)
 end
 
 sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-en = bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+#en = bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 #bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
-minimum(sp.energies) ≈ minimum(sort(en))
+#minimum(sp.energies) ≈ minimum(sort(en))
+
+i=9
+L=15
+
+println(my_digits(i, L))
+println(digits(i, base=2, pad=L))
