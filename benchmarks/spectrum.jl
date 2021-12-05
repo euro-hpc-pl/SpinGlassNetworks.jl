@@ -20,6 +20,45 @@ function my_digits(d::Int, L::Int)
     σ
 end
 
+function bg_kernel(J, energies, σ)
+    s = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+    L = size(J, 1)
+
+    for i=1:L if tstbit(L, i) @inbounds σ[i] = 1 end end
+
+    en = 0.0
+    for k=1:L
+        en += J[k, k] * σ[k]
+        for l=(k+1):L en += σ[k] * J[k, l] * σ[l] end
+    end
+    @inbounds energies[s] = en
+    return
+end
+
+function bench3(instance::String)
+    m = 2
+    n = 2
+    t = 24
+
+    ig = ising_graph(instance)
+    cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
+    J = couplings(cl[1, 1]) + Diagonal(biases(cl[1, 1]))
+
+    L = nv(cl[1, 1])
+    N = 2^L
+    @time begin
+        energies = CUDA.zeros(N)
+        σ = CUDA.zeros(L)
+        J_dev = CUDA.CuArray(J)
+        @cuda threads=1024 blocks=(2^(L-10)) bg_kernel(J_dev, energies, σ)
+        energies_cpu = Array(energies)
+        # perm = sortperm(energies_cpu)
+        sortperm(energies)
+    end
+    # @time @cuda threads=1024 blocks=4 kernel(J, energies)
+    energies_cpu
+end
+
 function kernel(J, energies, σ)
     L = size(J, 1)
 
@@ -28,6 +67,7 @@ function kernel(J, energies, σ)
 
     s = (i - 1) * blockDim().x + j
     s1 = copy(s)
+
     for k=1:L
         @inbounds σ[k, s] = s1%2
         if s1 == 1
@@ -72,7 +112,7 @@ function bench2(instance::String)
 end
 
 sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-#en = bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+en = bench3("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 #bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
 #minimum(sp.energies) ≈ minimum(sort(en))
