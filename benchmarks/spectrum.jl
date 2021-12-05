@@ -60,4 +60,7 @@ sp_cpu.energies ≈ sp_gpu.energies
 println(minimum(sp_gpu.energies))
 println(minimum(sp_cpu.energies))
 
-sp_gpu.states[:, begin] == sp_cpu.states[begin]
+@assert all(
+    sp_gpu.states[:, i] == sp_cpu.states[i]
+    for i ∈ 1:size(sp_cpu.states, 1)
+)
