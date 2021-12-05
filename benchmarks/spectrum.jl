@@ -24,11 +24,11 @@ function kernel(J, energies, σ)
     idx = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     L = size(σ, 1)
 
-    for i=1:L if tstbit(idx, i) @inbounds σ[i] = 1 end end
+    for i=1:L if tstbit(idx, i) @inbounds σ[i, idx] = 1 end end
 
     for k=1:L
-        @inbounds energies[idx] += J[k, k] * σ[k]
-        for l=1:L @inbounds energies[idx] += σ[k] * J[k, l] * σ[l] end # 1 -> (k+1)
+        @inbounds energies[idx] += J[k, k] * σ[k, idx]
+        for l=1:L @inbounds energies[idx] += σ[k, idx] * J[k, l] * σ[l, idx] end # 1 -> (k+1)
     end
     return
 end
@@ -46,12 +46,11 @@ function bench3(instance::String)
     N = 2^L
     @time begin
         energies = CUDA.zeros(N)
-        σ = CUDA.zeros(L)
+        σ = CUDA.zeros(Int, L, N)
         J_dev = CUDA.CuArray(J)
         @cuda threads=1024 blocks=(2^(L-10)) kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
         σ_cpu = Array(σ)
-        println(σ[1:5])
         # perm = sortperm(energies_cpu)
         #sortperm(energies)
     end
@@ -117,10 +116,10 @@ sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 en = bench3("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 #bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
-#minimum(sp.energies) ≈ minimum(en)
+#minimum(sp.energies) ≈
 
 println(minimum(sp.energies))
-println(en[1:10])
+println(minimum(en))
 
 
 L=100
