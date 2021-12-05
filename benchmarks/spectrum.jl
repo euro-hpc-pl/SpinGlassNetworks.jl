@@ -16,22 +16,20 @@ end
 
 function my_digits(d::Int, L::Int)
     σ = zeros(Int, L)
-    for i=1:L if tstbit(d, i) @inbounds σ[k] = 1 end end
+    for i=1:L if tstbit(d, i) @inbounds σ[1] = 1 end end
     σ
 end
 
 function bg_kernel(J, energies, σ)
     s = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    L = size(J, 1)
+    L = size(σ, 1)
 
     for i=1:L if tstbit(L, i) @inbounds σ[i] = 1 end end
 
-    en = 0.0
     for k=1:L
-        en += J[k, k] * σ[k]
-        for l=(k+1):L en += σ[k] * J[k, l] * σ[l] end
+        @inbounds energies[s] += J[k, k] * σ[k]
+        for l=(k+1):L @inbounds energies[s] += σ[k] * J[k, l] * σ[l] end
     end
-    @inbounds energies[s] = en
     return
 end
 
@@ -53,7 +51,7 @@ function bench3(instance::String)
         @cuda threads=1024 blocks=(2^(L-10)) bg_kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
         # perm = sortperm(energies_cpu)
-        sortperm(energies)
+        #sortperm(energies)
     end
     # @time @cuda threads=1024 blocks=4 kernel(J, energies)
     energies_cpu
