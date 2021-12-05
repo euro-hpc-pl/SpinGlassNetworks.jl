@@ -59,3 +59,5 @@ sp_cpu.energies ≈ sp_gpu.energies
 
 println(minimum(sp_gpu.energies))
 println(minimum(sp_cpu.energies))
+
+sp_gpu.states[:, begin] == sp_cpu.states[begin]
