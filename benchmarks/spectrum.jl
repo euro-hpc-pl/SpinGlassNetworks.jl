@@ -20,15 +20,15 @@ function my_digits(d::Int, L::Int)
     σ
 end
 
-function bg_kernel(J, energies, σ)
-    s = (blockIdx().x - 1) * blockDim().x + threadIdx().x
+function kernel(J, energies, σ)
+    idx = (blockIdx().x - 1) * blockDim().x + threadIdx().x
     L = size(σ, 1)
 
-    for i=1:L if tstbit(L, i) @inbounds σ[i] = 1 end end
+    for i=1:L if tstbit(idx, i) @inbounds σ[i] = 1 end end
 
     for k=1:L
-        @inbounds energies[s] += J[k, k] * σ[k]
-        for l=1:L @inbounds energies[s] += σ[k] * J[l, k] * σ[l] end # 1 -> (k+1)
+        @inbounds energies[idx] += J[k, k] * σ[k]
+        for l=1:L @inbounds energies[idx] += σ[k] * J[k, l] * σ[l] end # 1 -> (k+1)
     end
     return
 end
@@ -48,8 +48,10 @@ function bench3(instance::String)
         energies = CUDA.zeros(N)
         σ = CUDA.zeros(L)
         J_dev = CUDA.CuArray(J)
-        @cuda threads=1024 blocks=(2^(L-10)) bg_kernel(J_dev, energies, σ)
+        @cuda threads=1024 blocks=(2^(L-10)) kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
+        σ_cpu = Array(σ)
+        println(σ[1:5])
         # perm = sortperm(energies_cpu)
         #sortperm(energies)
     end
@@ -115,10 +117,11 @@ sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 en = bench3("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 #bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
-#minimum(sp.energies) ≈ minimum(sort(en))
+#minimum(sp.energies) ≈ minimum(en)
 
 println(minimum(sp.energies))
-println(minimum(sort(en)))
+println(en[1:10])
+
 
 L=100
 @assert all(my_digits(i, L) == digits(i, base=2, pad=L) for i=1:L)
