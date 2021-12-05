@@ -38,11 +38,12 @@ function bench_gpu(instance::String, max_states::Int=100)
 
     L = nv(cl[1, 1])
     N = 2^L
+    k = 10
     @time begin
         energies = CUDA.zeros(N)
         σ = CUDA.zeros(Int, L, N) .- 1
         J_dev = CUDA.CuArray(J)
-        @cuda threads=1024 blocks=(2^(L-10)) kernel(J_dev, energies, σ)
+        @cuda threads=2^k blocks=(2^(L-k)) kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
         σ_cpu = Array(σ)
         perm = partialsortperm(energies_cpu, 1:max_states)
