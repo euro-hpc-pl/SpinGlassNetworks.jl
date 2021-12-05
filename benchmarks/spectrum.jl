@@ -28,7 +28,7 @@ function bg_kernel(J, energies, σ)
 
     for k=1:L
         @inbounds energies[s] += J[k, k] * σ[k]
-        for l=(k+1):L @inbounds energies[s] += σ[k] * J[l, k] * σ[l] end
+        for l=1:L @inbounds energies[s] += σ[k] * J[l, k] * σ[l] end # 1 -> (k+1)
     end
     return
 end
