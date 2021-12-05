@@ -28,7 +28,7 @@ function bg_kernel(J, energies, σ)
 
     for k=1:L
         @inbounds energies[s] += J[k, k] * σ[k]
-        for l=(k+1):L @inbounds energies[s] += σ[k] * J[k, l] * σ[l] end
+        for l=(k+1):L @inbounds energies[s] += σ[k] * J[l, k] * σ[l] end
     end
     return
 end
@@ -57,6 +57,7 @@ function bench3(instance::String)
     energies_cpu
 end
 
+#=
 function kernel(J, energies, σ)
     L = size(J, 1)
 
@@ -108,6 +109,7 @@ function bench2(instance::String)
     # @time @cuda threads=1024 blocks=4 kernel(J, energies)
     energies_cpu
 end
+=#
 
 sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 en = bench3("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
