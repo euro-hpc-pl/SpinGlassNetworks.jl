@@ -46,7 +46,7 @@ function bench3(instance::String)
     N = 2^L
     @time begin
         energies = CUDA.zeros(N)
-        σ = CUDA.zeros(Int, L, N)
+        σ = CUDA.zeros(Int, L, N) .- 1
         J_dev = CUDA.CuArray(J)
         @cuda threads=1024 blocks=(2^(L-10)) kernel(J_dev, energies, σ)
         energies_cpu = Array(energies)
@@ -115,8 +115,6 @@ end
 sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 en = bench3("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 #bench2("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-
-#minimum(sp.energies) ≈
 
 println(minimum(sp.energies))
 println(minimum(en))
