@@ -16,7 +16,7 @@ end
 
 function my_digits(d::Int, L::Int)
     σ = zeros(Int, L)
-    for i=1:L if tstbit(d, i) @inbounds σ[1] = 1 end end
+    for i=1:L if tstbit(d, i) @inbounds σ[i] = 1 end end
     σ
 end
 
@@ -115,8 +115,8 @@ en = bench3("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
 #minimum(sp.energies) ≈ minimum(sort(en))
 
-i=9
-L=15
+println(minimum(sp.energies))
+println(minimum(sort(en)))
 
-println(my_digits(i, L))
-println(digits(i, base=2, pad=L))
+L=100
+@assert all(my_digits(i, L) == digits(i, base=2, pad=L) for i=1:L)
