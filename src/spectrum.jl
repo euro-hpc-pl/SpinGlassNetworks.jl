@@ -6,7 +6,7 @@ all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)..
 
 struct Spectrum
     energies::Vector{Float64}
-    states::Union{Vector{Vector{Int}}, Matrix{Int}}
+    states::Vector{Vector{Int}} #Union{Vector{Vector{Int}}, Matrix{Int}}
 end
 
 function Spectrum(ig::IsingGraph)

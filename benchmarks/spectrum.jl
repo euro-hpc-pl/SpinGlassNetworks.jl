@@ -24,7 +24,6 @@ function kernel(J, energies, σ)
         @inbounds energies[idx] += J[k, k] * σ[k, idx]
         for l=k+1:L @inbounds energies[idx] += σ[k, idx] * J[k, l] * σ[l, idx] end
     end
-    return
 end
 
 function bench_gpu(instance::String, max_states::Int=100)
@@ -48,7 +47,7 @@ function bench_gpu(instance::String, max_states::Int=100)
         σ_cpu = Array(σ)
         perm = partialsortperm(energies_cpu, 1:max_states)
     end
-    Spectrum(energies_cpu[perm], σ_cpu[:, perm])
+    Spectrum(energies_cpu[perm], [σ_cpu[:, i] for i ∈ 1:size(σ_cpu, 2)][perm])
 end
 
 sp_cpu = bench_cpu("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
@@ -56,6 +55,6 @@ sp_gpu = bench_gpu("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
 @assert sp_gpu.energies ≈ sp_cpu.energies
 @assert all(
-    sp_gpu.states[:, i] == sp_cpu.states[i]
+    sp_gpu.states[i] == sp_cpu.states[i]
     for i ∈ 1:size(sp_cpu.states, 1)
 )
