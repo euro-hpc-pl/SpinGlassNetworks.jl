@@ -37,7 +37,9 @@ function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     ρ ./ sum(ρ)
 end
 
-function brute_force(ig::IsingGraph; num_states::Int=1)
+brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1) = brute_force(ig, Val(s); num_states)
+
+function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     L = nv(ig)
     if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
     sp = Spectrum(ig)
