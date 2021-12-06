@@ -37,7 +37,9 @@ function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     ρ ./ sum(ρ)
 end
 
-brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1) = brute_force(ig, Val(s); num_states)
+function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
+    brute_force(ig, Val(s); num_states)
+end
 
 function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     L = nv(ig)
