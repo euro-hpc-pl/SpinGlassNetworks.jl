@@ -11,20 +11,22 @@ struct Spectrum
     states::AbstractArray{State}
 end
 
-energy(σ::State, ig::IsingGraph) = dot(σ, couplings(ig), σ) + dot(biases(ig), σ)
 function energy(σ::AbstractArray{State}, ig::IsingGraph)
-    J = couplings(ig), h = biases(ig)
+    J, h = couplings(ig), biases(ig)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
 function Spectrum(ig::IsingGraph)
     L = nv(ig)
     N = 2^L
+
     energies = zeros(Float64, N)
     states = Vector{State}(undef, N)
+
+    J, h = couplings(ig), biases(ig)
     Threads.@threads for i = 0:N-1
         σ = 2 .* digits(i, base=2, pad=L) .- 1
-        @inbounds energies[i+1] = energy(σ, ig)
+        @inbounds energies[i+1] = dot(σ, J, σ) + dot(h, σ)
         @inbounds states[i+1] = σ
     end
     Spectrum(energies, states)
@@ -32,7 +34,7 @@ end
 
 function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     σ = collect.(all_states(rank_vec(ig)))
-    ρ = exp.(-β .* energy.(σ, Ref(ig)))
+    ρ = exp.(-β .* energy(σ, ig))
     ρ ./ sum(ρ)
 end
 
@@ -54,7 +56,7 @@ function full_spectrum(ig::IsingGraph; num_states::Int=1)
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
     σ = collect.(all_states(ig_rank))
-    energies = energy.(σ, Ref(ig))
+    energies = energy(σ, ig)
     Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 

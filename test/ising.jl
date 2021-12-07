@@ -2,7 +2,6 @@ using CSV
 using LinearAlgebra
 using LabelledGraphs
 
-
 function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng = zeros(1,n)
     for (i, j) ∈ keys(cedges)
@@ -22,28 +21,12 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng
 end
 
-function _energy(ig::LabelledGraph, config::Array)
-    s = size(config, 1)
-    eng = zeros(s)
-    for i ∈ 1:s
-        eng[i] = energy(config[i, :], ig)
-    end
-    eng
-end
-
 @testset "Ising graph cannot be created" begin
-
     @testset "if input instance contains duplicate edges" begin
         @test_throws ArgumentError ising_graph(
-        Dict(
-                (1, 1) => 2.0,
-                (1, 2) => 0.5,
-                (2, 1) => -1.0
-            )
-        )
+        Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0))
     end
 end
-
 
 for (instance, source) ∈ (
     ("$(@__DIR__)/instances/example.txt", "file"),
@@ -66,11 +49,7 @@ for (instance, source) ∈ (
         LabelledEdge(1, 4) => -2.0,
         LabelledEdge(2, 4) => 1.0
     )
-    expected_J_matrix = [
-        [0 -0.3 -2.0];
-        [0 0 1.0];
-        [0 0 0];
-    ]
+    expected_J_matrix = [[0 -0.3 -2.0]; [0 0 1.0]; [0 0 0]]
 
     ig = ising_graph(instance)
 
@@ -96,7 +75,6 @@ for (instance, source) ∈ (
     end
 end
 end
-
 
 @testset "Ising graph created with additional parameters" begin
     expected_biases = [-0.1, -0.5, 0.0]
@@ -149,28 +127,22 @@ end
     @testset "Naive brute force for +/-1" begin
         k = 2^N
         sp = brute_force(ig, num_states=k)
-        s = 5
-
-        @test sp.energies ≈ energy.(sp.states, Ref(ig))
 
         β = rand(Float64)
         ρ = gibbs_tensor(ig, β)
 
-        @test size(ρ) == Tuple(fill(2, N))
-
         r = exp.(-β .* sp.energies)
         R = r ./ sum(r)
 
-        @test sum(R) ≈ 1
-        @test sum(ρ) ≈ 1
-
+        @test size(ρ) == Tuple(fill(2, N))
+        @test sum(R) ≈ sum(ρ) ≈ 1
+        @test sp.energies ≈ energy(sp.states, ig)
         @test [ρ[idx.(σ)...] for σ ∈ sp.states] ≈ R
     end
 
     @testset "Naive brute force for general spins" begin
         L = 4
-        instance = "$(@__DIR__)/instances/$(L)_001.txt"
-        ig = ising_graph(instance)
+        ig = ising_graph("$(@__DIR__)/instances/$(L)_001.txt")
 
         set_prop!(ig, :rank, [3, 2, 5, 4])
         rank = get_prop(ig, :rank)
@@ -212,12 +184,12 @@ end
         ig = ising_graph(instance)
 
         conf = [
-            -1 1 1 -1 -1 -1 1 1 1 -1 1 1 -1 1 -1 1;
-            -1 1 1 -1 -1 -1 1 1 1 -1 1 1 -1 1 -1 -1;
-            -1 1 1 -1 -1 1 1 1 1 -1 1 1 -1 1 -1 1;
-            -1 1 1 -1 -1 1 1 1 1 -1 1 1 -1 1 -1 -1
+            [-1, 1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1],
+            [-1, 1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1],
+            [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1],
+            [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1]
         ]
-        eng = _energy(ig, conf)
+        eng = energy(conf, ig)
         couplings = Dict()
         for (i, j, v) ∈ ising push!(couplings, (i, j) => v) end
 

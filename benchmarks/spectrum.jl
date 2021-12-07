@@ -11,7 +11,7 @@ function bench(instance::String, max_states::Int=100)
     ig = ising_graph(instance)
     cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
     @time sp = brute_force(cl[1, 1], num_states=max_states)
-    sp
+    return
 end
 
-sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
+bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt")

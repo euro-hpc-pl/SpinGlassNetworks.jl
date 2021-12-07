@@ -50,7 +50,7 @@ biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
 function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
-    for edge in edges(ig)
+    for edge ∈ edges(ig)
         i, j = ig.reverse_label_map[src(edge)], ig.reverse_label_map[dst(edge)]
         @inbounds J[i, j] = get_prop(ig, edge, :J)
     end

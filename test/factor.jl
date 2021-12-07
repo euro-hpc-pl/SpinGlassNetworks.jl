@@ -257,6 +257,6 @@ end
       for (k, v) ∈ d
          spins[k] = v
       end
-      @test factor_graph_energy(fg, state) ≈ energy(Int.(spins), ig)
+      @test factor_graph_energy(fg, state) ≈ energy([Int.(spins)], ig)[]
    end
 end
