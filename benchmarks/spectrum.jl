@@ -54,7 +54,4 @@ sp_cpu = bench_cpu("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 sp_gpu = bench_gpu("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
 
 @assert sp_gpu.energies ≈ sp_cpu.energies
-@assert all(
-    sp_gpu.states[i] == sp_cpu.states[i]
-    for i ∈ 1:size(sp_cpu.states, 1)
-)
+@assert sp_gpu.states == sp_cpu.states
