@@ -1,12 +1,12 @@
 
-using SpinGlassNetworks, LightGraphs
-using CUDA, LinearAlgebra
-using Bits
+using SpinGlassNetworks
 
-function bench_cpu(instance::String, max_states::Int=100)
+function bench(instance::String, max_states::Int=100)
     m = 2
     n = 2
     t = 24
+
+    println("Threads: ", Threads.nthreads())
 
     ig = ising_graph(instance)
     cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
@@ -14,44 +14,4 @@ function bench_cpu(instance::String, max_states::Int=100)
     sp
 end
 
-function kernel(J, energies, σ)
-    idx = (blockIdx().x - 1) * blockDim().x + threadIdx().x
-    L = size(σ, 1)
-
-    for i=1:L if tstbit(idx, i) @inbounds σ[i, idx] = 1 end end
-
-    for k=1:L
-        @inbounds energies[idx] += J[k, k] * σ[k, idx]
-        for l=k+1:L @inbounds energies[idx] += σ[k, idx] * J[k, l] * σ[l, idx] end
-    end
-end
-
-function bench_gpu(instance::String, max_states::Int=100)
-    m = 2
-    n = 2
-    t = 24
-
-    ig = ising_graph(instance)
-    cl = split_into_clusters(ig, super_square_lattice((m, n, t)))
-    J = couplings(cl[1, 1]) + Diagonal(biases(cl[1, 1]))
-
-    L = nv(cl[1, 1])
-    N = 2^L
-    k = 10
-    @time begin
-        energies = CUDA.zeros(N)
-        σ = CUDA.zeros(Int, L, N) .- 1
-        J_dev = CUDA.CuArray(J)
-        @cuda threads=2^k blocks=(2^(L-k)) kernel(J_dev, energies, σ)
-        energies_cpu = Array(energies)
-        σ_cpu = Array(σ)
-        perm = partialsortperm(energies_cpu, 1:max_states)
-    end
-    Spectrum(energies_cpu[perm], [σ_cpu[:, i] for i ∈ 1:size(σ_cpu, 2)][perm])
-end
-
-sp_cpu = bench_cpu("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-sp_gpu = bench_gpu("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
-
-@assert sp_gpu.energies ≈ sp_cpu.energies
-@assert sp_gpu.states == sp_cpu.states
+sp = bench("$(@__DIR__)/pegasus_droplets/2_2_3_00.txt");
