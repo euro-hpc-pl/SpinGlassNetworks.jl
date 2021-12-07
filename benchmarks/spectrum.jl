@@ -5,7 +5,7 @@ function bench(instance::String, size::NTuple{3, Int}, max_states::Int=100)
     ig = ising_graph(instance)
     cl = split_into_clusters(ig, super_square_lattice(size))
     @time sp = brute_force(cl[1, 1], num_states=max_states)
-    return
+    nothing
 end
 
 println("Threads: ", Threads.nthreads())

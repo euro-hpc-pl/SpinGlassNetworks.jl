@@ -44,11 +44,9 @@ function factor_graph(
 
             states_v = get_prop(fg, v, :spectrum).states
             states_w = get_prop(fg, w, :spectrum).states
-            reduced_states_v = [s[ind1] for s in states_v]
-            reduced_states_w = [s[ind2] for s in states_w]
 
-            pl, unique_states_v = rank_reveal(reduced_states_v, :PE)
-            pr, unique_states_w = rank_reveal(reduced_states_w, :PE)
+            pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
+            pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
 
             add_edge!(fg, v, w)
