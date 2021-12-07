@@ -2,25 +2,6 @@ using CSV
 using LinearAlgebra
 using LabelledGraphs
 
-function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
-    eng = zeros(1,n)
-    for (i, j) ∈ keys(cedges)
-        for (k, l) ∈ values(cedges[i, j])
-            for m ∈ 1:length(config[k])
-                s = config[k][m]
-                r = config[l][m]
-                J = couplings[k, l]
-                if k == l
-                    eng[m] += dot(s, J)
-                else
-                    eng[m] += dot(s, J, r)
-                end
-            end
-       end
-    end
-    eng
-end
-
 @testset "Ising graph cannot be created" begin
     @testset "if input instance contains duplicate edges" begin
         @test_throws ArgumentError ising_graph(
