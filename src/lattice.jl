@@ -11,13 +11,10 @@ function super_square_lattice(size::NTuple{3, Int})
     super_square_lattice((m, 1, n, 1, t))
 end
 
-
 function pegasus_lattice(size::NTuple{2, Int})
     m, n = size
     old = LinearIndices((1:24, 1:n, 1:m))
-    map = Dict(old[k, j, i] => (i, j, 1)  for i=1:m, j=1:n, k ∈ [1, 2, 3, 4, 9, 10, 11, 12, 17, 18, 19, 20])
-    for i=1:m, j=1:n, k ∈ [5, 6, 7, 8, 13, 14, 15, 16, 21, 22, 23, 24]
-        push!(map, old[k, j, i] => (i, j, 2))
-    end
+    map = Dict(old[k, j, i] => (i, j, 1) for i=1:m, j=1:n, k ∈ vcat(1:4, 9:12, 17:20))
+    for i=1:m, j=1:n, k ∈ vcat(5:8, 13:16, 21:24) push!(map, old[k, j, i] => (i, j, 2)) end
     map
 end
