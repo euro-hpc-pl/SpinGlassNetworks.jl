@@ -90,7 +90,6 @@ end
 function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
     ig_states = decode_factor_graph_state(fg, fg_state)
     en = 0.0
-    J, h = couplings(ig), biases(ig)
     for (i, σ) ∈ ig_states
         en += get_prop(ig, i, :h) * σ
         for (j, η) ∈ ig_states
