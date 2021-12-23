@@ -87,8 +87,21 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
-function energy(J::AbstractMatrix{<:Real}, fg, fg_state::Vector{Int})
-    σ = zeros(size(J, 1))
-    for (i, s) ∈ decode_factor_graph_state(fg, fg_state) @inbounds σ[i] = s end
-    dot(σ, J, σ)
+function energy(ig::IsingGraph, fg::LabelledGraph, fg_state::Vector{Int})
+    ig_state = decode_factor_graph_state(fg, fg_state)
+    en = 0.0
+    for (i, σ) ∈ ig_state
+        en += get_prop(ig, i, :h) * σ
+        for (j, η) ∈ ig_state
+            if has_edge(ig, i, j)
+                J = get_prop(ig, i, j, :J)
+            elseif has_edge(ig, j, i)
+                J = get_prop(ig, j, i, :J)
+            else
+                J = 0.0
+            end
+            en += σ * J * η / 2.0
+        end
+    end
+    en
 end
