@@ -86,3 +86,14 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     end
     ret
 end
+
+function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
+    spins = decode_factor_graph_state(fg, fg_state)
+    en = 0.0
+    J, h = couplings(ig), biases(ig)
+    for (i, σ) ∈ spins
+        en += h[i] * σ
+        for (j, η) ∈ spins en += σ * J[i, j] * η end
+    end
+    en
+end
