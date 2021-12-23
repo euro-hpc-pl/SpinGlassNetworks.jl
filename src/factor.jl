@@ -88,17 +88,15 @@ function decode_factor_graph_state(fg, state::Vector{Int})
 end
 
 function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
-    spins = decode_factor_graph_state(fg, fg_state)
+    ig_states = decode_factor_graph_state(fg, fg_state)
     en = 0.0
     J, h = couplings(ig), biases(ig)
-    for (i, σ) ∈ spins
+    for (i, σ) ∈ ig_states
         en += get_prop(ig, i, :h) * σ
-        for (j, η) ∈ spins 
-            if has_edge(ig, (i, j))
-                en += σ * get_prop(ig, i, j, :J) * η 
-            elseif has_edge(ig, (j, i))
-                en += σ * get_prop(ig, j, i, :J) * η 
-            end
+        for (j, η) ∈ ig_states
+            e = Egde(i, j)
+            J = has_edge(ig, e) ? get_prop(ig, e, :J) : get_prop(ig, j, i, :J)
+            en += σ * J * η
         end
     end
     en
