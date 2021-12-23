@@ -87,6 +87,7 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
+#TODO: improve this using dot
 function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
     ig_states = decode_factor_graph_state(fg, fg_state)
     en = 0.0
