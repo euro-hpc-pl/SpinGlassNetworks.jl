@@ -87,16 +87,8 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
-#TODO: improve this using dot
-function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
-    ig_states = decode_factor_graph_state(fg, fg_state)
-    en = 0.0
-    for (i, σ) ∈ ig_states
-        en += get_prop(ig, i, :h) * σ
-        for (j, η) ∈ ig_states
-            J = has_edge(ig, i, j) ? get_prop(ig, i, j, :J) : get_prop(ig, j, i, :J)
-            en += σ * J * η
-        end
-    end
-    en
+function energy(J::AbstractMatrix{<:Real}, fg, fg_state::Vector{Int})
+    σ = zeros(size(J, 1))
+    for (i, s) ∈ decode_factor_graph_state(fg, fg_state) @inbounds σ[i] = s end
+    dot(σ, J, σ)
 end
