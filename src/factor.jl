@@ -92,8 +92,8 @@ function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
     en = 0.0
     J, h = couplings(ig), biases(ig)
     for (i, σ) ∈ spins
-        en += h[i] * σ
-        for (j, η) ∈ spins en += σ * J[i, j] * η end
+        en += get_prop(ig, i, :h) * σ
+        for (j, η) ∈ spins en += σ * get_prop(ig, i, j, :J) * η end
     end
     en
 end
