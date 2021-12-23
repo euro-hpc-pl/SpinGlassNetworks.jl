@@ -94,7 +94,7 @@ function energy(ig::IsingGraph, fg, fg_state::Vector{Int})
         en += get_prop(ig, i, :h) * σ
         for (j, η) ∈ ig_states
             e = Egde(i, j)
-            J = has_edge(ig, e) ? get_prop(ig, e, :J) : get_prop(ig, j, i, :J)
+            J = has_edge(ig, e) ? get_prop(ig, e, :J) : get_prop(ig, Egde(j, i), :J)
             en += σ * J * η
         end
     end
