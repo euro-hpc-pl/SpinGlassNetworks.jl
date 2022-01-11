@@ -4,7 +4,7 @@ module SpinGlassNetworks
     using MetaGraphs # TODO: remove that
     using CSV
     using DocStringExtensions
-    using LinearAlgebra
+    using LinearAlgebra, MKL
     using Base.Cartesian
 
     import Base.Prehashed
