@@ -104,16 +104,13 @@ end
 
 function energy(fg::LabelledGraph, σ::Dict)
     en = 0.0
-    for e ∈ vertices(fg)
-        en += get_prop(fg, e, :spectrum).energies[σ[e]]
-        for f ∈ vertices(fg)
-            if has_edge(fg, e, f)
-                en_ef = get_prop(fg, e, f, :en)
-                pf = get_prop(fg, e, f, :pr)
-                pe = get_prop(fg, e, f, :pl)
-                en += en_ef[pe[σ[e]], pf[σ[f]]]
-            end
-        end
+    for v ∈ vertices(fg) en += get_prop(fg, v, :spectrum).energies[σ[v]] end
+    for edge ∈ edges(fg)
+        en_ef = get_prop(fg, edge, :en)
+        pf = get_prop(fg, edge, :pr)
+        pe = get_prop(fg, edge, :pl)
+        u, v = src(edge), dst(edge)
+        en += en_ef[pe[σ[u]], pf[σ[v]]]
     end
     en
 end
