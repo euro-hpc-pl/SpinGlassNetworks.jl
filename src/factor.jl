@@ -107,8 +107,7 @@ function energy(fg::LabelledGraph, σ::Dict)
     for v ∈ vertices(fg) en += get_prop(fg, v, :spectrum).energies[σ[v]] end
     for (e, f) ∈ edges(fg)
         en_ef = get_prop(fg, e, f, :en)
-        pf = get_prop(fg, e, f, :pr)
-        pe = get_prop(fg, e, f, :pl)
+        pe, pf = get_prop(fg, e, f, :pl), get_prop(fg, e, f, :pr)
         en += en_ef[pe[σ[e]], pf[σ[f]]]
     end
     en
