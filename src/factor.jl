@@ -1,5 +1,5 @@
 export factor_graph, rank_reveal, projectors, split_into_clusters
-export decode_factor_graph_state
+export decode_factor_graph_state, energy
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
@@ -100,4 +100,21 @@ function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
         end
     end
     en
+end
+
+function energy(fg::LabelledGraph, σ::Dict)
+    eng = 0
+    for v ∈ vertices(fg)
+        en = get_prop(fg, v, :spectrum).energies
+        eng += en[σ[v]] #sigma Dict(vertices -> Int)
+    end
+    println(edges(fg))
+    for (e,f) ∈ edges(fg)
+        #println()
+        E = get_prop(fg, e, f, :en)
+        Pf = get_prop(fg, e, f, :pr)
+        Pe = get_prop(fg, e, f, :pl)
+        eng += E[Pe[σ[e]], Pf[σ[f]]]
+    end
+    eng
 end
