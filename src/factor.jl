@@ -102,7 +102,8 @@ function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
     en
 end
 
-function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
+#function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
+function energy(fg::LabelledGraph, σ::Dict)
     en_fg = 0.0
     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
     for edge ∈ edges(fg)
