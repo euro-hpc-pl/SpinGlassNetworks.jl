@@ -1,5 +1,5 @@
 export factor_graph, rank_reveal, projectors, split_into_clusters
-export decode_factor_graph_state, energy
+export decode_factor_graph_state, energy, cluster_size
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
@@ -102,8 +102,7 @@ function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
     en
 end
 
-#function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
-function energy(fg::LabelledGraph, σ::Dict)
+function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg = 0.0
     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
     for edge ∈ edges(fg)
@@ -112,4 +111,8 @@ function energy(fg::LabelledGraph, σ::Dict)
         en_fg += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
     end
     en_fg
+end
+
+function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
+    length(get_prop(factor_graph, vertex, :spectrum).energies)
 end
