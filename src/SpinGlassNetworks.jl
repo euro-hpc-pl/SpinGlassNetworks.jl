@@ -1,3 +1,4 @@
+# TODO: remove experimental early attempt at tackling Pegasus topology
 module SpinGlassNetworks
     using MKL
     using LabelledGraphs
