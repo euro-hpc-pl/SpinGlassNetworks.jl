@@ -1,9 +1,16 @@
-export factor_graph, rank_reveal, projectors, split_into_clusters
-export decode_factor_graph_state, energy, cluster_size
+export
+    factor_graph,
+    rank_reveal,
+    projectors,
+    split_into_clusters,
+    decode_factor_graph_state,
+    energy, cluster_size
 
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
-    for v in vertices(ig) push!(cluster_id_to_verts[assignment_rule[v]], v) end
+    for v in vertices(ig)
+        push!(cluster_id_to_verts[assignment_rule[v]], v)
+    end
     Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
 end
 
@@ -36,17 +43,16 @@ function factor_graph(
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
-            ind1 = any(i -> i != 0, J, dims=2)
-            ind2 = any(i -> i != 0, J, dims=1)
-            ind1 = reshape(ind1, length(ind1))
-            ind2 = reshape(ind2, length(ind2))
+            ind1 = vec(any(i -> i != 0, J, dims=2))
+            ind2 = vec(any(i -> i != 0, J, dims=1))
+
             JJ = J[ind1, ind2]
 
             states_v = get_prop(fg, v, :spectrum).states
             states_w = get_prop(fg, w, :spectrum).states
 
-            pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
-            pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
+            pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v])
+            pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w])
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
 
             add_edge!(fg, v, w)
@@ -66,12 +72,10 @@ function factor_graph(
     )
 end
 
-function rank_reveal(energy, order=:PE)
-    @assert order ∈ (:PE, :EP)
-    dim = order == :PE ? 1 : 2
-    E, idx = unique_dims(energy, dim)
+function rank_reveal(energy)
+    E, idx = unique_dims(energy, 1)
     P = identity.(idx)
-    order == :PE ? (P, E) : (E, P)
+    P, E
 end
 
 function decode_factor_graph_state(fg, state::Vector{Int})
