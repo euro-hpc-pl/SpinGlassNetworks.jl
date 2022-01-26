@@ -1,5 +1,13 @@
-export all_states, local_basis, gibbs_tensor, brute_force
-export full_spectrum, Spectrum, idx, local_basis, energy
+export
+    all_states,
+    local_basis,
+    gibbs_tensor,
+    brute_force,
+    full_spectrum,
+    Spectrum,
+    idx,
+    local_basis,
+    energy
 
 @inline idx(σ::Int) = (σ == -1) ? 1 : σ + 1
 @inline local_basis(d::Int) = union(-1, 1:d-1)
