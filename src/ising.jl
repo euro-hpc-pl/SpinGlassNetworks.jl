@@ -93,15 +93,15 @@ function prune(ig::IsingGraph)
     LabelledGraph(labels, gg.inner_graph, reverse_label_map)
 end
 
-function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
-    en = 0.0
-    for (i, σ) ∈ ig_state
-        en += get_prop(ig, i, :h) * σ
-        for (j, η) ∈ ig_state
-            if has_edge(ig, i, j)
-                en += σ * get_prop(ig, i, j, :J) * η
-            end
-        end
-    end
-    en
-end
+# function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
+#     en = 0.0
+#     for (i, σ) ∈ ig_state
+#         en += get_prop(ig, i, :h) * σ
+#         for (j, η) ∈ ig_state
+#             if has_edge(ig, i, j)
+#                 en += σ * get_prop(ig, i, j, :J) * η
+#             end
+#         end
+#     end
+#     en
+# end
