@@ -11,7 +11,7 @@ function unique_nodes(ising_tuples)
 end
 
 function ising_graph(
-    instance::Instance; sgn::Real=1.0, rank_override::Dict{Int, Int}=Dict{Int, Int}()
+    instance::Instance; rank_override::Dict{Int, Int}=Dict{Int, Int}()
 )
     # load the Ising instance
     if instance isa String
@@ -21,8 +21,6 @@ function ising_graph(
     end
 
     nodes = unique_nodes(ising)
-    L = length(nodes)
-    nodes_to_vertices = Dict(w => i for (i, w) ∈ enumerate(nodes))
 
     ig = LabelledGraph{MetaGraph}(nodes)
 
@@ -30,7 +28,6 @@ function ising_graph(
     foreach(v -> set_prop!(ig, v, :rank, get(rank_override, v, 2)), vertices(ig))
 
     for (i, j, v) ∈ ising
-        v *= sgn
         if i == j
             set_prop!(ig, i, :h, v)
         else

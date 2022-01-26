@@ -72,7 +72,6 @@ end
 
     ig = ising_graph(
         "$(@__DIR__)/instances/example.txt",
-        sgn=-1,
         rank_override=Dict(1 => 3, 4 => 4)
     )
 
@@ -80,11 +79,6 @@ end
         # TODO: update default value of 2 once original implementation
         # is also updated.
         @test get_prop(ig, :rank) == Dict(1 => 3, 2 => 2, 4 => 4)
-    end
-
-    @testset "has coefficients multiplied by given sign" begin
-        @test biases(ig) == expected_biases
-        @test couplings(ig) == expected_J_matrix
     end
 end
 
