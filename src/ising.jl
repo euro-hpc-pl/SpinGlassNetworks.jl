@@ -1,7 +1,16 @@
 using LabelledGraphs
 
-export ising_graph, rank_vec, cluster, rank, nodes, basis_size, biases, couplings
-export IsingGraph, prune
+export
+    ising_graph,
+    rank_vec,
+    cluster,
+    rank,
+    nodes,
+    basis_size,
+    biases,
+    couplings,
+    IsingGraph,
+    prune
 
 const Instance = Union{String, Dict}
 const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}
