@@ -97,9 +97,7 @@ function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
         en += get_prop(ig, i, :h) * σ
         for (j, η) ∈ ig_state
             if has_edge(ig, i, j)
-                en += σ * get_prop(ig, i, j, :J) * η / 2.0
-            elseif has_edge(ig, j, i)
-                en += σ * get_prop(ig, j, i, :J) * η / 2.0
+                en += σ * get_prop(ig, i, j, :J) * η
             end
         end
     end
