@@ -150,7 +150,7 @@ function create_example_factor_graph()
   )
 end
 
-fg_state_to_spin = [
+const fg_state_to_spin = [
    ([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])
 ]
 
