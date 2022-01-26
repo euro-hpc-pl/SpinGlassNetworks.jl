@@ -23,11 +23,22 @@ function energy(σ::AbstractArray{State}, ig::IsingGraph)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
-function Spectrum(ig::IsingGraph)
+function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
+    σ = collect.(all_states(rank_vec(ig)))
+    ρ = exp.(-β .* energy(σ, ig))
+    ρ ./ sum(ρ)
+end
+
+function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
+    _brute_force(ig, Val(s); num_states)
+end
+
+function _brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     L = nv(ig)
+    if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
     N = 2^L
 
-    energies = zeros(Float64, N)
+    energies = Vector{Float64}(undef, N)
     states = Vector{State}(undef, N)
 
     J, h = couplings(ig), biases(ig)
@@ -36,26 +47,9 @@ function Spectrum(ig::IsingGraph)
         @inbounds energies[i+1] = dot(σ, J, σ) + dot(h, σ)
         @inbounds states[i+1] = σ
     end
-    Spectrum(energies, states)
-end
-
-function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
-    σ = collect.(all_states(rank_vec(ig)))
-    ρ = exp.(-β .* energy(σ, ig))
-    ρ ./ sum(ρ)
-end
-
-function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
-    brute_force(ig, Val(s); num_states)
-end
-
-function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
-    L = nv(ig)
-    if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
-    sp = Spectrum(ig)
     num_states = min(num_states, prod(rank_vec(ig)))
-    idx = partialsortperm(vec(sp.energies), 1:num_states)
-    Spectrum(sp.energies[idx], sp.states[idx])
+    idx = partialsortperm(vec(energies), 1:num_states)
+    Spectrum(energies[idx], states[idx])
 end
 
 function full_spectrum(ig::IsingGraph; num_states::Int=1)
