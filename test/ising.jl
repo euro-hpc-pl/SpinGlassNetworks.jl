@@ -113,7 +113,7 @@ end
 
         @test size(ρ) == Tuple(fill(2, N))
         @test sum(R) ≈ sum(ρ) ≈ 1
-        @test sp.energies ≈ energy(sp.states, ig)
+        @test sp.energies ≈ energy(ig, sp.states)
         @test [ρ[_idx.(σ)...] for σ ∈ sp.states] ≈ R
     end
 
@@ -166,7 +166,7 @@ end
             [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1],
             [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1]
         ]
-        eng = energy(conf, ig)
+        eng = energy(ig, conf)
         couplings = Dict()
         for (i, j, v) ∈ ising push!(couplings, (i, j) => v) end
 

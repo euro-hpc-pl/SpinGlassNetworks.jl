@@ -18,14 +18,14 @@ struct Spectrum
     states::AbstractArray{State}
 end
 
-function energy(σ::AbstractArray{State}, ig::IsingGraph)
+function energy(ig::IsingGraph, σ::AbstractArray{State})
     J, h = couplings(ig), biases(ig)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
 function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     σ = collect.(all_states(rank_vec(ig)))
-    ρ = exp.(-β .* energy(σ, ig))
+    ρ = exp.(-β .* energy(ig, σ))
     ρ ./ sum(ρ)
 end
 
@@ -57,7 +57,7 @@ function full_spectrum(ig::IsingGraph; num_states::Int=1)
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
     σ = collect.(all_states(ig_rank))
-    energies = energy(σ, ig)
+    energies = energy(ig, σ)
     Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 
