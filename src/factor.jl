@@ -91,19 +91,6 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
-function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
-    en = 0.0
-    for (i, σ) ∈ ig_state
-        en += get_prop(ig, i, :h) * σ
-        for (j, η) ∈ ig_state
-            if has_edge(ig, i, j)
-                en += σ * get_prop(ig, i, j, :J) * η
-            end
-        end
-    end
-    en
-end
-
 function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg = 0.0
     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
