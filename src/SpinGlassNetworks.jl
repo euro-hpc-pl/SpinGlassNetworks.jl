@@ -1,10 +1,11 @@
 module SpinGlassNetworks
+    using MKL
     using LabelledGraphs
     using LightGraphs
     using MetaGraphs # TODO: remove that
     using CSV
     using DocStringExtensions
-    using LinearAlgebra, MKL
+    using LinearAlgebra
     using Base.Cartesian
 
     import Base.Prehashed
