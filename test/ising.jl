@@ -2,6 +2,8 @@ using CSV
 using LinearAlgebra
 using LabelledGraphs
 
+@inline _idx(σ::Int) = (σ == -1) ? 1 : σ + 1
+
 @testset "Ising graph cannot be created" begin
     @testset "if input instance contains duplicate edges" begin
         @test_throws ArgumentError ising_graph(
@@ -112,7 +114,7 @@ end
         @test size(ρ) == Tuple(fill(2, N))
         @test sum(R) ≈ sum(ρ) ≈ 1
         @test sp.energies ≈ energy(sp.states, ig)
-        @test [ρ[idx.(σ)...] for σ ∈ sp.states] ≈ R
+        @test [ρ[_idx.(σ)...] for σ ∈ sp.states] ≈ R
     end
 
     @testset "Naive brute force for general spins" begin
@@ -131,7 +133,7 @@ end
         ϱ = ρ ./ sum(ρ)
         ϱ̃ = gibbs_tensor(ig, β)
 
-        @test [ϱ̃[idx.(σ)...] for σ ∈ sp.states] ≈ ϱ
+        @test [ϱ̃[_idx.(σ)...] for σ ∈ sp.states] ≈ ϱ
     end
 
     @testset "Reading from Dict" begin
