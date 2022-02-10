@@ -10,6 +10,9 @@ function unique_nodes(ising_tuples)
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 end
 
+"""
+Assumes: H = sgn * J_{ij} * s_i * s_j + sgn * J_{ii} * s_i
+"""
 function ising_graph(
     instance::Instance; sgn::Real=1.0, rank_override::Dict{Int, Int}=Dict{Int, Int}()
 )
@@ -20,11 +23,7 @@ function ising_graph(
         ising = [(i, j, J) for ((i, j), J) ∈ instance]
     end
 
-    nodes = unique_nodes(ising)
-    L = length(nodes)
-    nodes_to_vertices = Dict(w => i for (i, w) ∈ enumerate(nodes))
-
-    ig = LabelledGraph{MetaGraph}(nodes)
+    ig = LabelledGraph{MetaGraph}(unique_nodes(ising))
 
     set_prop!.(Ref(ig), vertices(ig), :h, 0)
     foreach(v -> set_prop!(ig, v, :rank, get(rank_override, v, 2)), vertices(ig))
@@ -45,7 +44,7 @@ function ising_graph(
     ig
 end
 rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
-basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
+basis_size(ig::IsingGraph) = prod(rank_vec(ig)) 
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
 function couplings(ig::IsingGraph)
@@ -58,6 +57,9 @@ function couplings(ig::IsingGraph)
 end
 cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
 
+"""
+Returns dense adjacency matrix
+"""
 function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     verts1, verts2 = vertices(cl1), vertices(cl2)
 
@@ -73,6 +75,10 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     outer_edges, J
 end
 
+"""
+Get rid of non-existing spins? 
+Used only in MPS_search, would be obsolete if MPS_search uses QMps.
+"""
 function prune(ig::IsingGraph)
     to_keep = vcat(
         findall(!iszero, degree(ig)),

@@ -1,12 +1,22 @@
 export factor_graph, rank_reveal, projectors, split_into_clusters
 export decode_factor_graph_state, energy, cluster_size
 
+"""
+Groups spins into clusters, 
+Return:
+Dict(factor graph coordinates -> group of spins in Ising graph)
+"""
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
     for v in vertices(ig) push!(cluster_id_to_verts[assignment_rule[v]], v) end
     Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
 end
 
+"""
+To how many states in each cluster truncate and create factor graph
+Returns:
+
+"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Int;
@@ -17,6 +27,9 @@ function factor_graph(
     factor_graph(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
+"""
+Factor graph order introduced as a natural order in factor graph coordinates.
+"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Dict{T, Int};
@@ -74,6 +87,12 @@ function rank_reveal(energy, order=:PE)
     order == :PE ? (P, E) : (E, P)
 end
 
+"""
+Assumes that state has the same order as vertices in factor graph.
+Returns:
+Dict(vertex of ising graph -> spin value)
+TODO: check tha order consistency over packages
+"""
 function decode_factor_graph_state(fg, state::Vector{Int})
     ret = Dict{Int, Int}()
     for (i, vert) ∈ zip(state, vertices(fg))
@@ -87,6 +106,9 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
+"""
+TODO: write it better
+"""
 function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
     en = 0.0
     for (i, σ) ∈ ig_state

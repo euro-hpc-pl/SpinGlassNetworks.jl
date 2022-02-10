@@ -32,6 +32,7 @@ function Spectrum(ig::IsingGraph)
     Spectrum(energies, states)
 end
 
+#Only for testing purposes
 function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))
@@ -51,6 +52,7 @@ function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     Spectrum(sp.energies[idx], sp.states[idx])
 end
 
+#TODO: to be removed
 function full_spectrum(ig::IsingGraph; num_states::Int=1)
     if nv(ig) == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
     ig_rank = rank_vec(ig)
