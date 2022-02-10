@@ -2,9 +2,7 @@ export factor_graph, rank_reveal, projectors, split_into_clusters
 export decode_factor_graph_state, energy, cluster_size
 
 """
-Groups spins into clusters, 
-Return:
-Dict(factor graph coordinates -> group of spins in Ising graph)
+Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
@@ -13,9 +11,8 @@ function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S,
 end
 
 """
-To how many states in each cluster truncate and create factor graph
-Returns:
-
+Create factor graph.
+Factor graph order introduced as a natural order in factor graph coordinates.
 """
 function factor_graph(
     ig::IsingGraph,
@@ -27,9 +24,6 @@ function factor_graph(
     factor_graph(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
-"""
-Factor graph order introduced as a natural order in factor graph coordinates.
-"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Dict{T, Int};
@@ -88,10 +82,9 @@ function rank_reveal(energy, order=:PE)
 end
 
 """
-Assumes that state has the same order as vertices in factor graph.
-Returns:
-Dict(vertex of ising graph -> spin value)
-TODO: check tha order consistency over packages
+Returns Dict(vertex of ising graph -> spin value)
+Assumes that state has the same order as vertices in factor graph!
+TODO: check the order consistency over external packages.
 """
 function decode_factor_graph_state(fg, state::Vector{Int})
     ret = Dict{Int, Int}()
@@ -107,7 +100,7 @@ function decode_factor_graph_state(fg, state::Vector{Int})
 end
 
 """
-TODO: write it better
+TODO: write it better (for now this is only for testing).
 """
 function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
     en = 0.0
@@ -123,7 +116,6 @@ function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
     end
     en
 end
-
 
 function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg = 0.0
