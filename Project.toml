@@ -7,7 +7,7 @@ authors = [
     "Łukasz Pawela <lukasz.pawela@gmail.com>",
     "Marek M. Rams <marekrams@gmail.com>"
 ]
-version = "0.2.3"
+version = "0.3.0"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
