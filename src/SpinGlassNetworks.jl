@@ -13,9 +13,16 @@ module SpinGlassNetworks
 
     export unique_neighbors
 
+    """
+    $(TYPEDSIGNATURES)
 
+    """
     unique_neighbors(ig::LabelledGraph, i::Int) = filter(j -> j > i, neighbors(ig, i))
 
+    """
+    @generated function unique_dims(A::AbstractArray{T,N}, dim::Integer) where {T,N}
+
+    """
     @generated function unique_dims(A::AbstractArray{T,N}, dim::Integer) where {T,N}
         quote
             1 <= dim <= $N || return copy(A)

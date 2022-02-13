@@ -13,12 +13,25 @@ export
     prune
 
 const Instance = Union{String, Dict}
+
+"""
+`const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}`
+
+"""
 const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function unique_nodes(ising_tuples)
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function ising_graph(
     instance::Instance; rank_override::Dict{Int, Int}=Dict{Int, Int}()
 )
@@ -50,10 +63,29 @@ function ising_graph(
     )
     ig
 end
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
 rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
 basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
     for edge ∈ edges(ig)
@@ -62,8 +94,17 @@ function couplings(ig::IsingGraph)
     end
     J
 end
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
 cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     verts1, verts2 = vertices(cl1), vertices(cl2)
 
@@ -79,6 +120,10 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     outer_edges, J
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function prune(ig::IsingGraph)
     to_keep = vcat(
         findall(!iszero, degree(ig)),
