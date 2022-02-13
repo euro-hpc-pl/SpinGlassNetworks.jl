@@ -15,7 +15,9 @@ export
 const Instance = Union{String, Dict}
 
 """
-`const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}`
+```julia
+const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}
+```
 
 """
 const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}
