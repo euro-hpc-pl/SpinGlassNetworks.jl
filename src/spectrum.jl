@@ -9,7 +9,16 @@ export
     local_basis,
     energy
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 @inline local_basis(d::Int) = union(-1, 1:d-1)
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
 all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)...)
 
 const State = Vector{Int}
@@ -18,21 +27,37 @@ struct Spectrum
     states::AbstractArray{State}
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function energy(ig::IsingGraph, σ::AbstractArray{State})
     J, h = couplings(ig), biases(ig)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(ig, σ))
     ρ ./ sum(ρ)
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
     _brute_force(ig, Val(s); num_states)
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function _brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     L = nv(ig)
     if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
@@ -52,6 +77,10 @@ function _brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     Spectrum(energies[idx], states[idx])
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function full_spectrum(ig::IsingGraph; num_states::Int=1)
     if nv(ig) == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
     ig_rank = rank_vec(ig)
@@ -61,6 +90,10 @@ function full_spectrum(ig::IsingGraph; num_states::Int=1)
     Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function inter_cluster_energy(
     cl1_states::Vector{State},
     J::Matrix{<:Real},
