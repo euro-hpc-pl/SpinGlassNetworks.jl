@@ -91,16 +91,16 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
-# function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
-#     en_fg = 0.0
-#     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
-#     for edge ∈ edges(fg)
-#         pl, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
-#         en = get_prop(fg, edge, :en)
-#         en_fg += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
-#     end
-#     en_fg
-# end
+function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
+    en_fg = 0.0
+    for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
+    for edge ∈ edges(fg)
+        pl, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
+        en = get_prop(fg, edge, :en)
+        en_fg += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
+    end
+    en_fg
+end
 
 # function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
 #     length(get_prop(factor_graph, vertex, :spectrum).energies)
