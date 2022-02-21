@@ -6,6 +6,10 @@ export
     decode_factor_graph_state,
     energy, cluster_size
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
     for v in vertices(ig)
@@ -14,6 +18,10 @@ function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S,
     Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Int;
@@ -24,6 +32,10 @@ function factor_graph(
     factor_graph(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Dict{T, Int};
@@ -64,6 +76,10 @@ function factor_graph(
     fg
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function factor_graph(
     ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
 ) where T
@@ -72,12 +88,20 @@ function factor_graph(
     )
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function rank_reveal(energy)
     E, idx = unique_dims(energy, 1)
     P = identity.(idx)
     P, E
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function decode_factor_graph_state(fg, state::Vector{Int})
     ret = Dict{Int, Int}()
     for (i, vert) ∈ zip(state, vertices(fg))
