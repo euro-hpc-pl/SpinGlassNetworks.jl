@@ -115,6 +115,10 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
 function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg = 0.0
     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
