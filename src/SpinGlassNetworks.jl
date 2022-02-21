@@ -1,4 +1,6 @@
+# TODO: remove experimental early attempt at tackling Pegasus topology
 module SpinGlassNetworks
+    using MKL
     using LabelledGraphs
     using LightGraphs
     using MetaGraphs # TODO: remove that
@@ -11,9 +13,16 @@ module SpinGlassNetworks
 
     export unique_neighbors
 
+    """
+    $(TYPEDSIGNATURES)
 
+    """
     unique_neighbors(ig::LabelledGraph, i::Int) = filter(j -> j > i, neighbors(ig, i))
 
+    """
+    @generated function unique_dims(A::AbstractArray{T,N}, dim::Integer) where {T,N}
+
+    """
     @generated function unique_dims(A::AbstractArray{T,N}, dim::Integer) where {T,N}
         quote
             1 <= dim <= $N || return copy(A)
@@ -84,7 +93,6 @@ module SpinGlassNetworks
         end
     end
 
-    include("states.jl")
     include("ising.jl")
     include("spectrum.jl")
     include("lattice.jl")

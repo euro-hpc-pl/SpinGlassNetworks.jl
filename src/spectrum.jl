@@ -1,77 +1,103 @@
-export all_states, local_basis
-export gibbs_tensor
-export brute_force, full_spectrum, energy
-export Spectrum
+export
+    all_states,
+    local_basis,
+    gibbs_tensor,
+    brute_force,
+    full_spectrum,
+    Spectrum,
+    idx,
+    local_basis,
+    energy
 
 """
 $(TYPEDSIGNATURES)
 
-Calculates Gibbs state of a classical Ising Hamiltonian
-
-# Details
-
-Calculates matrix elements (probabilities) of \$\\rho\$
-```math
-\$\\bra{\\σ}\\rho\\ket{\\sigma}\$
-```
-for all possible configurations \$\\σ\$.
 """
-function gibbs_tensor(ig::IsingGraph, β=Float64=1.0)
-    states = collect.(all_states(rank_vec(ig)))
-    ρ = exp.(-β .* energy.(states, Ref(ig)))
+@inline local_basis(d::Int) = union(-1, 1:d-1)
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
+all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)...)
+
+const State = Vector{Int}
+struct Spectrum
+    energies::Vector{<:Real}
+    states::AbstractArray{State}
+end
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
+function energy(ig::IsingGraph, σ::AbstractArray{State})
+    J, h = couplings(ig), biases(ig)
+    dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
+end
+
+"""
+$(TYPEDSIGNATURES)
+
+"""
+function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
+    σ = collect.(all_states(rank_vec(ig)))
+    ρ = exp.(-β .* energy(ig, σ))
     ρ ./ sum(ρ)
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+"""
+function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
+    _brute_force(ig, Val(s); num_states)
+end
 
 """
 $(TYPEDSIGNATURES)
 
-Calculate the Ising energy
-```math
-E = -\\sum_<i,j> s_i J_{ij} * s_j - \\sum_j h_i s_j.
-```
 """
-energy(σ::Vector, J::Matrix, η::Vector=σ) = dot(σ, J, η)
-energy(σ::Vector, h::Vector) = dot(h, σ)
-energy(σ::Vector, ig::IsingGraph) = energy(σ, couplings(ig)) + energy(σ, biases(ig))
+function _brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
+    L = nv(ig)
+    if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
+    N = 2^L
 
+    energies = Vector{Float64}(undef, N)
+    states = Vector{State}(undef, N)
+
+    J, h = couplings(ig), biases(ig)
+    Threads.@threads for i = 0:N-1
+        σ = 2 .* digits(i, base=2, pad=L) .- 1
+        @inbounds energies[i+1] = dot(σ, J, σ) + dot(h, σ)
+        @inbounds states[i+1] = σ
+    end
+    num_states = min(num_states, prod(rank_vec(ig)))
+    idx = partialsortperm(vec(energies), 1:num_states)
+    Spectrum(energies[idx], states[idx])
+end
 
 """
 $(TYPEDSIGNATURES)
 
-Return the low energy spectrum
-
-# Details
-
-Calculates \$k\$ lowest energy states
-together with the coresponding energies
-of a classical Ising Hamiltonian
 """
-
-function brute_force(ig::IsingGraph; sorted=true, num_states::Int=1)
-    if nv(ig) == 0 return Spectrum(zeros(1), []) end
+function full_spectrum(ig::IsingGraph; num_states::Int=1)
+    if nv(ig) == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
-
     σ = collect.(all_states(ig_rank))
-    energies = energy.(σ, Ref(ig))
-    if sorted
-        perm = partialsortperm(vec(energies), 1:num_states)
-        return Spectrum(energies[perm], σ[perm])
-    else
-        return Spectrum(energies[1:num_states], σ[1:num_states])
-    end
+    energies = energy(ig, σ)
+    Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 
-full_spectrum(ig::IsingGraph; num_states::Int=1) = brute_force(ig, sorted=false, num_states=num_states)
+"""
+$(TYPEDSIGNATURES)
 
-struct Spectrum
-    energies::Vector{Float64}
-    states::Vector{Vector{Int}}
-end
-
-# Please don't make the below another energy method.
-# There is already so much mess going on :)
-function inter_cluster_energy(cl1_states, J::Matrix, cl2_states)
+"""
+function inter_cluster_energy(
+    cl1_states::Vector{State},
+    J::Matrix{<:Real},
+    cl2_states::Vector{State}
+)
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end

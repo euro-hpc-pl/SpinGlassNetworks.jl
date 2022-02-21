@@ -114,7 +114,7 @@ end
             energy[ii, jj] = eij
          end
       end
-      @test energy ≈ pl * (en * pr)
+      @test energy ≈ en[pl, pr]
    end
 
    @testset "each cluster comprises expected cells" begin
@@ -134,54 +134,11 @@ end
    end
 end
 
-
-@testset "Rank reveal correctly decomposes energy row-wise" begin
-   energy = [[1 2 3]; [0 -1 0]; [1 2 3]]
-   P, E = rank_reveal(energy, :PE)
-   @test size(P) == (3, 2)
-   @test size(E) == (2, 3)
-   @test P * E ≈ energy
-end
-
-@testset "Rank reveal correctly decomposes energy column-wise" begin
-   energy = [[1, 2, 3] [0, -1, 1] [1, 2, 3]]
-   E, P = rank_reveal(energy, :EP)
-   @test size(P) == (2, 3)
-   @test size(E) == (3, 2)
-   @test E * P ≈ energy
-end
-
-@testset "Rank reveal correctly decomposes energy into projector, energy, projector" begin
-   #energy = [[1 2 3]; [0 -1 0]; [1 2 3]]
-   energy = [
-      [1.0  -0.5   1.5   0.0   0.0  -1.5   0.5  -1.0];
-      [0.0   0.5   0.5   1.0  -1.0  -0.5  -0.5   0.0];
-      [0.5   0.0   1.0   0.5  -0.5  -1.0   0.0  -0.5];
-      [-0.5   1.0   0.0   1.5  -1.5   0.0  -1.0   0.5];
-      [0.5  -1.0   0.0  -1.5   1.5   0.0   1.0  -0.5];
-      [-0.5   0.0  -1.0  -0.5   0.5   1.0   0.0   0.5];
-      [0.0  -0.5  -0.5  -1.0   1.0   0.5   0.5   0.0];
-      [-1.0   0.5  -1.5   0.0   0.0   1.5  -0.5   1.0]
-   ]
-   Pl, E_old = rank_reveal(energy, :PE)
-   @test size(Pl) == (8, 8)
-   @test size(E_old) == (8, 8)
-   @test Pl * E_old ≈ energy
-
-   E, Pr = rank_reveal(E_old, :EP)
-   @test size(Pr) == (8, 8)
-   @test size(E) == (8, 8)
-   @test E * Pr ≈ E_old
-   @test Pl * E * Pr ≈ energy
-end
-
-
 function create_example_factor_graph()
    J12 = -1.0
    h1 = 0.5
    h2 = 0.75
 
-   
    D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
    ig = ising_graph(D)
 
@@ -199,7 +156,7 @@ const fg_state_to_spin = [
 
 @testset "Decoding solution gives correct spin assignment" begin
    fg = create_example_factor_graph()
-   for (state, spin_values) ∈ fg_state_to_spin   
+   for (state, spin_values) ∈ fg_state_to_spin
       d = decode_factor_graph_state(fg, state)
       states = collect(values(d))[collect(keys(d))]
       @test states == spin_values
@@ -262,7 +219,7 @@ function create_larger_example_factor_graph()
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
-   
+
    ig, fg
 end
 
@@ -280,7 +237,7 @@ function factor_graph_energy(fg, state)
    for edge ∈ edges(fg)
       i, j = fg.reverse_label_map[src(edge)], fg.reverse_label_map[dst(edge)]
       pl, en, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :en), get_prop(fg, edge, :pr)
-      edge_energy = pl * en * pr
+      edge_energy = en[pl, pr]
       total_en += edge_energy[state[i], state[j]]
    end
 
@@ -296,10 +253,10 @@ end
 
    for state ∈ all_states
       d = decode_factor_graph_state(fg, state)
-      spins = zeros(length(d))
+      spins = zeros(Int, length(d))
       for (k, v) ∈ d
          spins[k] = v
       end
-      @test factor_graph_energy(fg, state) ≈ energy(spins, ig)
+      @test factor_graph_energy(fg, state) ≈ energy(ig, [spins])[]
    end
 end
