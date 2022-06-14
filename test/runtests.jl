@@ -26,7 +26,7 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng
 end
 
-my_tests = ["ising.jl", "factor.jl"]
+my_tests = ["numeration.jl",]#["ising.jl", "factor.jl"]
 
 for my_test ∈ my_tests
     include(my_test)
