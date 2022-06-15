@@ -6,7 +6,7 @@
 
     @testset "linear_to_pegasus" begin
 
-        python_P2_ltp = Dict(0 => (0, 0, 0, 0), 11 => (0, 0, 11, 0), 
+        python_P2_ltp = Dict(0 => (0, 0, 0, 0), 11 => (0, 0, 11, 0),
                         18 => (0, 1, 6, 0), 23 => (0, 1, 11, 0))
 
         python_P4_ltp = Dict(0 => (0, 0, 0, 0), 86 => (0, 2, 4, 2),
@@ -37,7 +37,7 @@
 
     @testset "pegasus_to_nice" begin
 
-        python_ptn = Dict((0,0,4,0) => (0, 0, 0, 0, 0), (0, 3, 1, 1) => (2, 1, 2, 0, 1), 
+        python_ptn = Dict((0,0,4,0) => (0, 0, 0, 0, 0), (0, 3, 1, 1) => (2, 1, 2, 0, 1),
                     (1, 5, 11, 6) => (2, 5, 6, 1, 3), (1, 14, 0, 10) => (1, 13, 10, 1, 0))
 
         for p in keys(python_ptn)
@@ -54,7 +54,7 @@
     end
 
     @testset "dattani_to_linear" begin
-        python_P16_dtl = Dict((12, 7, 1, 1, 0) => 4501, (6, 10, 1, 0, 0) => 2409, 
+        python_P16_dtl = Dict((12, 7, 1, 1, 0) => 4501, (6, 10, 1, 0, 0) => 2409,
                     (3, 2, 2, 0, 1) => 1146, (9, 0, 2, 0, 3)=> 3260, (10, 3, 1, 0, 2) => 3683)
         for i in keys(python_P16_dtl)
             @test dattani_to_linear(16, i) == python_P16_dtl[i]
@@ -80,10 +80,10 @@ end
         fg = factor_graph(
             ig,
             max_cl_states,
-            spectrum = brute_force, 
+            spectrum = brute_force,
             cluster_assignment_rule=super_square_lattice((m, n, t))
         )
-        
+
         @test nv(fg) == s^2
 
         if s > 1
@@ -91,9 +91,5 @@ end
                 @test has_edge(fg, (l,k), (l+1,k-1))
             end
         end
-
-
     end
 end
-
-
