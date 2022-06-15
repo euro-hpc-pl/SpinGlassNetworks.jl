@@ -49,7 +49,17 @@
         @test linear_to_nice(16, 111) == (0, 6, 0, 0, 3)
     end
 
+    @testset "nice_to_dattani" begin
+        @test nice_to_dattani((2, 5, 6, 1, 3)) == (6, 5, 2, 1, 3)
+    end
 
+    @testset "dattani_to_linear" begin
+        python_P16_dtl = Dict((12, 7, 1, 1, 0) => 4501, (6, 10, 1, 0, 0) => 2409, 
+                    (3, 2, 2, 0, 1) => 1146, (9, 0, 2, 0, 3)=> 3260, (10, 3, 1, 0, 2) => 3683)
+        for i in keys(python_P16_dtl)
+            @test dattani_to_linear(16, i) == python_P16_dtl[i]
+        end
+    end
 end
 
 # This test takes long time.

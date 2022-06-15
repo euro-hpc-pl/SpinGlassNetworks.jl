@@ -4,11 +4,13 @@ export
     linear_to_pegasus,
     pegasus_to_nice,
     linear_to_nice,
+    nice_to_dattani,
+    dattani_to_linear,
     droplets_to_pegasus_nice
 
 
 const Instance = Union{String, Dict}
-const IsingGraph = LabelledGraph{MetaGraph{Int64, Float64}, Int64}
+
 
 """
 Rewriten from Dwave-networkx
@@ -24,7 +26,7 @@ end
 """
 Rewriten from Dwave-networkx
 """
-function pegasus_to_nice(p::NTuple{4, Int64}) #TODO: Write it better. Now it is rewriten verbatim.
+function pegasus_to_nice(p::NTuple{4, Int}) #TODO: Write it better. Now it is rewriten verbatim.
     u, w, k, z = p
 
     t = (2-u-(2*u-1)*floor(k/4)) % 3
@@ -70,9 +72,13 @@ function pegasus_to_nice(p::NTuple{4, Int64}) #TODO: Write it better. Now it is 
     end
 end
 
+"""
+Rewriten from Dwave-networkx
+"""
 function linear_to_nice(size::Int, r::Int)
     pegasus_to_nice(linear_to_pegasus(size, r))
 end
+
 
 function droplets_to_pegasus_nice(instance::Instance)
     ig = ising_graph(instance)
@@ -81,3 +87,17 @@ function droplets_to_pegasus_nice(instance::Instance)
 
 end
 
+"""
+Changes pegasus_nice tuple into tuple from Dattani's paper. 
+It is worth noting that two last indexes in Dattani's paper corespond to binary representatation of number from [0,1,2,3]
+"""
+function nice_to_dattani(pn::NTuple{5, Int})
+    (pn[3], pn[2], pn[1], pn[4], pn[5])
+end
+
+"""
+Changes tuple into linear index inspired by Dattani's paper
+"""
+function dattani_to_linear(size::Int, d::NTuple{5, Int})
+    24*(size - 1) * d[1] + 24 * d[2] + 8 * d[3] + 4 * d[4] + d[5] + 1
+end
