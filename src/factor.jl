@@ -1,5 +1,11 @@
-export factor_graph, rank_reveal, projectors, split_into_clusters
-export decode_factor_graph_state, energy, cluster_size
+export
+    factor_graph,
+    rank_reveal,
+    projectors,
+    split_into_clusters,
+    decode_factor_graph_state,
+    energy,
+    cluster_size
 
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)

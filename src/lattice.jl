@@ -1,4 +1,7 @@
-export super_square_lattice, pegasus_lattice, pegasus_lattice_flip12
+export
+    super_square_lattice,
+    pegasus_lattice,
+    pegasus_lattice_flip12
 
 "Variable number of Ising graph -> Factor graph coordinate system"
 function super_square_lattice(size::NTuple{5, Int})
@@ -25,4 +28,3 @@ function pegasus_lattice(size::NTuple{3, Int})
     end
     map
 end
-
