@@ -54,3 +54,20 @@ function pegasus_lattice_tomek(size::NTuple{3, Int})
     end
     map
 end
+
+#=
+function zephyr_lattice(size::NTuple{3, Int})
+m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
+map = Dict()
+# odd columns
+for i=1:2:2*m+1, j=1:n
+    for p in 1:2*t
+        push!(map, (i-1)*(2*n*t) + (p-1)*n + (j-1) => (i,j,1))
+    end
+end
+#even columns
+    for i=0:2:2*m, j=1:n+1
+
+    end
+end
+=#
