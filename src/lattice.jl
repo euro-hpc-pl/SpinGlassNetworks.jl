@@ -55,19 +55,37 @@ function pegasus_lattice_tomek(size::NTuple{3, Int})
     map
 end
 
-#=
-function zephyr_lattice(size::NTuple{3, Int})
+
+function zephyr_lattice(size::NTuple{3, Int})::Dict{Int, NTuple{3, Int}}
 m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
 map = Dict()
-# odd columns
-for i=1:2:2*m+1, j=1:n
-    for p in 1:2*t
-        push!(map, (i-1)*(2*n*t) + (p-1)*n + (j-1) => (i,j,1))
-    end
-end
-#even columns
-    for i=0:2:2*m, j=1:n+1
 
+for i=1:2*n, j=1:2*m
+    for p in p_func(i, j, t)
+        push!(map, (i-1)*(2*n*t) + (j-1)*(2*m*t) + p*n + (i-1)*(j%2) => (i,j,1))
     end
+    
+    for q in q_func(i, j, t)
+        push!(map, 2*t*(2*n+1) + (i-1)*(2*n*t) + (j%2)*(2*m*t) + q*m + (j-1)*(i-1) => (i,j,2))
+    end
+   
 end
-=#
+map
+end
+
+function flag_horizontal(i::Int, j::Int)
+    (i+j)%2 == 1 ? true : false 
+end
+
+function flag_vertical(i::Int, j::Int)
+    (i+j)%2 == 0 ? true : false 
+end
+
+
+function p_func(i::Int, j::Int, t::Int)
+    flag_horizontal(i, j) ? collect(1:2:2*t) : collect(1:2*t)
+end
+
+function q_func(i::Int, j::Int, t::Int)
+    flag_vertical(i, j) ? collect(1:2:2*t) : collect(1:2*t)
+end
