@@ -3,7 +3,8 @@ export
     pegasus_lattice,
     pegasus_lattice_masoud,
     pegasus_lattice_tomek,
-    zephyr_lattice
+    zephyr_lattice,
+    j_function
     
 "Variable number of Ising graph -> Factor graph coordinate system"
 function super_square_lattice(size::NTuple{5, Int})
@@ -56,11 +57,11 @@ function pegasus_lattice_tomek(size::NTuple{3, Int})
 end
 
 
-function zephyr_lattice(size::NTuple{3, Int})::Dict{Int, NTuple{3, Int}}
+function zephyr_lattice_z1(size::NTuple{3, Int})
 m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
-map = Dict()
+map = Dict{Int, NTuple{3, Int}}()
 
-for i=1:2*n, j=1:2*m
+for i=1:2*n, j in 1:2*m
     for p in p_func(i, j, t)
         push!(map, (i-1)*(2*n*t) + (j-1)*(2*m*t) + p*n + (i-1)*(j%2) => (i,j,1))
     end
@@ -73,12 +74,31 @@ end
 map
 end
 
+
+function zephyr_lattice_boundary(size::NTuple{3, Int})
+    m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
+    map = Dict{Int, NTuple{3, Int}}()
+    
+    for i=1:2*n, j in j_function(i, n)
+        for p in p_func(i, j, t)
+            push!(map,  p*n + i%n  => (i,j,1))
+        end
+        
+        for q in q_func(i, j, t)
+            push!(map,  q*m  => (i,j,2))
+        end
+       
+    end
+    map
+    end
+
+
 function flag_horizontal(i::Int, j::Int)
-    (i+j)%2 == 1 ? true : false 
+    (i ∈ 1:n && j ∈ (m + 1):2*m) || (i ∈ (n+1): 2*n && j ∈ 1:m) ? true : false 
 end
 
 function flag_vertical(i::Int, j::Int)
-    (i+j)%2 == 0 ? true : false 
+    (i ∈ 1:n && j ∈ 1:m) || (i ∈ (n+1): 2*n && j ∈ (m + 1):2*m) ? true : false 
 end
 
 
@@ -88,4 +108,12 @@ end
 
 function q_func(i::Int, j::Int, t::Int)
     flag_vertical(i, j) ? collect(1:2:2*t) : collect(1:2*t)
+end
+
+function j_function(i::Int, n::Int)
+    if i in collect(1:n)
+        return collect((n + 1 - i):(n + i))
+    else 
+        return collect((i-n):(3*n + 1 - i))
+    end
 end
