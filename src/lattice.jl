@@ -4,6 +4,7 @@ export
     pegasus_lattice_masoud,
     pegasus_lattice_tomek,
     zephyr_lattice,
+    zephyr_lattice_z1,
     j_function
     
 "Variable number of Ising graph -> Factor graph coordinate system"
@@ -58,20 +59,20 @@ end
 
 
 function zephyr_lattice_z1(size::NTuple{3, Int})
-m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
-map = Dict{Int, NTuple{3, Int}}()
+    m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
+    map = Dict{Int, NTuple{3, Int}}()
 
-for i=1:2*n, j in 1:2*m
-    for p in p_func(i, j, t)
-        push!(map, (i-1)*(2*n*t) + (j-1)*(2*m*t) + p*n + (i-1)*(j%2) => (i,j,1))
-    end
+    for i=1:2*n, j in 1:2*m
+        for p in p_func(i, j, t, n, m)
+            push!(map, (i-1)*(2*n*t) + (j-1)*(2*m*t) + p*n + (i-1)*(j%2) => (i,j,1))
+        end
+        
+        for q in q_func(i, j, t, n, m)
+            push!(map, 2*t*(2*n+1) + (i-1)*(2*n*t) + (j%2)*(2*m*t) + q*m + (j-1)*(i-1) => (i,j,2))
+        end
     
-    for q in q_func(i, j, t)
-        push!(map, 2*t*(2*n+1) + (i-1)*(2*n*t) + (j%2)*(2*m*t) + q*m + (j-1)*(i-1) => (i,j,2))
     end
-   
-end
-map
+    map
 end
 
 
@@ -80,11 +81,11 @@ function zephyr_lattice_boundary(size::NTuple{3, Int})
     map = Dict{Int, NTuple{3, Int}}()
     
     for i=1:2*n, j in j_function(i, n)
-        for p in p_func(i, j, t)
+        for p in p_func(i, j, t, n, m)
             push!(map,  p*n + i%n  => (i,j,1))
         end
         
-        for q in q_func(i, j, t)
+        for q in q_func(i, j, t, n, m)
             push!(map,  q*m  => (i,j,2))
         end
        
@@ -93,21 +94,21 @@ function zephyr_lattice_boundary(size::NTuple{3, Int})
     end
 
 
-function flag_horizontal(i::Int, j::Int)
+function flag_horizontal(i::Int, j::Int, n::Int, m::Int)
     (i ∈ 1:n && j ∈ (m + 1):2*m) || (i ∈ (n+1): 2*n && j ∈ 1:m) ? true : false 
 end
 
-function flag_vertical(i::Int, j::Int)
+function flag_vertical(i::Int, j::Int, n::Int, m::Int)
     (i ∈ 1:n && j ∈ 1:m) || (i ∈ (n+1): 2*n && j ∈ (m + 1):2*m) ? true : false 
 end
 
 
-function p_func(i::Int, j::Int, t::Int)
-    flag_horizontal(i, j) ? collect(1:2:2*t) : collect(1:2*t)
+function p_func(i::Int, j::Int, t::Int, n::Int, m::Int)
+    flag_horizontal(i, j, n, m) ? collect(1:2:2*t) : collect(1:2*t)
 end
 
-function q_func(i::Int, j::Int, t::Int)
-    flag_vertical(i, j) ? collect(1:2:2*t) : collect(1:2*t)
+function q_func(i::Int, j::Int, t::Int, n::Int, m::Int)
+    flag_vertical(i, j, n, m) ? collect(1:2:2*t) : collect(1:2*t)
 end
 
 function j_function(i::Int, n::Int)
