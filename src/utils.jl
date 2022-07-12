@@ -6,8 +6,11 @@ export
     linear_to_nice,
     nice_to_dattani,
     dattani_to_linear,
-    droplets_to_pegasus_nice
+    droplets_to_pegasus_nice,
+    linear_to_zephyr,
+    zephyr_to_linear
 
+    
 const Instance = Union{String, Dict}
 
 """
@@ -84,4 +87,35 @@ Changes tuple into linear index inspired by Dattani's paper
 """
 function dattani_to_linear(size::Int, d::NTuple{5, Int})
     24 * (size - 1) * d[1] + 24 * d[2] + 8 * d[3] + 4 * d[4] + d[5] + 1
+end
+
+"""
+Rewriten from Dwave-networkx
+"""
+function linear_to_zephyr(m::Int, t::Int, ind::Int)
+    # m - Grid parameter for the Zephyr lattice.
+    # t - Tile parameter for the Zephyr lattice; must be even.
+
+    M = 2 * m + 1
+
+    ind, z = divrem(ind, m)
+    ind, j = divrem(ind, 2)
+    ind, k = divrem(ind, t)
+    u, w = divrem(ind, M)
+
+    (u, w, k, j, z)
+end
+
+"""
+Rewriten from Dwave-networkx
+"""
+function zephyr_to_linear(m::Int, t::Int, q::NTuple{5, Int})
+    # m - Grid parameter for the Zephyr lattice.
+    # t - Tile parameter for the Zephyr lattice; must be even.
+
+    M = 2 * m + 1
+    u, w, k, j, z = q
+    ind = (((u * M + w) * t + k) * 2 + j) * m + z
+
+    ind
 end
