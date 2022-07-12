@@ -134,3 +134,14 @@ function j_function(i::Int, n::Int)
         return collect((i-n):(3*n + 1 - i))
     end
 end
+
+function zephyr_lattice_z1_5tuple(size::NTuple{3, Int})
+    m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
+    map = Dict{Int, NTuple{3, Int}}()
+
+    # ( u, w, k, ζ, z)
+
+    for u ∈ 0:1, w ∈ 0:2*m, k ∈ 0:t-1, ζ ∈ 0:1, z ∈ 0:n-1
+        push!(map, zephyr_to_linear(m, t, ()) => (i, j, u + 1))
+    end
+end
