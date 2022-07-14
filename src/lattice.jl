@@ -6,7 +6,7 @@ export
     zephyr_lattice,
     zephyr_lattice_z1,
     j_function,
-    zephyr_lattice_z1_5tuple
+    zephyr_lattice_5tuple
     
 "Variable number of Ising graph -> Factor graph coordinate system"
 function super_square_lattice(size::NTuple{5, Int})
@@ -136,7 +136,7 @@ function j_function(i::Int, n::Int)
     end
 end
 
-function zephyr_lattice_z1_5tuple(size::NTuple{3, Int})
+function zephyr_lattice_5tuple(size::NTuple{3, Int})
     m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
     map = Dict{Int, NTuple{3, Int}}()
 
@@ -155,11 +155,10 @@ function zephyr_lattice_z1_5tuple(size::NTuple{3, Int})
         for w ∈ 0:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, (i,z) ∈ enumerate(0:n-1)
             push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) + 1 => (w + 1, 2*i, 2))
         end
-        for w ∈ 0:2*m, k ∈ 0:t-1, ζ ∈ 0:1, z ∈ 0:n-1
+        for w ∈ 1:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, z ∈ 0:n-1
             push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) + 1 => (w + 1, 2*z + 2*ζ + u, 2))
         end
     end
-    
     map
 
 end
