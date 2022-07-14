@@ -6,7 +6,8 @@ export
     zephyr_lattice,
     zephyr_lattice_z1,
     j_function,
-    zephyr_lattice_5tuple
+    zephyr_lattice_5tuple,
+    zephyr_lattice_5tuple_rotated
     
 "Variable number of Ising graph -> Factor graph coordinate system"
 function super_square_lattice(size::NTuple{5, Int})
@@ -144,21 +145,49 @@ function zephyr_lattice_5tuple(size::NTuple{3, Int})
 
     for u = 0
         for w ∈ 0:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, (i,z) ∈ enumerate(0:n-1)
-            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) + 1 => (2*i, w + 1, 1))
+            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) => (2*i, w + 1, 1))
         end
         for w ∈ 1:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, z ∈ 0:n-1
-            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) + 1 => (2*z + 2*ζ + 1, w + 1, 1))
+            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) => (2*z + 2*ζ + 1, w + 1, 1))
         end
     end
 
     for u = 1
         for w ∈ 0:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, (i,z) ∈ enumerate(0:n-1)
-            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) + 1 => (w + 1, 2*i, 2))
+            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) => (w + 1, 2*i, 2))
         end
         for w ∈ 1:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, z ∈ 0:n-1
-            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) + 1 => (w + 1, 2*z + 2*ζ + u, 2))
+            push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) => (w + 1, 2*z + 2*ζ + u, 2))
         end
     end
     map
 
+end
+
+function rotate(m::Int, n::Int)
+    new_dict = Dict{NTuple{3, Int}, NTuple{3, Int}}()
+    for (k,j) ∈ enumerate(1:2:m)
+        for (l,i) ∈ enumerate(n-1:-2:1)
+            push!(new_dict, (i,j,1) => (i/2 + k - 1, l + k - 1, 1))
+            push!(new_dict, (i,j,2) => (i/2 + k - 1, l + k - 1, 2))
+        end
+    end
+
+    for (k,j) ∈ enumerate(2:2:m)
+        for (l,i) ∈ enumerate(n:-2:1)
+            push!(new_dict, (i,j,1) => ((i-1)/2 + k, l + k - 1, 1))
+            push!(new_dict, (i,j,2) => ((i-1)/2 + k, l + k - 1, 2))
+        end
+    end
+    new_dict
+
+end
+
+function zephyr_lattice_5tuple_rotated(m::Int, n::Int, map::Dict{Int, NTuple{3, Int}})
+    rotated_map = rotate(m, n)
+    new_map = Dict{Int, NTuple{3, Int}}()
+    for k in keys(map)
+        push!(new_map, k => rotated_map[map[k]])
+    end
+    new_map
 end
