@@ -3,8 +3,6 @@ export
     pegasus_lattice,
     pegasus_lattice_masoud,
     pegasus_lattice_tomek,
-    zephyr_lattice,
-    zephyr_lattice_z1,
     j_function,
     zephyr_lattice_5tuple,
     zephyr_lattice_5tuple_rotated
@@ -75,58 +73,6 @@ function zephyr_lattice_z1(size::NTuple{3, Int})
     
     end
     map
-end
-
-
-function zephyr_lattice_boundary(size::NTuple{3, Int})
-    m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
-    map = Dict{Int, NTuple{3, Int}}()
-    
-    for i=1:2*n, j in [j_function(i, n)[begin], j_function(i, n)[end]]
-        for p in p_func(i, j, t, n, m)
-            push!(map, (i-1)*(2*n*t) + p*n + (j-m)*2m*t + max(0, i-j) + Int(flag_down(i, j, n, m))*(n-1) + 1 => (i,j,1))
-        end
-        
-        for q in q_func(i, j, t, n, m)
-            push!(map, 2*n*t*(2*n+1) + q*m  + 1 => (i,j,2))
-        end
-       
-    end
-    map
-    end
-
-
-function flag_left(i::Int, j::Int, n::Int, m::Int)
-    (i ∈ 1:n && j == m - i + 1) ? true : false
-end
-
-function flag_right(i::Int, j::Int, n::Int, m::Int)
-    (i ∈ n+1:2*n && j == 3*m + 1 - i) ? true : false
-end
-
-function flag_up(i::Int, j::Int, n::Int, m::Int)
-    (i == j-n  && j ∈ m + 1:2*m ) ? true : false
-end
-
-function flag_down(i::Int, j::Int, n::Int, m::Int)
-    (i == j + n  && j ∈ 1:m ) ? true : false
-end
-
-function flag_horizontal(i::Int, j::Int, n::Int, m::Int)
-    flag_down(i, j, n, m) || flag_up(i, j, n, m)  ? true : false 
-end
-
-function flag_vertical(i::Int, j::Int, n::Int, m::Int)
-    flag_left(i, j, n, m) || flag_right(i, j, n, m) ? true : false 
-end
-
-
-function p_func(i::Int, j::Int, t::Int, n::Int, m::Int)
-    flag_horizontal(i, j, n, m) ? collect(0:2:2*t-1) : collect(0:2*t-1)
-end
-
-function q_func(i::Int, j::Int, t::Int, n::Int, m::Int)
-    flag_vertical(i, j, n, m) ? collect(0:2:2*t-1) : collect(0:2*t-1)
 end
 
 function j_function(i::Int, n::Int)
