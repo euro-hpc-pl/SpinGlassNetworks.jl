@@ -129,11 +129,53 @@ function rotate(m::Int, n::Int)
 
 end
 
+function empty_clusters(m::Int, n::Int)
+    p = (m - 1) / 2
+    count = 0
+    ii = []
+    for (i, j) ∈ enumerate(1:p-1)
+        count += i
+        push!(ii, i)
+    end
+    (count, reverse(ii))
+end
+
 function zephyr_lattice_5tuple_rotated(m::Int, n::Int, map::Dict{Int, NTuple{3, Int}})
-    rotated_map = rotate(m, n)
+    rotated_map = rotate(m, n) #5, 5, for Z2
     new_map = Dict{Int, NTuple{3, Int}}()
+
+    (empty, ii) = empty_clusters(m, n)
     for k in keys(map)
         push!(new_map, k => rotated_map[map[k]])
     end
+
+    empty_vertices = empty_indexing(m,n)
+    for (k,l) ∈ enumerate(empty_vertices)
+        push!(new_map, -k => l)
+    end    
     new_map
+end
+
+function empty_indexing(m::Int, n::Int)
+    (empty, ii) = empty_clusters(m, n)
+    p = Int((m-1)/2)
+    empty_vertices = []
+    for (k,l) ∈ enumerate(ii)
+        for i in 1:l
+            push!(empty_vertices, (k, i, 1))
+            push!(empty_vertices, (k, i, 2))
+            push!(empty_vertices, (k, i + m - p + k - 1, 1))
+            push!(empty_vertices, (k, i + m - p + k - 1, 2))
+
+        end
+    end
+    for (k,l) ∈ enumerate(reverse(ii))
+        for i in 1:l
+            push!(empty_vertices, (k + m - p, i, 1))
+            push!(empty_vertices, (k + m - p, i, 2))
+            push!(empty_vertices, (k + m - p, ii[k] + m - p + k - i, 1))
+            push!(empty_vertices, (k + m - p, ii[k] + m - p + k - i, 2))
+        end
+    end
+    empty_vertices
 end
