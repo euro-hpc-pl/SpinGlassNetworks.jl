@@ -4,6 +4,7 @@ export
     pegasus_lattice_masoud,
     pegasus_lattice_tomek,
     j_function,
+    zephyr_lattice,
     zephyr_lattice_5tuple,
     zephyr_lattice_5tuple_rotated
     
@@ -81,6 +82,13 @@ function j_function(i::Int, n::Int)
     else 
         return collect((i-n):(3*n + 1 - i))
     end
+end
+
+zephyr_lattice(size::NTuple{2, Int}) = zephyr_lattice((size[1], size[2], 4))
+
+function zephyr_lattice(size::NTuple{3, Int})
+    m, n, t = size
+    zephyr_lattice_5tuple_rotated(m+1, n+1, zephyr_lattice_5tuple((Int(m/2), Int(n/2), t)))
 end
 
 function zephyr_lattice_5tuple(size::NTuple{3, Int})
