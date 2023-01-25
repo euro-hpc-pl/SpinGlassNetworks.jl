@@ -1,36 +1,23 @@
 
 
-Proj = Union{Vector{Int64}, Cuarray{Int64, 1}}
+export
+    PoolOfProjectors
 
+const Proj{T} = Union{Vector{T}, CuArray{T, 1}}
 
-struct list_of_projectors
-    default_decive = CPU
-    data :: Dict{devices, Dict{Int64, Proj}}   #  kazdy klucz ma element na cpu
-    ## jak kontrolowac czy okiekt na gpu czy na cpu?
-    # osobne miejsce 
+struct PoolOfProjectors{T}
+    data::Dict{Symbol, Dict{Int, Proj{T}}}
+    default_device::Symbol
 
-length(lp::list_of_projectors, index::Int64) = length(lp.data[lp.default_device][index])
-
-
-function clear_memory(lp, device)
-
-function get_projector(lp :: list_of_projectors, index::Proj_keys, device::Int64; view::Symbol = :1D)
-    # sprawdz czy index in lp.data[device]; jesli nie to go dodaj biorac dane z lp.data[default_device]
-    return lp.data[device][index]  #  dodac element do dataGPU jak jest na cpu, ale nie na gpu ???
+    PoolOfProjectors(data:::Dict{Int, Dict{Int, Vector{T}}}) where T = new{T}(data, :CPU)
 end
 
+Base.eltype(lp::PoolOfProjectors{T}) where T = T
+Base.length(lp::PoolOfProjectors, index::Int) = length(lp.data[lp.default_device][index])
+Base.empty(lp::PoolOfProjectors, device::Symbol) = empty!(lp.data[device])
 
-function get_projector_CSC(lp :: list_of_projectors, index::Proj_keys, device::Int64)
+function get_projector!(lp::PoolOfProjectors, index::Int, device::Symbol)
+
     # sprawdz czy index in lp.data[device]; jesli nie to go dodaj biorac dane z lp.data[default_device]
-    return lp.data[device][index]  #  dodac element do dataGPU jak jest na cpu, ale nie na gpu ???
-end
-
-
-function add_projector(lp :: list_of_projectors, p::Proj)
-if p in values(lp.data)
-    key = key of p_in_lp.data
-else
-    key = generate_new_key
-    add!(lp.data, key => p)
-return key
+    lp.data[device][index]  #  dodac element do dataGPU jak jest na cpu, ale nie na gpu ???
 end
