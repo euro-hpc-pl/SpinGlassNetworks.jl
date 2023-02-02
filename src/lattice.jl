@@ -6,7 +6,8 @@ export
     j_function,
     zephyr_lattice,
     zephyr_lattice_5tuple,
-    zephyr_lattice_5tuple_rotated
+    zephyr_lattice_5tuple_rotated,
+    periodic_lattice
     
 "Variable number of Ising graph -> Factor graph coordinate system"
 function super_square_lattice(size::NTuple{5, Int})
@@ -186,4 +187,27 @@ function empty_indexing(m::Int, n::Int)
         end
     end
     empty_vertices
+end
+
+function periodic_lattice(size::NTuple{3, Int})
+    m, n, t = size
+    map = super_square_lattice((m, n, t))
+    new_map  = Dict{Int, NTuple{2, Int}}()
+    for (key, val) in map
+        i, j = val
+        if i <= m/2
+            if j <= m/2
+                push!(new_map, key => (i, j))
+            elseif j > m/2
+                push!(new_map, key => (i, m-j+1))
+            end
+        elseif i > m/2
+            if j <= m/2
+                push!(new_map, key => (m-i+1, j))
+            elseif j > m/2
+                push!(new_map, key => (m-i+1, m-j+1))
+            end 
+        end
+    end
+    new_map
 end
