@@ -1,46 +1,67 @@
 
 
 export
-    PoolOfProjectors
+    PoolOfProjectors,
+    get_projector!,
+    add_projector!
 
 const Proj{T} = Union{Vector{T}, CuArray{T, 1}}
 
-struct PoolOfProjectors{T}
+struct PoolOfProjectors{T <: Integer}
     data::Dict{Symbol, Dict{Int, Proj{T}}}
     default_device::Symbol
 
-    PoolOfProjectors(data:::Dict{Int, Dict{Int, Vector{T}}}) where T = new{T}(data, :CPU)
+    PoolOfProjectors(data::Dict{Int, Dict{Int, Vector{T}}}) where T = new{T}(Dict(:CPU => data), :CPU)
+    PoolOfProjectors{T}() where T = new{T}(Dict(:CPU => Dict{Int, Proj{T}}()), :CPU)
 end
 
+
 Base.eltype(lp::PoolOfProjectors{T}) where T = T
+Base.length(lp::PoolOfProjectors) = length(lp.data[lp.default_device])
 Base.length(lp::PoolOfProjectors, index::Int) = length(lp.data[lp.default_device][index])
-Base.empty(lp::PoolOfProjectors, device::Symbol) = empty!(lp.data[device])
+Base.length(lp::PoolOfProjectors, device::Symbol) = length(lp.data[device])
+Base.empty!(lp::PoolOfProjectors, device::Symbol) = empty!(lp.data[device])
+
+get_projector!(lp::PoolOfProjectors, index::Int) = get_projector!(lp, index, lp.default_device)
 
 # TODO This is version for only one GPU
-function get_projector!(lp::PoolOfProjectors, index::Int, device::Symbol)
-    if device ∉ lp.data
-        push!(lp.data[device], index => CuArray(lp.data[default_device][index]))
+function get_projector!(lp::PoolOfProjectors{T}, index::Int, device::Symbol) where T <: Integer
+    if device ∉ keys(lp.data)
+        push!(lp.data, device => Dict{Int, Proj{T}}())
+    end
+
+    if index ∉ keys(lp.data[device])
+        if device == :GPU
+            p = CuArray{T}(lp.data[lp.default_device][index])
+        elseif device == :CPU
+            p = Array{T}(lp.data[lp.default_device][index])
+        else
+            throw(ArgumentError("device should be :CPU or :GPU"))
+        end
+        push!(lp.data[device], index => p)
     end
     lp.data[device][index]
 end
 
-#=
-buf_a = Mem.alloc(Mem.Unified, sizeof(a))
-d_a = unsafe_wrap(CuArray{Float32,3}, convert(CuPtr{Float32}, buf_a), dims)
-finalizer(d_a) do _
-    Mem.free(buf_a)
-end
-copyto!(d_a, a)
-=#
-
-#=
-function add_projector!(lp::PoolOfProjectors, p::Proj)
-    if p in values(lp.data)
-        key = key of p_in_lp.data
+function add_projector!(lp::PoolOfProjectors{T}, p::Proj) where T <: Integer
+    if lp.default_device == :CPU
+        p = Array{T}(p)
+    elseif lp.default_device == :GPU
+        p = CuArray{T}(p)
     else
-        key = generate_new_key
-        push!(lp.data, key => p)
+        throw(ArgumentError("default_device should be :CPU or :GPU"))
+    end
+    if p in values(lp.data[lp.default_device])
+        key = -1
+        for guess in keys(lp.data[lp.default_device])
+            if lp.data[lp.default_device][guess] == p
+                key = guess
+                break
+            end
+        end
+    else
+        key = length(lp.data[lp.default_device]) + 1
+        push!(lp.data[lp.default_device], key => p)
     end
     key
 end
-=#

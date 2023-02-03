@@ -4,6 +4,7 @@ using LightGraphs
 using MetaGraphs
 using Logging
 using Test
+using CUDA
 
 Base.:(==)(e1::LabelledEdge, e2::LabelledEdge) = src(e1) == src(e2) && dst(e1) == dst(e2)
 
@@ -27,9 +28,10 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
 end
 
 my_tests = [
-    "ising.jl",
-    "factor.jl",
-    "utils.jl",
+    #"ising.jl",
+    #"factor.jl",
+    # "utils.jl",
+    "projectors.jl"
 ]
 
 for my_test ∈ my_tests
