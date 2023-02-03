@@ -190,8 +190,9 @@ function empty_indexing(m::Int, n::Int)
 end
 
 function periodic_lattice(size::NTuple{3, Int})
-    m, n, t = size
-    map = super_square_lattice((m, n, t))
+    mm, nn, tt = size
+    m, n = 2*mm, 2*nn
+    map = super_square_lattice((m, n, 1))
     new_map  = Dict{Int, NTuple{2, Int}}()
     for (key, val) in map
         i, j = val
