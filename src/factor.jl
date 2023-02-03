@@ -131,11 +131,13 @@ function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
     en
 end
 
-function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
+function energy(fg::LabelledGraph{S, T}, lp::PoolOfProjectors, σ::Dict{T, Int}) where {S, T}
     en_fg = 0.0
     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
     for edge ∈ edges(fg)
-        pl, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
+        kl, kr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
+        pl = get_projector!(lp, kl)
+        pr = get_projector!(lp, kr)
         en = get_prop(fg, edge, :en)
         en_fg += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
     end
