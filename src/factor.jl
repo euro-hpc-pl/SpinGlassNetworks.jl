@@ -44,6 +44,8 @@ function factor_graph(
         set_props!(fg, v, Dict(:cluster => cl, :spectrum => sp))
     end
 
+    lp = PoolOfProjectors{Int64}()  # TODO: Have consistent way to specify type of Integers
+
     for (i, v) ∈ enumerate(vertices(fg)), w ∈ vertices(fg)[i+1:end]
         cl1, cl2 = get_prop(fg, v, :cluster), get_prop(fg, w, :cluster)
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
@@ -63,12 +65,18 @@ function factor_graph(
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
 
             add_edge!(fg, v, w)
+
+            kl = add_projector!(lp, pl)
+            kr = add_projector!(lp, pr)
+
             set_props!(
-                fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
+                fg, v, w, Dict(:outer_edges => outer_edges, :pl => kl, :en => en, :pr => kr)
             )
         end
     end
-    fg
+    # TODO: now we return two structure; Graph (contains keys of projectors); and our dict of projectors
+    # TODO: this should be cleaned
+    (fg, lp)
 end
 
 function factor_graph(
