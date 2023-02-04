@@ -21,6 +21,11 @@
         @test get_projector!(lp, 1) == p1
         @test get_projector!(lp, 2) == p2
 
+        @test length(lp, 1) == 6
+        @test length(lp, 2) == 4
+        @test size(lp, 1) == 3
+        @test size(lp, 2) == 3
+
         empty!(lp, lp.default_device)
         @test length(lp) == 0
     end

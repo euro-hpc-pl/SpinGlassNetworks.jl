@@ -10,9 +10,14 @@ const Proj{T} = Union{Vector{T}, CuArray{T, 1}}
 struct PoolOfProjectors{T <: Integer}
     data::Dict{Symbol, Dict{Int, Proj{T}}}
     default_device::Symbol
+    sizes::Dict{Int, Int}
 
-    PoolOfProjectors(data::Dict{Int, Dict{Int, Vector{T}}}) where T = new{T}(Dict(:CPU => data), :CPU)
-    PoolOfProjectors{T}() where T = new{T}(Dict(:CPU => Dict{Int, Proj{T}}()), :CPU)
+    PoolOfProjectors(data::Dict{Int, Dict{Int, Vector{T}}}) where T = new{T}(Dict(:CPU => data), 
+                                                                            :CPU, 
+                                                                            Dict{Int, Int}(k => maximum(v) for (k, v) ∈ data))
+    PoolOfProjectors{T}() where T = new{T}(Dict(:CPU => Dict{Int, Proj{T}}()), 
+                                           :CPU,
+                                           Dict{Int, Int}())
 end
 
 
@@ -21,6 +26,7 @@ Base.length(lp::PoolOfProjectors) = length(lp.data[lp.default_device])
 Base.length(lp::PoolOfProjectors, index::Int) = length(lp.data[lp.default_device][index])
 Base.length(lp::PoolOfProjectors, device::Symbol) = length(lp.data[device])
 Base.empty!(lp::PoolOfProjectors, device::Symbol) = empty!(lp.data[device])
+Base.size(lp::PoolOfProjectors, index::Int) = lp.sizes[index]
 
 get_projector!(lp::PoolOfProjectors, index::Int) = get_projector!(lp, index, lp.default_device)
 
@@ -62,6 +68,7 @@ function add_projector!(lp::PoolOfProjectors{T}, p::Proj) where T <: Integer
     else
         key = length(lp.data[lp.default_device]) + 1
         push!(lp.data[lp.default_device], key => p)
+        push!(lp.sizes, key => maximum(p))
     end
     key
 end
