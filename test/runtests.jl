@@ -30,7 +30,6 @@ end
 my_tests = [
     "ising.jl",
     "factor.jl",
-    "projectors.jl",
     "utils.jl",
 ]
 

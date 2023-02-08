@@ -6,7 +6,6 @@ module SpinGlassNetworks
     using DocStringExtensions
     using LinearAlgebra, MKL
     using Base.Cartesian
-    using CUDA
 
     import Base.Prehashed
 
@@ -85,7 +84,6 @@ module SpinGlassNetworks
         end
     end
 
-    include("idea_projectors.jl")
     include("ising.jl")
     include("spectrum.jl")
     include("lattice.jl")
