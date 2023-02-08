@@ -4,7 +4,7 @@ using LightGraphs
 using MetaGraphs
 using Logging
 using Test
-using CUDA
+
 
 Base.:(==)(e1::LabelledEdge, e2::LabelledEdge) = src(e1) == src(e2) && dst(e1) == dst(e2)
 
