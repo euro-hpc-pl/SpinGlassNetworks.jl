@@ -12,13 +12,16 @@ unique_nodes(ising_tuples) =
 const IsingGraph = LabelledGraph{MetaGraph{Int64,Float64},Int64}
 
 """
-$(TYPEDSIGNATURES)
+    ising_graph(instance::Union{String,Dict};
+    sgn::Number = 1.0,
+    rank_override::Dict{Int,Int} = Dict{Int,Int}())
 
-Create the Ising spin glass model.
-
+Create the Ising spin glass model as [LabelledGraph](https://juliapackages.com/p/labelledgraphs). 
+An 'instance' parameter can be given either as path to .txt file containng instance configuration, 
+or as a Dictionary ((node, node) => value), see [Preparing an instance](@ref)  
 # Details
 
-Store extra information
+Store extra information. Teststes
 """
 function ising_graph(
     instance::Instance;
@@ -62,6 +65,11 @@ rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
+"""
+    couplings(ig::IsingGraph)
+
+returns coupling as uppertriangular matrix
+"""
 function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
     for edge in edges(ig)
