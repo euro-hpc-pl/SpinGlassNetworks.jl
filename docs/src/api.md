@@ -5,8 +5,7 @@
 ```@meta
 CurrentModule = SpinGlassNetworks
 ```
-```@contents
-```
+
 
 
 ## Module
