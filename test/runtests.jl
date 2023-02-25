@@ -29,6 +29,7 @@ end
 
 my_tests = [
     "ising.jl",
+    "spectrum.jl",
     "factor.jl",
     "utils.jl",
 ]
