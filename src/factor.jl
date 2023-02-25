@@ -36,10 +36,9 @@ function factor_graph(
     spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T}
 ) where T
-    L = maximum(values(cluster_assignment_rule))
-
-    fg = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
-
+    fg = LabelledGraph{MetaDiGraph}(
+        sort(unique(values(cluster_assignment_rule)))
+    )
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
         set_props!(fg, v, Dict(:cluster => cl, :spectrum => sp))
@@ -70,9 +69,7 @@ function factor_graph(
     fg
 end
 
-function factor_graph(
-    ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
-) where T
+function factor_graph(ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}) where T
     factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
@@ -102,31 +99,14 @@ function decode_factor_graph_state(fg, state::Vector{Int})
     ret
 end
 
-"""
-TODO: write it better (for now this is only for testing).
-"""
-function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
-    en = zero(T)
-    for (i, σ) ∈ ig_state
-        en += get_prop(ig, i, :h) * σ
-        for (j, η) ∈ ig_state
-            if has_edge(ig, i, j)
-                en += σ * get_prop(ig, i, j, :J) * η / T(2)
-            elseif has_edge(ig, j, i)
-                en += σ * get_prop(ig, j, i, :J) * η / T(2)
-            end
-        end
-    end
-    en
-end
-
 function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg = 0
     for v ∈ vertices(fg)
         en_fg += get_prop(fg, v, :spectrum).energies[σ[v]]
     end
     for edge ∈ edges(fg)
-        pl, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
+        pl = get_prop(fg, edge, :pl)
+        pr = get_prop(fg, edge, :pr)
         en = get_prop(fg, edge, :en)
         en_fg += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
     end

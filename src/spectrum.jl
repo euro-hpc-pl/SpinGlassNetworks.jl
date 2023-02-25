@@ -24,10 +24,21 @@ function energy(σ::AbstractArray{State}, ig::IsingGraph)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
+function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
+    en = zero(T)
+    for (i, σ) ∈ ig_state
+        en += get_prop(ig, i, :h) * σ
+        for (j, η) ∈ ig_state
+            edge = has_edge(ig, i, j) ? (i, j) : (j, i)
+            en += T(1/2) * σ * get_prop(ig, edge..., :J) * η
+        end
+    end
+    en
+end
+
 function Spectrum(ig::IsingGraph{T}) where T
     L = nv(ig)
     N = 2^L
-
     energies = zeros(T, N)
     states = Vector{State}(undef, N)
 
@@ -40,7 +51,6 @@ function Spectrum(ig::IsingGraph{T}) where T
     Spectrum(energies, states)
 end
 
-#Only for testing purposes
 function gibbs_tensor(ig::IsingGraph, β::Real=1)
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))

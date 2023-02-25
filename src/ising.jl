@@ -87,10 +87,7 @@ Used only in MPS_search, would be obsolete if MPS_search uses QMps.
 function prune(ig::IsingGraph; atol::Real=1e-14)
     to_keep = vcat(
         findall(!iszero, degree(ig)),
-        findall(
-            x -> iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol=atol),
-            vertices(ig)
-        )
+        findall(x -> iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol=atol), vertices(ig))
     )
     gg = ig[ig.labels[to_keep]]
     labels = collect(vertices(gg.inner_graph))

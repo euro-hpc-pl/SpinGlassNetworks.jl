@@ -152,9 +152,7 @@ function create_example_factor_graph(::Type{T}) where T
     )
 end
 
-fg_state_to_spin = [
-   ([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])
-]
+fg_state_to_spin = [([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])]
 
 @testset "Decoding solution gives correct spin assignment" begin
 
@@ -204,7 +202,6 @@ function create_larger_example_factor_graph()
       (3, 6) => 1.1,
       (6, 9) => 0.7
    )
-
    ig = ising_graph(instance)
 
    assignment_rule = Dict(
@@ -218,21 +215,19 @@ function create_larger_example_factor_graph()
       8 => (2, 1),
       9 => (2, 2)
    )
-
    fg = factor_graph(
       ig,
       Dict{NTuple{2, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
-
    ig, fg
 end
 
 function factor_graph_energy(fg, state)
    # This is highly inefficient, but simple, which makes it suitable for testing.
    # If such a function is needed elsewhere, we need to implement it properly.
-   total_en = 0.0
+   total_en = 0
 
    # Collect local terms from each cluster
    for (s, v) ∈ zip(state, vertices(fg))
@@ -246,10 +241,8 @@ function factor_graph_energy(fg, state)
       edge_energy = en[pl, pr]
       total_en += edge_energy[state[i], state[j]]
    end
-
    total_en
 end
-
 
 @testset "Decoding solution gives spins configuration with corresponding energies" begin
    ig, fg = create_larger_example_factor_graph()
@@ -260,9 +253,8 @@ end
    for state ∈ all_states
       d = decode_factor_graph_state(fg, state)
       spins = zeros(length(d))
-      for (k, v) ∈ d
-         spins[k] = v
-      end
-      @test factor_graph_energy(fg, state) ≈ energy([Int.(spins)], ig)[]
-   end
+      for (k, v) ∈ d spins[k] = v end
+      σ = [Int.(spins)]
+      @test factor_graph_energy(fg, state) ≈ energy(σ, ig)[]
+    end
 end
