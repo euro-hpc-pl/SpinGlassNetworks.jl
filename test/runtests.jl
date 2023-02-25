@@ -28,9 +28,9 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
 end
 
 my_tests = [
-    #"ising.jl",
+    "ising.jl",
     "factor.jl",
-    #"utils.jl",
+    "utils.jl",
 ]
 
 for my_test ∈ my_tests

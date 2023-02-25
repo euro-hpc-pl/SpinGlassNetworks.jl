@@ -15,7 +15,7 @@ all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)..
 
 const State = Vector{Int}
 struct Spectrum
-    energies::Vector{<:Real}
+    energies::Vector{T<:Real}
     states::AbstractArray{State}
 end
 
@@ -70,8 +70,6 @@ function full_spectrum(ig::IsingGraph{T}; num_states::Int=1) where T
     Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 
-function inter_cluster_energy(
-    cl1_states::Vector{State}, J::Matrix{<:Real}, cl2_states::Vector{State}
-)
+function inter_cluster_energy(cl1_states::Vector{State}, J::Matrix{<:Real}, cl2_states::Vector{State})
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end

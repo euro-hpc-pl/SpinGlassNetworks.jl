@@ -57,7 +57,6 @@ end
 function zephyr_lattice_z1(size::NTuple{3, Int})
     m, n, t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
     map = Dict{Int, NTuple{3, Int}}()
-
     for i=1:2*n, j ∈ 1:2*m
         for p in p_func(i, j, t, n, m)
             push!(map, (i-1)*(2*n*t) + (j-1)*(2*m*t) + p*n + (i-1)*(j%2) + 1  => (i, j, 1))
@@ -85,9 +84,7 @@ end
 function zephyr_lattice_5tuple(size::NTuple{3, Int})
     m, n , t = size # t is identical to dwave (Tile parameter for the Zephyr lattice)
     map = Dict{Int, NTuple{3, Int}}()
-
     # ( u, w, k, ζ, z)
-
     for u = 0
         for w ∈ 0:2:2*m, k ∈ 0:t-1, ζ ∈ 0:1, (i,z) ∈ enumerate(0:n-1)
             push!(map, zephyr_to_linear(m, t, (u,w,k,ζ,z)) => (2*i, w + 1, 1))
@@ -106,7 +103,6 @@ function zephyr_lattice_5tuple(size::NTuple{3, Int})
         end
     end
     map
-
 end
 
 function rotate(m::Int, n::Int)
