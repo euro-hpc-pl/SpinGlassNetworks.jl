@@ -76,7 +76,7 @@ function factor_graph(
     factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
-function rank_reveal(energy, order=:PE)
+function rank_reveal(energy::Vector{Vector{T}}, order=:PE) where T <: Real
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2
     E, idx = unique_dims(energy, dim)
@@ -122,7 +122,9 @@ end
 
 function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg = 0
-    for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
+    for v ∈ vertices(fg)
+        en_fg += get_prop(fg, v, :spectrum).energies[σ[v]]
+    end
     for edge ∈ edges(fg)
         pl, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
         en = get_prop(fg, edge, :en)

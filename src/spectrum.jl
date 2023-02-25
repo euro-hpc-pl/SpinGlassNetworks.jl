@@ -15,7 +15,7 @@ all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)..
 
 const State = Vector{Int}
 struct Spectrum
-    energies::Vector{T<:Real}
+    energies::Vector{<:Real}
     states::AbstractArray{State}
 end
 
