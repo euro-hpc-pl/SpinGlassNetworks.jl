@@ -20,10 +20,9 @@ function unique_nodes(ising_tuples)
 end
 
 """
-Creates Ising graph, convention: H = sgn * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
+Creates Ising graph, convention: H = scale * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
 """
-function ising_graph(::Type{T}, inst::Instance; sgn::Real=1, rank_override::Dict=Dict{Int, Int}()) where T
-    # load the Ising instance
+function ising_graph(::Type{T}, inst::Instance; scale::Real=1, rank_override::Dict=Dict{Int, Int}()) where T
     if inst isa String
         ising = CSV.File(inst, types = [Int, Int, T], header=0, comment = "#")
     else
@@ -35,7 +34,7 @@ function ising_graph(::Type{T}, inst::Instance; sgn::Real=1, rank_override::Dict
     foreach(v -> set_prop!(ig, v, :rank, get(rank_override, v, 2)), vertices(ig))
 
     for (i, j, v) ∈ ising
-        v *= sgn
+        v *= T(scale)
         if i == j
             set_prop!(ig, i, :h, v)
         else
@@ -47,8 +46,8 @@ function ising_graph(::Type{T}, inst::Instance; sgn::Real=1, rank_override::Dict
     ig
 end
 
-function ising_graph(inst::Instance; sgn::Real=1, rank_override::Dict=Dict{Int, Int}())
-    ising_graph(Float64, inst; sgn = sgn, rank_override = rank_override)
+function ising_graph(inst::Instance; scale::Real=1, rank_override::Dict=Dict{Int, Int}())
+    ising_graph(Float64, inst; scale = scale, rank_override = rank_override)
 end
 Base.eltype(ig::IsingGraph{T}) where T = T
 

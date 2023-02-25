@@ -62,7 +62,7 @@ end
 
     ig = ising_graph(
         "$(@__DIR__)/instances/example.txt",
-        sgn=-1,
+        scale=-1,
         rank_override=Dict(1 => 3, 4 => 4)
     )
 

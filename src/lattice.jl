@@ -24,9 +24,11 @@ end
 pegasus_lattice(size::NTuple{2, Int}) = pegasus_lattice((size[1], size[2], 3))
 
 function pegasus_lattice(size::NTuple{3, Int})
-    m, n, t = size  # t is number of chimera units
+    m, n, t = size
     old = LinearIndices((1:8*t, 1:n, 1:m))
-    map = Dict(old[k, j, i] => (i, j, 1) for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 1:4))
+    map = Dict(
+        old[k, j, i] => (i, j, 1) for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 1:4)
+    )
     for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 5:8)
         push!(map, old[k, j, i] => (i, j, 2))
     end
@@ -35,9 +37,11 @@ end
 
 # TODO masoud / tomek should be removed from function names
 function pegasus_lattice_masoud(size::NTuple{3, Int})
-    m, n, t = size  # t is number of chimera units
+    m, n, t = size
     old = LinearIndices((1:8*t, 1:n, 1:m))
-    map = Dict(old[k, j, i] => (i, j, 2) for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 1:4))
+    map = Dict(
+        old[k, j, i] => (i, j, 2) for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 1:4)
+    )
     for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 5:8)
         push!(map, old[k, j, i] => (i, j, 1))
     end
@@ -45,9 +49,11 @@ function pegasus_lattice_masoud(size::NTuple{3, Int})
 end
 
 function pegasus_lattice_tomek(size::NTuple{3, Int})
-    m, n, t = size  # t is number of chimera units
+    m, n, t = size
     old = LinearIndices((1:8*t, 1:n, 1:m))
-    map = Dict(old[k, j, i] => (i, n-j+1, 2) for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 1:4))
+    map = Dict(
+        old[k, j, i] => (i, n-j+1, 2) for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 1:4)
+    )
     for i=1:m, j=1:n, k ∈ (p * 8 + q for p ∈ 0 : t-1, q ∈ 5:8)
         push!(map, old[k, j, i] => (i, n-j+1, 1))
     end
@@ -107,14 +113,14 @@ end
 
 function rotate(m::Int, n::Int)
     new_dict = Dict{NTuple{3, Int}, NTuple{3, Int}}()
-    for (k,j) ∈ enumerate(1:2:m)
+    for (k, j) ∈ enumerate(1:2:m)
         for (l,i) ∈ enumerate(n-1:-2:1)
             push!(new_dict, (i,j,1) => (i/2 + k - 1, l + k - 1, 1))
             push!(new_dict, (i,j,2) => (i/2 + k - 1, l + k - 1, 2))
         end
     end
 
-    for (k,j) ∈ enumerate(2:2:m)
+    for (k, j) ∈ enumerate(2:2:m)
         for (l,i) ∈ enumerate(n:-2:1)
             push!(new_dict, (i,j,1) => ((i-1)/2 + k, l + k - 1, 1))
             push!(new_dict, (i,j,2) => ((i-1)/2 + k, l + k - 1, 2))
@@ -125,8 +131,7 @@ end
 
 function empty_clusters(m::Int, n::Int)
     p = (m - 1) / 2
-    count = 0
-    ii = []
+    count, ii = 0, []
     for (i, j) ∈ enumerate(1:p-1)
         count += i
         push!(ii, i)
@@ -135,9 +140,8 @@ function empty_clusters(m::Int, n::Int)
 end
 
 function zephyr_lattice_5tuple_rotated(m::Int, n::Int, map::Dict{Int, NTuple{3, Int}})
-    rotated_map = rotate(m, n) #5, 5, for Z2
+    rotated_map = rotate(m, n)
     new_map = Dict{Int, NTuple{3, Int}}()
-
     (empty, ii) = empty_clusters(m, n)
     for k in keys(map)
         push!(new_map, k => rotated_map[map[k]])
@@ -154,7 +158,7 @@ function empty_indexing(m::Int, n::Int)
     (empty, ii) = empty_clusters(m, n)
     p = Int((m-1)/2)
     empty_vertices = []
-    for (k,l) ∈ enumerate(ii)
+    for (k, l) ∈ enumerate(ii)
         for i ∈ 1:l
             push!(empty_vertices, (k, i, 1))
             push!(empty_vertices, (k, i, 2))

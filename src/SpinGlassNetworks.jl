@@ -1,7 +1,7 @@
 module SpinGlassNetworks
     using LabelledGraphs
     using LightGraphs
-    using MetaGraphs # TODO: remove that
+    using MetaGraphs # TODO: to be replaced by MetaGraphsNext
     using CSV
     using DocStringExtensions
     using LinearAlgebra, MKL
