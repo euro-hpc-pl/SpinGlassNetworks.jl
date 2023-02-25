@@ -5,8 +5,8 @@ using LabelledGraphs
 @testset "Ising graph cannot be created" begin
     @testset "if input instance contains duplicate edges" begin
         for T ∈ [Float16, Float32, Float64]
-            @test_throws ArgumentError ising_graph(T,
-                Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0)
+            @test_throws ArgumentError ising_graph(
+                T, Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0)
             )
         end
     end
@@ -20,29 +20,26 @@ for T ∈ [Float16, Float32, Float64]
         @testset "Ising graph created from $(source)" begin
             expected_num_vertices = 3
             expected_biases = [T(1/10), T(1/2), T(0)]
-            expected_couplings = Dict(LabelledEdge(1, 2) => -T(3/10), LabelledEdge(1, 4) => -T(2), LabelledEdge(2, 4) => T(1))
+            expected_couplings = Dict(
+                LabelledEdge(1, 2) => -T(3/10), LabelledEdge(1, 4) => -T(2), LabelledEdge(2, 4) => T(1)
+            )
             expected_J_matrix = [[T(0) -T(3/10) -T(2)]; [T(0) T(0) T(1)]; [T(0) T(0) T(0)]]
 
             ig = ising_graph(T, instance)
             @test eltype(ig) == T
-
             @testset "contains the same number vertices as original instance" begin
                 @test nv(ig) == expected_num_vertices
             end
-
             @testset "has collection of edges comprising all interactions from instance" begin
                 # This test uses the fact that edges iterates in the lex ordering.
-                @test collect(edges(ig)) == [LabelledEdge(e...) for e in [(1, 2), (1, 4), (2, 4)]]
+                @test collect(edges(ig)) == [LabelledEdge(e...) for e ∈ [(1, 2), (1, 4), (2, 4)]]
             end
-
             @testset "stores biases as property of vertices" begin
                 @test biases(ig) == expected_biases
             end
-
             @testset "stores couplings both as property of edges and its own property" begin
                 @test couplings(ig) == expected_J_matrix
             end
-
             @testset "has default rank stored for each active vertex" begin
                 @test get_prop(ig, :rank) == Dict(1 => 2, 2 => 2, 4 => 2)
             end

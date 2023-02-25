@@ -9,7 +9,7 @@ using Test
 Base.:(==)(e1::LabelledEdge, e2::LabelledEdge) = src(e1) == src(e2) && dst(e1) == dst(e2)
 
 function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
-    eng = zeros(1,n)
+    eng = zeros(1, n)
     for (i, j) ∈ keys(cedges)
         for (k, l) ∈ values(cedges[i, j])
             for m ∈ 1:length(config[k])
@@ -28,8 +28,8 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
 end
 
 my_tests = [
-    "ising.jl",
-    #"factor.jl",
+    #"ising.jl",
+    "factor.jl",
     #"utils.jl",
 ]
 

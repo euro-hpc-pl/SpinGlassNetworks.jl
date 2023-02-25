@@ -12,27 +12,29 @@ enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
 
    instance = "$(@__DIR__)/instances/chimera_droplets/$(L)power/001.txt"
 
-   ig = ising_graph(instance)
+   for T ∈ [Float16, Float32, Float64]
+        ig = ising_graph(T, instance)
 
-   fg = factor_graph(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t)))
+        fg = factor_graph(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t)))
 
-   @test collect(vertices(fg)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
+        @test collect(vertices(fg)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
 
-   clv = []
-   cle = []
-   rank = rank_vec(ig)
+        clv = []
+        cle = []
+        rank = rank_vec(ig)
 
-   for v ∈ vertices(fg)
-      cl = get_prop(fg, v, :cluster)
-      push!(clv, vertices(cl))
-      push!(cle, collect(edges(cl)))
+        for v ∈ vertices(fg)
+            cl = get_prop(fg, v, :cluster)
+            push!(clv, vertices(cl))
+            push!(cle, collect(edges(cl)))
 
-      @test rank_vec(cl) == get_prop.(Ref(ig), vertices(cl), :rank)
-   end
+            @test rank_vec(cl) == get_prop.(Ref(ig), vertices(cl), :rank)
+        end
 
-   # Check if graph is factored correctly
-   @test isempty(intersect(clv...))
-   @test isempty(intersect(cle...))
+        # Check if graph is factored correctly
+        @test isempty(intersect(clv...))
+        @test isempty(intersect(cle...))
+    end
 end
 
 @testset "Factor graph builds on pathological instance" begin
@@ -73,83 +75,81 @@ end
    )
 
    d = 2
-   rank = Dict(
-      c => fill(d, length(idx))
-      for (c,idx) ∈ cells if !isempty(idx)
-   )
-
+   rank = Dict(c => fill(d, length(idx)) for (c, idx) ∈ cells if !isempty(idx))
    bond_dimensions = [2, 2, 8, 4, 2, 2, 8]
 
-   fg = factor_graph(
-      ising_graph(instance),
-      spectrum=full_spectrum,
-      cluster_assignment_rule=super_square_lattice((m, n, t)),
-   )
+   for T ∈ [Float16, Float32, Float64]
+        ig = ising_graph(T, instance)
+        @test eltype(ig) == T
 
-   for (bd, e) in zip(bond_dimensions, edges(fg))
-      pl, en, pr = get_prop(fg, e, :pl), get_prop(fg, e, :en), get_prop(fg, e, :pr)
-      @test minimum(size(en)) == bd
-      @test maximum(pl) == size(en, 1)
-      @test maximum(pr) == size(en, 2)
-   end
+        fg = factor_graph(
+            ig,
+            spectrum=full_spectrum,
+            cluster_assignment_rule=super_square_lattice((m, n, t)),
+        )
 
-   for ((i, j), cedge) ∈ cedges
-      pl, en, pr = get_prop(fg, i, j, :pl), get_prop(fg, i, j, :en), get_prop(fg, i, j, :pr)
-      base_i = all_states(rank[i])
-      base_j = all_states(rank[j])
+        for (bd, e) in zip(bond_dimensions, edges(fg))
+            pl, en, pr = get_prop(fg, e, :pl), get_prop(fg, e, :en), get_prop(fg, e, :pr)
+            @test minimum(size(en)) == bd
+            @test maximum(pl) == size(en, 1)
+            @test maximum(pr) == size(en, 2)
+        end
 
-      idx_i = enum(cells[i])
-      idx_j = enum(cells[j])
+        for ((i, j), cedge) ∈ cedges
+            pl, en, pr = get_prop(fg, i, j, :pl), get_prop(fg, i, j, :en), get_prop(fg, i, j, :pr)
+            base_i = all_states(rank[i])
+            base_j = all_states(rank[j])
 
-      # Change it to test if energy is calculated using passed 'energy' function
-      energy = zeros(prod(rank[i]), prod(rank[j]))
+            idx_i = enum(cells[i])
+            idx_j = enum(cells[j])
 
-      for (ii, σ) ∈ enumerate(base_i)
-         for (jj, η) ∈ enumerate(base_j)
-            eij = 0.
-            for (k, l) ∈ values(cedge)
-               kk, ll = enum(cells[i])[k], enum(cells[j])[l]
-               s, r = σ[idx_i[k]], η[idx_j[l]]
-               J = couplings[k, l]
-               eij += s * J * r
+            # Change it to test if energy is calculated using passed 'energy' function
+            energy = zeros(T, prod(rank[i]), prod(rank[j]))
+
+            for (ii, σ) ∈ enumerate(base_i), (jj, η) ∈ enumerate(base_j)
+                eij = zero(T)
+                for (k, l) ∈ values(cedge)
+                    kk = enum(cells[i])[k]
+                    ll = enum(cells[j])[l]
+                    s = σ[idx_i[k]]
+                    r = η[idx_j[l]]
+                    J = couplings[k, l]
+                    eij += s * J * r
+                end
+                energy[ii, jj] = eij
             end
-            energy[ii, jj] = eij
-         end
-      end
-      @test energy ≈ en[pl, pr]
-   end
-
-   @testset "each cluster comprises expected cells" begin
-   for v ∈ vertices(fg)
-      cl = get_prop(fg, v, :cluster)
-
-      @test issetequal(vertices(cl), cells[v])
-   end
-   end
-
-   @testset "each edge comprises expected bunch of edges from source Ising graph" begin
-   for e ∈ edges(fg)
-      outer_edges = get_prop(fg, e, :outer_edges)
-
-      @test issetequal(cedges[(src(e), dst(e))], [(src(oe), dst(oe)) for oe ∈ outer_edges])
-   end
-   end
+            @test eltype(energy) == T == eltype(en)
+            @test energy ≈ en[pl, pr]
+        end
+        @testset "each cluster comprises expected cells" begin
+            for v ∈ vertices(fg)
+                cl = get_prop(fg, v, :cluster)
+                @test issetequal(vertices(cl), cells[v])
+            end
+        end
+        @testset "each edge comprises expected bunch of edges from source Ising graph" begin
+            for e ∈ edges(fg)
+                outer_edges = get_prop(fg, e, :outer_edges)
+                @test issetequal(cedges[(src(e), dst(e))], [(src(oe), dst(oe)) for oe ∈ outer_edges])
+            end
+        end
+    end
 end
 
-function create_example_factor_graph()
-   J12 = -1.0
-   h1 = 0.5
-   h2 = 0.75
+function create_example_factor_graph(::Type{T}) where T
+    J12 = -1
+    h1 = 1/2
+    h2 = 0.75
 
-   D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
-   ig = ising_graph(D)
+    D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
+    ig = ising_graph(T, D)
 
-   factor_graph(
-      ig,
-      Dict((1, 1) => 2, (1, 2) => 2),
-      spectrum = full_spectrum,
-      cluster_assignment_rule = Dict(1 => (1, 1), 2 => (1, 2)),
-  )
+    factor_graph(
+        ig,
+        Dict((1, 1) => 2, (1, 2) => 2),
+        spectrum = full_spectrum,
+        cluster_assignment_rule = Dict(1 => (1, 1), 2 => (1, 2)),
+    )
 end
 
 fg_state_to_spin = [
@@ -157,12 +157,16 @@ fg_state_to_spin = [
 ]
 
 @testset "Decoding solution gives correct spin assignment" begin
-   fg = create_example_factor_graph()
-   for (state, spin_values) ∈ fg_state_to_spin
-      d = decode_factor_graph_state(fg, state)
-      states = collect(values(d))[collect(keys(d))]
-      @test states == spin_values
-   end
+
+   for T ∈ [Float16, Float32, Float64]
+        fg = create_example_factor_graph(T)
+        @test all(eltype(get_prop(fg, e, :en)) == T for e ∈ edges(fg))
+        for (state, spin_values) ∈ fg_state_to_spin
+            d = decode_factor_graph_state(fg, state)
+            states = collect(values(d))[collect(keys(d))]
+            @test states == spin_values
+        end
+    end
 end
 
 """

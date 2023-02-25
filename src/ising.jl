@@ -13,14 +13,14 @@ export
     prune
 
 const Instance = Union{String, Dict}
-const IsingGraph{T} = LabelledGraph{MetaGraph{Int64, T}}
+const IsingGraph{T} = LabelledGraph{MetaGraph{Int, T}}
 
 function unique_nodes(ising_tuples)
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 end
 
 """
-Creates Ising graph, H = sgn * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
+Creates Ising graph, convention: H = sgn * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
 """
 function ising_graph(::Type{T}, inst::Instance; sgn::Real=1, rank_override::Dict=Dict{Int, Int}()) where T
     # load the Ising instance
