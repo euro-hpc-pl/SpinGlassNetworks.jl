@@ -22,6 +22,11 @@ using LabelledGraphs
         @test sum(R) ≈ sum(ρ) ≈ 1
         @test sp.energies ≈ energy(sp.states, ig)
         @test [ρ[idx.(σ)...] for σ ∈ sp.states] ≈ R
+
+        for (i, state) in enumerate(sp.states)
+            state_dict = Dict(i => s for (i, s) ∈ enumerate(state))
+            energy(ig, state_dict) ≈ sp.energies[i]
+        end
     end
 
     @testset "Naive brute force for general spins" begin

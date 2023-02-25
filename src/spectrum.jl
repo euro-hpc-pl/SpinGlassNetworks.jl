@@ -14,6 +14,7 @@ export
 all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)...)
 
 const State = Vector{Int}
+
 struct Spectrum
     energies::Vector{<:Real}
     states::AbstractArray{State}
@@ -29,8 +30,11 @@ function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
     for (i, σ) ∈ ig_state
         en += get_prop(ig, i, :h) * σ
         for (j, η) ∈ ig_state
-            edge = has_edge(ig, i, j) ? (i, j) : (j, i)
-            en += T(1/2) * σ * get_prop(ig, edge..., :J) * η
+            if has_edge(ig, i, j)
+                en += T(1/2) * σ * get_prop(ig, i, j, :J) * η
+            elseif has_edge(ig, j, i)
+                en += T(1/2) * σ * get_prop(ig, j, i, :J) * η
+            end
         end
     end
     en
@@ -51,7 +55,7 @@ function Spectrum(ig::IsingGraph{T}) where T
     Spectrum(energies, states)
 end
 
-function gibbs_tensor(ig::IsingGraph, β::Real=1)
+function gibbs_tensor(ig::IsingGraph{T}, β::T=1) where T
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))
     ρ ./ sum(ρ)
@@ -61,6 +65,7 @@ function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
     brute_force(ig, Val(s); num_states)
 end
 
+#TODO only one of brute_force and full_spectrum should remain
 function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
     L = nv(ig)
     L == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[])
@@ -70,7 +75,6 @@ function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
     Spectrum(sp.energies[idx], sp.states[idx])
 end
 
-#TODO: to be removed
 function full_spectrum(ig::IsingGraph{T}; num_states::Int=1) where T
     nv(ig) == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[])
     ig_rank = rank_vec(ig)
