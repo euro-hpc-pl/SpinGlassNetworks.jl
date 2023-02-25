@@ -24,11 +24,11 @@ function energy(σ::AbstractArray{State}, ig::IsingGraph)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
-function Spectrum(ig::IsingGraph)
+function Spectrum(ig::IsingGraph{T}) where T
     L = nv(ig)
     N = 2^L
 
-    energies = zeros(Float64, N)
+    energies = zeros(T, N)
     states = Vector{State}(undef, N)
 
     J, h = couplings(ig), biases(ig)
@@ -41,7 +41,7 @@ function Spectrum(ig::IsingGraph)
 end
 
 #Only for testing purposes
-function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
+function gibbs_tensor(ig::IsingGraph, β::Real=1)
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))
     ρ ./ sum(ρ)
@@ -51,9 +51,9 @@ function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
     brute_force(ig, Val(s); num_states)
 end
 
-function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
+function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
     L = nv(ig)
-    if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
+    L == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[])
     sp = Spectrum(ig)
     num_states = min(num_states, prod(rank_vec(ig)))
     idx = partialsortperm(vec(sp.energies), 1:num_states)
@@ -61,8 +61,8 @@ function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
 end
 
 #TODO: to be removed
-function full_spectrum(ig::IsingGraph; num_states::Int=1)
-    if nv(ig) == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
+function full_spectrum(ig::IsingGraph{T}; num_states::Int=1) where T
+    nv(ig) == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[])
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
     σ = collect.(all_states(ig_rank))
@@ -71,9 +71,7 @@ function full_spectrum(ig::IsingGraph; num_states::Int=1)
 end
 
 function inter_cluster_energy(
-    cl1_states::Vector{State},
-    J::Matrix{<:Real},
-    cl2_states::Vector{State}
+    cl1_states::Vector{State}, J::Matrix{<:Real}, cl2_states::Vector{State}
 )
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end

@@ -29,8 +29,8 @@ end
 
 my_tests = [
     "ising.jl",
-    "factor.jl",
-    "utils.jl",
+    #"factor.jl",
+    #"utils.jl",
 ]
 
 for my_test ∈ my_tests

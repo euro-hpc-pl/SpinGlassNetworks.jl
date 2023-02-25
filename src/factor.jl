@@ -7,10 +7,12 @@ export
     energy,
     cluster_size
 
+const FactorGraph{T} = LabelledGraph{MetaDiGraph{Int64, T}, Int64}
+
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
-function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
+function split_into_clusters(ig::IsingGraph, assignment_rule)
     cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
     for v in vertices(ig) push!(cluster_id_to_verts[assignment_rule[v]], v) end
     Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
@@ -21,23 +23,17 @@ Create factor graph.
 Factor graph order introduced as a natural order in factor graph coordinates.
 """
 function factor_graph(
-    ig::IsingGraph,
-    num_states_cl::Int;
-    spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
-) where T
+    ig::IsingGraph, num_states_cl::Int; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict
+)
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
     factor_graph(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
 function factor_graph(
-    ig::IsingGraph,
-    num_states_cl::Dict{T, Int};
-    spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T}
+    ig::IsingGraph{T}, num_states_cl::Dict{T, Int}; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict
 ) where T
     L = maximum(values(cluster_assignment_rule))
-    fg = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
+    fg = FactorGraph{T}(sort(unique(values(cluster_assignment_rule))))
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
@@ -63,22 +59,14 @@ function factor_graph(
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
 
             add_edge!(fg, v, w)
-            set_props!(
-                fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
-            )
+            set_props!(fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr))
         end
     end
-    # TODO: now we return two structure; Graph (contains keys of projectors); and our dict of projectors
-    # TODO: this should be cleaned
     fg
 end
 
-function factor_graph(
-    ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
-) where T
-    factor_graph(
-      ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule
-    )
+function factor_graph(ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict)
+    factor_graph(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
 function rank_reveal(energy, order=:PE)
@@ -94,7 +82,7 @@ Returns Dict(vertex of ising graph -> spin value)
 Assumes that state has the same order as vertices in factor graph!
 TODO: check the order consistency over external packages.
 """
-function decode_factor_graph_state(fg, state::Vector{Int})
+function decode_factor_graph_state(fg::FactorGraph, state::Vector{Int})
     ret = Dict{Int, Int}()
     for (i, vert) ∈ zip(state, vertices(fg))
         spins = get_prop(fg, vert, :cluster).labels
@@ -110,23 +98,23 @@ end
 """
 TODO: write it better (for now this is only for testing).
 """
-function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
-    en = 0.0
+function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
+    en = zero(T)
     for (i, σ) ∈ ig_state
         en += get_prop(ig, i, :h) * σ
         for (j, η) ∈ ig_state
             if has_edge(ig, i, j)
-                en += σ * get_prop(ig, i, j, :J) * η / 2.0
+                en += σ * get_prop(ig, i, j, :J) * η / T(2)
             elseif has_edge(ig, j, i)
-                en += σ * get_prop(ig, j, i, :J) * η / 2.0
+                en += σ * get_prop(ig, j, i, :J) * η / T(2)
             end
         end
     end
     en
 end
 
-function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
-    en_fg = 0.0
+function energy(fg::FactorGraph{T}, σ::Dict{S, Int}) where {S, T}
+    en_fg = zero(T)
     for v ∈ vertices(fg) en_fg += get_prop(fg, v, :spectrum).energies[σ[v]] end
     for edge ∈ edges(fg)
         pl, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :pr)
@@ -136,6 +124,4 @@ function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg
 end
 
-function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
-    length(get_prop(factor_graph, vertex, :spectrum).energies)
-end
+cluster_size(fg::FactorGraph, vertex) = length(get_prop(fg, vertex, :spectrum).energies)
