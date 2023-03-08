@@ -9,16 +9,18 @@ const Instance = Union{String,Dict}
 unique_nodes(ising_tuples) =
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 
+
+
 const IsingGraph = LabelledGraph{MetaGraph{Int64,Float64},Int64}
 
 """
 $(TYPEDSIGNATURES)
 
-Create the Ising spin glass model.
+Generate an Ising model graph from an input instance. 
 
 # Details
 
-Store extra information
+
 """
 function ising_graph(
     instance::Instance;
@@ -62,6 +64,9 @@ rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
+"""
+
+"""
 function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
     for edge in edges(ig)

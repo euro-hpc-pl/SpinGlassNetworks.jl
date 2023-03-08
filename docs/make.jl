@@ -1,9 +1,9 @@
 using Documenter, SpinGlassNetworks
 
 _pages = [
-    "Home" => "index.md",
+    "Introduction" => "index.md",
     "User guide" => "userguide.md",
-    "API" => "api.md"
+    "API Reference" => "api.md"
 ]
 
 # ============================
