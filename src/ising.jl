@@ -14,12 +14,9 @@ unique_nodes(ising_tuples) =
 const IsingGraph = LabelledGraph{MetaGraph{Int64,Float64},Int64}
 
 """
-$(TYPEDSIGNATURES)
+    ising_graph(instance, sgn::Number = 1.0, rank_override::Dict{Int,Int} = Dict{Int,Int}())
 
-Generate an Ising model graph from an input instance. 
-
-# Details
-
+Create an Ising model graph from an input instance. The in
 
 """
 function ising_graph(
@@ -60,12 +57,26 @@ function ising_graph(
     ig
 end
 
+"""
+    rank_vec(ising_graph)
+
+Return vector of 'ranks' of nodes. In this context rank tels us how many spins values node can have. 
+"""
 rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
+
+"""
+    biases(ising_graph)
+
+Return vector of biases of ising model defined by given 'ising_graph'.
+"""
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
 """
+    couplings(ising_graph)
 
+Return couplings of ising model defined by given 'ising_graph'. 
+The couplings are presented as an uper-triangular matrix 
 """
 function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
@@ -90,6 +101,12 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     outer_edges, J
 end
 
+
+"""
+    prune(ising_graph)
+
+Return copy of 'ising_graph' with removed isolated vertices.
+"""
 function prune(ig::IsingGraph)
     to_keep = vcat(
         findall(!iszero, degree(ig)),

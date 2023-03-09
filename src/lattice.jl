@@ -7,6 +7,11 @@ function super_square_lattice(size::NTuple{5,Int})
     Dict(old[k, uj, j, ui, i] => (i, j) for i = 1:m, ui = 1:um, j = 1:n, uj = 1:un, k = 1:t)
 end
 
+"""
+    super_square_lattice(size::NTuple{3,Int})
+
+Create clustering scheme for 
+"""
 function super_square_lattice(size::NTuple{3,Int})
     m, n, t = size
     super_square_lattice((m, 1, n, 1, t))
