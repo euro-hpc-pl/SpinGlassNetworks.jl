@@ -12,6 +12,15 @@ function split_into_clusters(ig::LabelledGraph{S,T}, assignment_rule) where {S,T
 end
 
 
+"""
+    function factor_graph(
+        ig::IsingGraph,
+        num_states_cl::Int;
+        spectrum::Function = full_spectrum,
+        cluster_assignment_rule::Dict
+
+See @Ref
+"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Int;
@@ -27,7 +36,27 @@ function factor_graph(
     )
 end
 
-function factor_graph(
+"""
+    factor_graph(
+        ig::IsingGraph,
+        num_states_cl::Dict;
+        spectrum::Function = full_spectrum,
+        cluster_assignment_rule::Dict) where {T}
+
+Constructs a factor graph representation of the given `IsingGraph`. 
+
+# Arguments
+- `ig::IsingGraph`: The Ising graph to convert to a factor graph.
+- `num_states_cl::Dict : A dictionary mapping each cluster to the number of states it can take on. If given empty dictionary
+    function will try to interfere number of states for each cluster.
+- `spectrum::Function`: A function that computes the spectrum (i.e., list of energies of all possible states) of
+  a given cluster. The default is `full_spectrum`, which computes the spectrum exactly.
+- `cluster_assignment_rule::Dict`: A dictionary that assigns each vertex of the Ising graph to a cluster.
+
+# Returns
+A `LabelledGraph` that represents the factor graph of the Ising graph.
+"""
+ function factor_graph(
     ig::IsingGraph,
     num_states_cl::Dict{T,Int};
     spectrum::Function = full_spectrum,
@@ -64,7 +93,8 @@ function factor_graph(
         end
     end
     fg
-end
+end   
+
 
 function factor_graph(
     ig::IsingGraph;
