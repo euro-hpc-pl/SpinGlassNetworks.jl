@@ -9,16 +9,29 @@ const Instance = Union{String,Dict}
 unique_nodes(ising_tuples) =
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
 
+
+
 const IsingGraph = LabelledGraph{MetaGraph{Int64,Float64},Int64}
 
 """
-$(TYPEDSIGNATURES)
+    ising_graph(instance, sgn::Number = 1.0, rank_override::Dict{Int,Int} = Dict{Int,Int}())
 
-Create the Ising spin glass model.
+Create an Ising model graph from an input `instance``.
 
-# Details
+# Arguments
+- `instance`: Instance of the Ising spin glass system. Can be given eiter as dictionary or a CSV file.
+- `sgn::Number`: decides the used convention for the energy sum
+- `rank_override`: Dict{Int,Int}
 
-Store extra information
+# Output
+A `LabelledGraph` that represents inputed Ising instance.
+
+# Example
+```@example
+instance =  Dict((1, 1) => 0.5, (2, 2) => 0.75, (3, 3) => -0.25, (1, 2) => -1.0, (2, 3) => 1.0)
+
+ig = ising_graph(instance)
+```
 """
 function ising_graph(
     instance::Instance;
@@ -58,10 +71,27 @@ function ising_graph(
     ig
 end
 
+"""
+    rank_vec(ising_graph)
+
+Return vector of 'ranks' of nodes. In this context rank tels us how many spins values node can have. 
+"""
 rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(prod(rank_vec(ig)))
+
+"""
+    biases(ising_graph)
+
+Return vector of biases of ising model defined by given 'ising_graph'.
+"""
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
+"""
+    couplings(ising_graph)
+
+Return couplings of ising model defined by given 'ising_graph'. 
+The couplings are presented as an uper-triangular matrix 
+"""
 function couplings(ig::IsingGraph)
     J = zeros(nv(ig), nv(ig))
     for edge in edges(ig)
@@ -71,6 +101,11 @@ function couplings(ig::IsingGraph)
     J
 end
 
+"""
+    cluster(ig::IsingGraph, verts)
+
+Return cluster specified by `verts`
+"""
 cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
 
 function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
@@ -85,6 +120,12 @@ function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)
     outer_edges, J
 end
 
+
+"""
+    prune(ising_graph)
+
+Return copy of 'ising_graph' with removed isolated vertices.
+"""
 function prune(ig::IsingGraph)
     to_keep = vcat(
         findall(!iszero, degree(ig)),
