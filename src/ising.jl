@@ -16,8 +16,17 @@ const IsingGraph = LabelledGraph{MetaGraph{Int64,Float64},Int64}
 """
     ising_graph(instance, sgn::Number = 1.0, rank_override::Dict{Int,Int} = Dict{Int,Int}())
 
-Create an Ising model graph from an input instance. The in
+Create an Ising model graph from an input `instance``.
 
+# Arguments
+- `instance`: Instance of the Ising spin glass system. Can be given eiter as dictionary or a CSV file.
+In case  `v` and `w`
+are system sites and `J` is the strenght of interaction. To implement 
+- `sgn::Number`: decides the used convention for the energy sum
+- `rank_override`: Dict{Int,Int}
+
+# Output
+A `LabelledGraph` that represents inputed Ising instance.
 """
 function ising_graph(
     instance::Instance;
@@ -87,6 +96,11 @@ function couplings(ig::IsingGraph)
     J
 end
 
+"""
+    cluster(ig::IsingGraph, verts)
+
+Return cluster specified by `verts`
+"""
 cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
 
 function inter_cluster_edges(ig::IsingGraph, cl1::IsingGraph, cl2::IsingGraph)

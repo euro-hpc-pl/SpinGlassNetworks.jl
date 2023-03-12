@@ -12,15 +12,6 @@ function split_into_clusters(ig::LabelledGraph{S,T}, assignment_rule) where {S,T
 end
 
 
-"""
-    function factor_graph(
-        ig::IsingGraph,
-        num_states_cl::Int;
-        spectrum::Function = full_spectrum,
-        cluster_assignment_rule::Dict
-
-See @Ref
-"""
 function factor_graph(
     ig::IsingGraph,
     num_states_cl::Int;
@@ -47,13 +38,14 @@ Constructs a factor graph representation of the given `IsingGraph`.
 
 # Arguments
 - `ig::IsingGraph`: The Ising graph to convert to a factor graph.
-- `num_states_cl::Dict : A dictionary mapping each cluster to the number of states it can take on. If given empty dictionary
-    function will try to interfere number of states for each cluster.
+- `num_states_cl::Dict` : A dictionary mapping each cluster to the number of states it can take on. If given empty dictionary
+    function will try to interfere number of states for each cluster. Can be also given as `Int`, then each cluster will have 
+    specified number of states. If ommited completly, function will behave as if an empy directory was passed
 - `spectrum::Function`: A function that computes the spectrum (i.e., list of energies of all possible states) of
   a given cluster. The default is `full_spectrum`, which computes the spectrum exactly.
 - `cluster_assignment_rule::Dict`: A dictionary that assigns each vertex of the Ising graph to a cluster.
 
-# Returns
+# Output
 A `LabelledGraph` that represents the factor graph of the Ising graph.
 """
  function factor_graph(
@@ -109,6 +101,15 @@ function factor_graph(
     )
 end
 
+"""
+    rank_reveal(energy, order = :PE)
+
+calculate the rank of the matrix represented by `energy`, and returns a tuple of two matrices `P` and `E`, 
+where `P` is a binary matrix that reveals the rank of `energy`, and `E` is the set of non-zero singular 
+values of `energy` in decreasing order. Argument `order=:PE` specifies the order of the output matrices. 
+The default is `:PE`, which means that the `P` matrix is returned first, followed by the `E` matrix. 
+If `order` is set to `:EP`, the order is reversed.
+"""
 function rank_reveal(energy, order = :PE)
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2
@@ -128,7 +129,11 @@ function rank_reveal(energy, order = :PE)
     order == :PE ? (P, E) : (E, P)
 end
 
+"""
+    decode_factor_graph_state(fg, state::Vector{Int})
 
+Convert factor graphs clusters states inot state of original Ising system.
+"""
 function decode_factor_graph_state(fg, state::Vector{Int})
     ret = Dict{Int,Int}()
     for (i, vert) ∈ zip(state, vertices(fg))
