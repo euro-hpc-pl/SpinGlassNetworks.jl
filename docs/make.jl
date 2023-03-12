@@ -7,9 +7,15 @@ _pages = [
 ]
 
 # ============================
+format = Documenter.HTML(edit_link = "master",
+                         prettyurls = get(ENV, "CI", nothing) == "true",
+)
+
+# format = Documenter.LaTeX(platform="none")
 
 makedocs(
-    sitename="SpinGlassNetworks",
+    sitename="SpinGlassNetworks.jl",
     modules = [SpinGlassNetworks],
-    pages = _pages
+    pages = _pages,
+    format = format
     )
