@@ -43,11 +43,12 @@ ig = ising_graph(instance)
 sgn = -1
 
 # absorb μ into h and construct ising graph and 
+instance2 = Dict((1,1) => instance[(1,1)]*μ, (2, 2) => instance[(2,2)]*μ, (1, 2) => -1.25)
 
-ig2 = ising_graph(instance, sgn=sgn)
+ig2 = ising_graph(instance2, sgn=sgn)
 
 # select arbitrary state
-σ = [-1, 1]
+σ = [1, 1]
 
 println("energy without conversion: ", energy(σ, ig), 
 " energy after conversion: ", energy(σ, ig2))
@@ -79,16 +80,43 @@ A factor graph consists of two types of nodes: variable nodes and factor nodes. 
 Each variable node in the factor graph corresponds to a tensor in the tensor network, and each factor node corresponds to a tensor contraction or operation that is applied to one or more of those tensors. The edges between the nodes in the factor graph represent the indices that are shared between the corresponding tensors in the tensor network.
 
 ## Simple example
+
 ```@example
 using SpinGlassNetworks
 
-#
+# Prepare simple instance
 instance = Dict((1, 1) => 1.0, (2, 2) => 0.5, (3, 3) => -0.25, 
 (1, 2) => -1.0, (2, 3) => 1.0)
+ig = ising_graph(instance)
+
+# Create factor graph.
+fg = factor_graph(
+    ig,
+    cluster_assignment_rule = super_square_lattice((3, 1, 1))
+)
 ```
 
 ## Chimera graphs
+The Chimera graph is a type of graph architecture used in quantum computing systems, particularly in the quantum annealing machines developed by D-Wave Systems. It is a two-dimensional lattice of unit cells, each consisting of a bipartite graph of $K_{4,4}$ complete bipartite subgraphs. Futer details can be found [here](https://docs.dwavesys.com/docs/latest/c_gs_4.html#chimera-graph).
+
 
 ```@example
+using SpinGlassEngine, SpinGlassNetworks, LabelledGraphs
 
+# load Chimera instance and create Ising graph
+instance = "$(@__DIR__)/../../src/instances/chimera_droplets/128power/001.txt"
+ig = ising_graph(instance)
+
+# Loaded instance is 4x4x8 chimera graph
+m = 4
+n = 4
+t = 8
+
+fg = fg = factor_graph(
+    ig,
+    cluster_assignment_rule = super_square_lattice((m, n, t))
+)
+
+println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n",
+        " Number of nodes in factor graph: ", length(LabelledGraphs.vertices(fg)))
 ```

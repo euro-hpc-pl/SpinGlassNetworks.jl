@@ -40,7 +40,7 @@ Constructs a factor graph representation of the given `IsingGraph`.
 - `ig::IsingGraph`: The Ising graph to convert to a factor graph.
 - `num_states_cl::Dict` : A dictionary mapping each cluster to the number of states it can take on. If given empty dictionary
     function will try to interfere number of states for each cluster. Can be also given as `Int`, then each cluster will have 
-    specified number of states. If ommited completly, function will behave as if an empy directory was passed
+    specified number of states. If ommited completly, function will behave as if an empy directory was passed.
 - `spectrum::Function`: A function that computes the spectrum (i.e., list of energies of all possible states) of
   a given cluster. The default is `full_spectrum`, which computes the spectrum exactly.
 - `cluster_assignment_rule::Dict`: A dictionary that assigns each vertex of the Ising graph to a cluster.
@@ -132,7 +132,7 @@ end
 """
     decode_factor_graph_state(fg, state::Vector{Int})
 
-Convert factor graphs clusters states inot state of original Ising system.
+Convert factor graphs clusters states into state of the original Ising system.
 """
 function decode_factor_graph_state(fg, state::Vector{Int})
     ret = Dict{Int,Int}()

@@ -20,13 +20,18 @@ Create an Ising model graph from an input `instance``.
 
 # Arguments
 - `instance`: Instance of the Ising spin glass system. Can be given eiter as dictionary or a CSV file.
-In case  `v` and `w`
-are system sites and `J` is the strenght of interaction. To implement 
 - `sgn::Number`: decides the used convention for the energy sum
 - `rank_override`: Dict{Int,Int}
 
 # Output
 A `LabelledGraph` that represents inputed Ising instance.
+
+# Example
+```@example
+instance =  Dict((1, 1) => 0.5, (2, 2) => 0.75, (3, 3) => -0.25, (1, 2) => -1.0, (2, 3) => 1.0)
+
+ig = ising_graph(instance)
+```
 """
 function ising_graph(
     instance::Instance;
