@@ -5,7 +5,8 @@ export
     split_into_clusters,
     decode_factor_graph_state,
     energy,
-    cluster_size
+    cluster_size,
+    truncate_factor_graph
 
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
@@ -136,4 +137,60 @@ end
 
 function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
     length(get_prop(factor_graph, vertex, :spectrum).energies)
+end
+
+function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::Int) where {S, T}
+    states = Dict()
+    for node in vertices(fg)
+        E = copy(get_prop(fg, node, :spectrum).energies)
+        for n in vertices(fg)
+            if has_edge(fg, node, n)
+                E_bond = get_prop(fg, node, n, :en)
+                pl, pr = get_prop(fg, node, n, :pl), get_prop(fg, node, n, :pr)
+                E_bond = E_bond[pl, pr]
+                E_neighbor = get_prop(fg, n, :spectrum).energies
+                E_bond = E_bond .+ reshape(E_neighbor, (1, :))
+                E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)
+            elseif has_edge(fg, n, node)
+                E_bond = get_prop(fg, n, node, :en)
+                pl, pr = get_prop(fg, n, node, :pl), get_prop(fg, n, node, :pr)
+                E_bond = E_bond[pl, pr]'
+                E_neighbor = get_prop(fg, n, :spectrum).energies 
+                E_bond = E_bond .+ reshape(E_neighbor, (1, :))
+                E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)            
+            end
+        end
+        push!(states, node => sortperm(E)[1:min(num_states, length(E))])
+    end
+    
+
+    new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
+
+    for v ∈ vertices(new_fg)
+        cl = get_prop(fg, v, :cluster)
+        sp = get_prop(fg, v, :spectrum)
+        sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
+        set_props!(new_fg, v, Dict(:cluster => cl, :spectrum => sp))
+    end
+
+    for e ∈ edges(fg)
+        v, w = src(e), dst(e)
+        add_edge!(new_fg, v, w)
+        outer_edges = get_prop(fg, v, w, :outer_edges)
+        pl = get_prop(fg, v, w, :pl)
+        pr = get_prop(fg, v, w, :pr)
+        en = get_prop(fg, v, w, :en)
+        pl = pl[states[v]]
+        pr = pr[states[w]]
+        pl_transition, pl_unique = rank_reveal(pl, :PE)
+        pr_transition, pr_unique = rank_reveal(pr, :PE)
+        en = en[pl_unique[pl_transition], pr_unique[pr_transition]]
+
+        set_props!(
+                  new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
+              )
+    end
+
+    new_fg
+
 end
