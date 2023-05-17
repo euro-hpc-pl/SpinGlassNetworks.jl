@@ -139,7 +139,7 @@ function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
     length(get_prop(factor_graph, vertex, :spectrum).energies)
 end
 
-function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::Int) where {S, T}
+function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::Int, ::Val{:mean_field}) where {S, T}
     states = Dict()
     for node in vertices(fg)
         E = copy(get_prop(fg, node, :spectrum).energies)
@@ -190,7 +190,72 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::
                   new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
               )
     end
+    new_fg
+end
+
+function truncate_factor_graph(fg::LabelledGraph{S, T}, β::Real, num_states::Int, ::Val{:pegasus}) where {S, T}
+    states = Dict()
+    for node in vertices(fg)
+        if node in keys(states) continue end
+        i, j, _ = node
+        E1 = copy(get_prop(fg, (i, j, 1), :spectrum).energies)
+        E2 = copy(get_prop(fg, (i, j, 2), :spectrum).energies)
+        if has_edge(fg, (i, j, 1), (i, j, 2))
+            en12 = copy(get_prop(fg, (i, j, 1), (i, j, 2), :en))
+            pl = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pl))
+            pr = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pr))
+            int_eng = en12[pl, pr]
+        elseif has_edge(fg, (i, j, 2), (i, j, 1))
+            en21 = copy(get_prop(fg, (i, j, 2), (i, j, 1), :en))
+            pl = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pl))
+            pr = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pr))
+            int_eng = en21[pl, pr]'
+        else
+            int_eng = zeros(1, 1)
+        end
+        E = int_eng .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
+        sx, sy = size(E)
+        E = reshape(E, sx * sy)
+        ind = sortperm(E)[1:min(num_states, length(E))]
+        ind1 = mod.(ind .- 1, sx) .+ 1
+        ind2 = div.(ind .- 1, sx) .+ 1  
+        ind1 = sort([Set(ind1)...])
+        ind2 = sort([Set(ind2)...])
+        push!(states, (i, j, 1) => ind1)
+        push!(states, (i, j, 2) => ind2)
+    end
+
+    new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
+
+    # sp = empty_spectrum(num_states)
+    for v ∈ vertices(new_fg)
+        cl = get_prop(fg, v, :cluster)
+        sp = get_prop(fg, v, :spectrum)
+        if sp.states == Vector{Int64}[]
+            sp = Spectrum(sp.energies[states[v]], [])
+        else
+            sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
+        end
+        set_props!(new_fg, v, Dict(:cluster => cl, :spectrum => sp))
+    end
+
+    for e ∈ edges(fg)
+        v, w = src(e), dst(e)
+        add_edge!(new_fg, v, w)
+        outer_edges = get_prop(fg, v, w, :outer_edges)
+        pl = get_prop(fg, v, w, :pl)
+        pr = get_prop(fg, v, w, :pr)
+        en = get_prop(fg, v, w, :en)
+        pl = pl[states[v]]
+        pr = pr[states[w]]
+        pl_transition, pl_unique = rank_reveal(pl, :PE)
+        pr_transition, pr_unique = rank_reveal(pr, :PE)
+        en = en[pl_unique[pl_transition], pr_unique[pr_transition]]
+
+        set_props!(
+                  new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
+              )
+    end
 
     new_fg
-
 end
