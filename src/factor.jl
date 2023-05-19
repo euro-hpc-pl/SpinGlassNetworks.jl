@@ -139,7 +139,7 @@ function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
     length(get_prop(factor_graph, vertex, :spectrum).energies)
 end
 
-function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::Int, ::Val{:mean_field}) where {S, T}
+function truncate_factor_graph_1site_meanfield(fg::LabelledGraph{S, T}, beta::Real, num_states::Int) where {S, T}
     states = Dict()
     for node in vertices(fg)
         E = copy(get_prop(fg, node, :spectrum).energies)
@@ -155,14 +155,14 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::
                 E_bond = get_prop(fg, n, node, :en)
                 pl, pr = get_prop(fg, n, node, :pl), get_prop(fg, n, node, :pr)
                 E_bond = E_bond[pl, pr]'
-                E_neighbor = get_prop(fg, n, :spectrum).energies 
+                E_neighbor = get_prop(fg, n, :spectrum).energies
                 E_bond = E_bond .+ reshape(E_neighbor, (1, :))
-                E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)            
+                E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)
             end
         end
         push!(states, node => sortperm(E)[1:min(num_states, length(E))])
     end
-    
+
 
     new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
 
@@ -184,7 +184,7 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::
         pr = pr[states[w]]
         pl_transition, pl_unique = rank_reveal(pl, :PE)
         pr_transition, pr_unique = rank_reveal(pr, :PE)
-        en = en[pl_unique[pl_transition], pr_unique[pr_transition]]
+        en = en[pl_unique, pr_unique]
 
         set_props!(
                   new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
@@ -193,7 +193,7 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, beta::Real, num_states::
     new_fg
 end
 
-function truncate_factor_graph(fg::LabelledGraph{S, T}, β::Real, num_states::Int, ::Val{:pegasus}) where {S, T}
+function truncate_factor_graph_2site(fg::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
     for node in vertices(fg)
         if node in keys(states) continue end
@@ -218,7 +218,7 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, β::Real, num_states::In
         E = reshape(E, sx * sy)
         ind = sortperm(E)[1:min(num_states, length(E))]
         ind1 = mod.(ind .- 1, sx) .+ 1
-        ind2 = div.(ind .- 1, sx) .+ 1  
+        ind2 = div.(ind .- 1, sx) .+ 1
         ind1 = sort([Set(ind1)...])
         ind2 = sort([Set(ind2)...])
         push!(states, (i, j, 1) => ind1)
@@ -250,7 +250,7 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, β::Real, num_states::In
         pr = pr[states[w]]
         pl_transition, pl_unique = rank_reveal(pl, :PE)
         pr_transition, pr_unique = rank_reveal(pr, :PE)
-        en = en[pl_unique[pl_transition], pr_unique[pr_transition]]
+        en = en[pl_unique, pr_unique]
 
         set_props!(
                   new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
