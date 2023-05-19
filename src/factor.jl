@@ -162,7 +162,7 @@ function truncate_factor_graph_1site_meanfield(fg::LabelledGraph{S, T}, beta::Re
                 E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)
             end
         end
-        push!(states, node => sortperm(E)[1:min(num_states, length(E))])
+        push!(states, node => partialsortperm(E, 1:min(num_states, length(E))))
     end
 
 
@@ -218,7 +218,7 @@ function truncate_factor_graph_2site(fg::LabelledGraph{S, T}, num_states::Int) w
         E = int_eng .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
         sx, sy = size(E)
         E = reshape(E, sx * sy)
-        ind = sortperm(E)[1:min(num_states, length(E))]
+        ind = partialsortperm(E, 1:min(num_states, length(E)))
         ind1 = mod.(ind .- 1, sx) .+ 1
         ind2 = div.(ind .- 1, sx) .+ 1
         ind1 = sort([Set(ind1)...])
