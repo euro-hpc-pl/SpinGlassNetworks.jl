@@ -6,7 +6,9 @@ export
     decode_factor_graph_state,
     energy,
     cluster_size,
-    truncate_factor_graph
+    truncate_factor_graph_2site,
+    truncate_factor_graph_1site_meanfield
+
 
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
