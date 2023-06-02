@@ -6,7 +6,8 @@ export
     decode_factor_graph_state,
     energy,
     cluster_size,
-    truncate_factor_graph_2site,
+    #  truncate_factor_graph_2site,
+    truncate_factor_graph_2site_precise,
     truncate_factor_graph_1site_meanfield
 
 
@@ -195,7 +196,7 @@ function truncate_factor_graph_1site_meanfield(fg::LabelledGraph{S, T}, beta::Re
     new_fg
 end
 
-function truncate_factor_graph_2site(fg::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
+function truncate_factor_graph_2site_precise(fg::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
     for node in vertices(fg)
         if node in keys(states) continue end
@@ -218,11 +219,7 @@ function truncate_factor_graph_2site(fg::LabelledGraph{S, T}, num_states::Int) w
         E = int_eng .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
         sx, sy = size(E)
         E = reshape(E, sx * sy)
-        ind = partialsortperm(E, 1:min(num_states, length(E)))
-        ind1 = mod.(ind .- 1, sx) .+ 1
-        ind2 = div.(ind .- 1, sx) .+ 1
-        ind1 = sort([Set(ind1)...])
-        ind2 = sort([Set(ind2)...])
+        ind1, ind2 = select_numstate_best(E, sx, num_states)
         push!(states, (i, j, 1) => ind1)
         push!(states, (i, j, 2) => ind2)
     end
@@ -260,4 +257,28 @@ function truncate_factor_graph_2site(fg::LabelledGraph{S, T}, num_states::Int) w
     end
 
     new_fg
+end
+
+
+# truncate based on energy in two nods of factor graph; resulting states are a product of states in two nodes, so we have to fine-tune to end up with expected number of states
+function select_numstate_best(E, sx, num_states)
+
+    low, high = 1, min(num_states, length(E))
+
+    while true
+        guess = div(low + high, 2)
+        ind = partialsortperm(E, 1:guess)
+        ind1 = mod.(ind .- 1, sx) .+ 1
+        ind2 = div.(ind .- 1, sx) .+ 1
+        ind1 = sort([Set(ind1)...])
+        ind2 = sort([Set(ind2)...])
+        if high - low <= 2
+            return ind1, ind2
+        end
+        if length(ind1) * length(ind2) > num_states
+            high = guess
+        else
+            low = guess
+        end
+    end
 end
