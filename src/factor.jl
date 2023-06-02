@@ -272,7 +272,7 @@ function select_numstate_best(E, sx, num_states)
         ind2 = div.(ind .- 1, sx) .+ 1
         ind1 = sort([Set(ind1)...])
         ind2 = sort([Set(ind2)...])
-        if high - low <= 2
+        if high - low <= 1
             return ind1, ind2
         end
         if length(ind1) * length(ind2) > num_states
