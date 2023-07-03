@@ -329,12 +329,9 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
     iteration = 0
     while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
         iteration += 1
-        println("iteration", iteration)
         old_beliefs = beliefs
         for v in vertices(fg)
-            println("v", v)
             for neighbor in get_neighbors(fg, v)
-                println("neighbor", neighbor)
                 #update messages
                 if has_edge(fg, v, neighbor)
                     messages[(neighbor, (v, neighbor))] = beliefs[neighbor]./messages[(v, neighbor), neighbor]
