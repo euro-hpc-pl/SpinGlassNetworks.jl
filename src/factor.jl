@@ -296,7 +296,7 @@ function get_neighbors(graph::LabelledGraph{S, T}, vertex::Tuple{Any, Any, Any})
 end
 
 # Works for Pegasus and Zephyr
-function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta::Real, num_states::Int) where {S, T}
+function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta::Real, num_states::Int, iter::Int) where {S, T}
     states = Dict()
     messages = Dict{Tuple{Any, Any}, Array{Any}}()
     beliefs = Dict{Tuple{Any, Any, Any}, Array{Any}}()
@@ -327,7 +327,7 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
     # Perform message passing until convergence
     converged = false
     iteration = 0
-    while !converged && iteration < 100  # Set an appropriate number of iterations and convergence threshold
+    while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
         iteration += 1
         println("iteration", iteration)
         old_beliefs = beliefs
