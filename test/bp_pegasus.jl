@@ -2,26 +2,19 @@
 Instance below looks like this:
 
 1 -- 2
-
-
+|
+3 -- 4
 
 """
-function create_larger_example_factor_graph_tree()
+function create_larger_example_factor_graph_tree_basic()
    instance = Dict(
       (1, 1) => 0.5,
       (2, 2) => 0.25,
-      # (3, 3) => 0.3,
-      # (4, 4) => 0.1,
-      # (5, 5) => 0.1,
-      # (6, 6) => -2.0,
+      (3, 3) => 0.3,
+      (4, 4) => 0.1,
       (1, 2) => -1.0,
-      # (1, 3) => 1.0
-      # (2, 4) => 1.0,
-      # (3, 4) => 1.0,
-      # (1, 5) => 0.5,
-      # (2, 5) => 0.5,
-      # (2, 6) => 0.5,
-      # (5, 6) => -0.3,
+      (1, 3) => 1.0,
+      (3, 4) => 1.0
    )
 
    ig = ising_graph(instance)
@@ -29,10 +22,8 @@ function create_larger_example_factor_graph_tree()
    assignment_rule = Dict(
       1 => (1, 1, 1),
       2 => (1, 2, 1),
-      # 3 => (2, 1, 1)
-      # 4 => (1, 2, 2),
-      # 5 => (2, 1, 1),
-      # 6 => (2, 1, 2),
+      3 => (2, 1, 1),
+      4 => (2, 2, 2)
    )
 
    fg = factor_graph(
@@ -45,19 +36,149 @@ function create_larger_example_factor_graph_tree()
    ig, fg
 end
 
-function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  # TODO: Not going to work without PoolOfProjectors
-   ver = vertices(factor_graph)
-   rank = cluster_size.(Ref(factor_graph), ver)
-   states = [Dict(ver .=> σ) for σ ∈ Iterators.product([1:r for r ∈ rank]...)]
-   energies = SpinGlassNetworks.energy.(Ref(factor_graph), states)
-   prob = exp.(-beta .* energies)
-   prob ./= sum(prob)
-   sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
+"""
+Instance below looks like this:
+
+1 -- 2 -- 3
+|
+4 -- 5 -- 6
+| 
+7 -- 8 -- 9
+"""
+function create_larger_example_factor_graph_tree()
+   instance = Dict(
+      (1, 1) => 0.5,
+      (2, 2) => 0.25,
+      (3, 3) => 0.3,
+      (4, 4) => 0.1,
+      (5, 5) => -0.1,
+      (6, 6) => 0.1,
+      (7, 7) => 0.0,
+      (8, 8) => 0.1,
+      (9, 9) => 0.01,
+      (1, 2) => -1.0,
+      (2, 3) => 1.0,
+      (1, 4) => 1.0,
+      (4, 5) => 1.0,
+      (5, 6) => 1.0,
+      (4, 7) => 1.0,
+      (7, 8) => 1.0,
+      (8, 9) => 1.0
+   )
+
+   ig = ising_graph(instance)
+
+   assignment_rule = Dict(
+      1 => (1, 1, 1),
+      2 => (1, 2, 1),
+      3 => (1, 3, 1),
+      4 => (2, 1, 1),
+      5 => (2, 2, 1),
+      6 => (2, 3, 1),
+      7 => (3, 1, 1),
+      8 => (3, 2, 1),
+      9 => (3, 3, 1)
+   )
+
+   fg = factor_graph(
+      ig,
+      Dict{NTuple{3, Int}, Int}(),
+      spectrum = full_spectrum,
+      cluster_assignment_rule = assignment_rule,
+   )
+
+   ig, fg
 end
 
-ig, fg = create_larger_example_factor_graph_tree()
-beta = 1
-beliefs = belief_propagation(fg, beta; iter=100)
-println(beliefs)
+"""
+Instance below looks like this:
 
-println(exact_cond_prob(fg, beta, Dict((1, 1, 1) => 1)))
+1 -- 2 -- 3
+|    |
+4    5
+
+"""
+function create_larger_example_factor_graph_tree_pathological()
+   instance = Dict(
+      (1, 1) => 0.5,
+      (2, 2) => 0.25,
+      (3, 3) => 0.3,
+      (4, 4) => 0.1,
+      (5, 5) => -0.1,
+      (6, 6) => 0.1,
+      (7, 7) => 0.0,
+      (8, 8) => 0.1,
+      (1, 2) => -1.0,
+      (1, 3) => 1.0,
+      (3, 4) => 1.0,
+      (3, 5) => 1.0,
+      (5, 6) => 1.0,
+      (2, 7) => 0.5,
+      (3, 7) => 1.0,
+      (5, 8) => 1.0,
+      
+   )
+
+   ig = ising_graph(instance)
+
+   assignment_rule = Dict(
+      1 => (1, 1),
+      2 => (1, 1),
+      3 => (1, 1),
+      4 => (1, 2),
+      5 => (1, 2),
+      6 => (1, 3),
+      7 => (2, 1),
+      8 => (2, 2)
+   )
+
+   fg = factor_graph(
+      ig,
+      Dict{NTuple{2, Int}, Int}(),
+      spectrum = full_spectrum,
+      cluster_assignment_rule = assignment_rule,
+   )
+
+   ig, fg
+end
+
+
+@testset "Belief propagation basic" begin
+   ig, fg = create_larger_example_factor_graph_tree_basic()
+   beta = 1
+   iter = 100
+   beliefs = belief_propagation(fg, beta; iter=iter)
+   exact_marginal = Dict()
+   for k in keys(beliefs)
+      push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+   end
+   for v in keys(beliefs)
+      @test beliefs[v] ≈ exact_marginal[v]
+   end
+end
+@testset "Belief propagation " begin
+   ig, fg = create_larger_example_factor_graph_tree()
+   beta = 1
+   iter = 100
+   beliefs = belief_propagation(fg, beta; iter=iter)
+   exact_marginal = Dict()
+   for k in keys(beliefs)
+      push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+   end
+   for v in keys(beliefs)
+      @test beliefs[v] ≈ exact_marginal[v]
+   end
+end
+@testset "Belief propagation pathological" begin
+   ig, fg = create_larger_example_factor_graph_tree_pathological()
+   beta = 1
+   iter = 100
+   beliefs = belief_propagation(fg, beta; iter=iter)
+   exact_marginal = Dict()
+   for k in keys(beliefs)
+      push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+   end
+   for v in keys(beliefs)
+      @test beliefs[v] ≈ exact_marginal[v]
+   end
+end

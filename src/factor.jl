@@ -10,7 +10,8 @@ export
     truncate_factor_graph_2site_precise,
     truncate_factor_graph_1site_meanfield,
     truncate_factor_graph_belief_propagation,
-    belief_propagation
+    belief_propagation,
+    exact_cond_prob
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
@@ -399,3 +400,13 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
 
     beliefs
 end
+
+function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  # TODO: Not going to work without PoolOfProjectors
+    ver = vertices(factor_graph)
+    rank = cluster_size.(Ref(factor_graph), ver)
+    states = [Dict(ver .=> σ) for σ ∈ Iterators.product([1:r for r ∈ rank]...)]
+    energies = SpinGlassNetworks.energy.(Ref(factor_graph), states)
+    prob = exp.(-beta .* energies)
+    prob ./= sum(prob)
+    sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
+ end
