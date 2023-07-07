@@ -304,20 +304,17 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
     # Initialize messages with uniform probabilities
     for v in vertices(fg)
         ns = length(get_prop(fg, v, :spectrum).states)
-        belief = ones(ns)/ns
+        belief = ones(ns)./ns
         push!(beliefs, v => belief)
 
         for neighbor in get_neighbors(fg, v)
+            message_av = ones(ns)./ns
+            message_va = ones(ns)./ns
+
             if has_edge(fg, v, neighbor)
-                pl, pr = get_prop(fg, v, neighbor, :pl), get_prop(fg, v, neighbor, :pr)
-                message_av = ones(ns)/ns
-                message_va = ones(ns)/ns
                 push!(messages, (v, (v, neighbor)) => message_va)
                 push!(messages, ((v, neighbor), v) => message_av)
             elseif has_edge(fg, neighbor, v)
-                pl, pr = get_prop(fg, neighbor, v, :pl), get_prop(fg, neighbor, v, :pr)
-                message_av = ones(ns)/ns
-                message_va = ones(ns)/ns
                 push!(messages, (v, (neighbor, v)) => message_va)
                 push!(messages, ((neighbor, v), v) => message_av)
             end
@@ -332,19 +329,30 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
         old_beliefs = beliefs
         for v in vertices(fg)
             for neighbor in get_neighbors(fg, v)
-                #update messages
+                #update messages from vertex to edge
                 if has_edge(fg, v, neighbor)
                     messages[(neighbor, (v, neighbor))] = beliefs[neighbor]./messages[(v, neighbor), neighbor]
-                    messages[((v, neighbor), v)] = compute_factor(fg, v, neighbor, beta) * messages[(neighbor, (v, neighbor))]
                 elseif has_edge(fg, neighbor, v)
                     messages[(neighbor, (neighbor, v))] = beliefs[neighbor]./messages[(neighbor, v), neighbor]
+                end
+            end
+        end
+        messages = normalize_dict(messages)
+        for v in vertices(fg)
+            for neighbor in get_neighbors(fg, v)
+                #update messages from edge to vertex
+                if has_edge(fg, v, neighbor)
+                    messages[((v, neighbor), v)] = compute_factor(fg, v, neighbor, beta) * messages[(neighbor, (v, neighbor))]
+                elseif has_edge(fg, neighbor, v)
                     messages[((neighbor, v), v)] = compute_factor(fg, neighbor, v, beta)' * messages[(neighbor, (neighbor, v))]
                 end
             end
         end
+        messages = normalize_dict(messages)
+        
         for v in vertices(fg)
             E_local = get_prop(fg, v, :spectrum).energies
-            messages_product = E_local./sum(E_local)
+            messages_product = exp.(-E_local * beta)
             for neighbor in get_neighbors(fg, v)
                 #update beliefs
                 if has_edge(fg, v, neighbor)
@@ -357,15 +365,15 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
             # Normalize the beliefs
             beliefs[v] ./= sum(beliefs[v])
         end
+
         # Check convergence
         if all([all(abs.(old_beliefs[v] .- beliefs[v]) .< 1e-6) for v in keys(beliefs)])
             converged = true
         end
     end
-
     # Truncate the state space based on the belief probabilities
     for node in vertices(fg)
-        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])))
+        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])), rev=true)
         push!(states, node => indices)
     end
 
@@ -404,16 +412,23 @@ function compute_factor(fg, src_node, dst_node, beta)
         E_bond = get_prop(fg, src_node, dst_node, :en)
         pl, pr = get_prop(fg, src_node, dst_node, :pl), get_prop(fg, src_node, dst_node, :pr)
         E_bond = E_bond[pl, pr]
-        E_neighbor = get_prop(fg, dst_node, :spectrum).energies
-        E_bond = E_bond .+ reshape(E_neighbor, (1, :))
         factor = exp.(-E_bond * beta)
     elseif has_edge(fg, dst_node, src_node)
         E_bond = get_prop(fg, dst_node, src_node, :en)
         pl, pr = get_prop(fg, dst_node, src_node, :pl), get_prop(fg, dst_node, src_node, :pr)
         E_bond = E_bond[pl, pr]'
-        E_neighbor = get_prop(fg, dst_node, :spectrum).energies
-        E_bond = E_bond .+ reshape(E_neighbor, (1, :))
         factor = exp.(-E_bond * beta)
     end
     factor
+end
+
+function normalize_dict(beliefs::Dict)
+    normalized = Dict()
+    for k in keys(beliefs)
+        push!(normalized, k => exp.(beliefs[k]))
+    end
+    for k in keys(normalized)
+        normalized[k] ./= sum(normalized[k])
+    end
+    normalized
 end
