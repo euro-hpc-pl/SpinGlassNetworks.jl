@@ -337,7 +337,6 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
                 end
             end
         end
-        messages = normalize_dict(messages)
         for v in vertices(fg)
             for neighbor in get_neighbors(fg, v)
                 #update messages from edge to vertex
@@ -348,7 +347,6 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
                 end
             end
         end
-        messages = normalize_dict(messages)
         
         for v in vertices(fg)
             E_local = get_prop(fg, v, :spectrum).energies
@@ -420,15 +418,4 @@ function compute_factor(fg, src_node, dst_node, beta)
         factor = exp.(-E_bond * beta)
     end
     factor
-end
-
-function normalize_dict(beliefs::Dict)
-    normalized = Dict()
-    for k in keys(beliefs)
-        push!(normalized, k => exp.(beliefs[k]))
-    end
-    for k in keys(normalized)
-        normalized[k] ./= sum(normalized[k])
-    end
-    normalized
 end
