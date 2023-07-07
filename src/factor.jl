@@ -357,7 +357,6 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     iteration = 0
     while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
         iteration += 1
-        println(iteration)
         old_beliefs = deepcopy(beliefs)
         for v in vertices(fg)
             for neighbor in get_neighbors(fg, v)
