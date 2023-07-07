@@ -6,12 +6,11 @@ export
     decode_factor_graph_state,
     energy,
     cluster_size,
-    #  truncate_factor_graph_2site,
-    truncate_factor_graph_2site_precise,
-    truncate_factor_graph_1site_meanfield,
-    truncate_factor_graph_belief_propagation,
+    truncate_factor_graph_2site_energy,
+    truncate_factor_graph_1site_BP,
     belief_propagation,
-    exact_cond_prob
+    exact_cond_prob,
+    beliefs_2site
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
@@ -143,132 +142,33 @@ function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
     length(get_prop(factor_graph, vertex, :spectrum).energies)
 end
 
-function truncate_factor_graph_1site_meanfield(fg::LabelledGraph{S, T}, beta::Real, num_states::Int) where {S, T}
-    states = Dict()
-    for node in vertices(fg)
-        E = copy(get_prop(fg, node, :spectrum).energies)
-        for n in vertices(fg)
-            if has_edge(fg, node, n)
-                E_bond = get_prop(fg, node, n, :en)
-                pl, pr = get_prop(fg, node, n, :pl), get_prop(fg, node, n, :pr)
-                E_bond = E_bond[pl, pr]
-                E_neighbor = get_prop(fg, n, :spectrum).energies
-                E_bond = E_bond .+ reshape(E_neighbor, (1, :))
-                E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)
-            elseif has_edge(fg, n, node)
-                E_bond = get_prop(fg, n, node, :en)
-                pl, pr = get_prop(fg, n, node, :pl), get_prop(fg, n, node, :pr)
-                E_bond = E_bond[pl, pr]'
-                E_neighbor = get_prop(fg, n, :spectrum).energies
-                E_bond = E_bond .+ reshape(E_neighbor, (1, :))
-                E .+= log.(sum(exp.(-E_bond * beta), dims=2))./(-beta)
-            end
-        end
-        push!(states, node => partialsortperm(E, 1:min(num_states, length(E))))
-    end
 
-
-    new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
-
-    for v ∈ vertices(new_fg)
-        cl = get_prop(fg, v, :cluster)
-        sp = get_prop(fg, v, :spectrum)
-        sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
-        set_props!(new_fg, v, Dict(:cluster => cl, :spectrum => sp))
-    end
-
-    for e ∈ edges(fg)
-        v, w = src(e), dst(e)
-        add_edge!(new_fg, v, w)
-        outer_edges = get_prop(fg, v, w, :outer_edges)
-        pl = get_prop(fg, v, w, :pl)
-        pr = get_prop(fg, v, w, :pr)
-        en = get_prop(fg, v, w, :en)
-        pl = pl[states[v]]
-        pr = pr[states[w]]
-        pl_transition, pl_unique = rank_reveal(pl, :PE)
-        pr_transition, pr_unique = rank_reveal(pr, :PE)
-        en = en[pl_unique, pr_unique]
-
-        set_props!(
-                  new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
-              )
-    end
-    new_fg
-end
-
-function truncate_factor_graph_2site_precise(fg::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
+function truncate_factor_graph_2site_energy(fg::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
     for node in vertices(fg)
         if node in keys(states) continue end
         i, j, _ = node
         E1 = copy(get_prop(fg, (i, j, 1), :spectrum).energies)
         E2 = copy(get_prop(fg, (i, j, 2), :spectrum).energies)
-        if has_edge(fg, (i, j, 1), (i, j, 2))
-            en12 = copy(get_prop(fg, (i, j, 1), (i, j, 2), :en))
-            pl = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pl))
-            pr = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pr))
-            int_eng = en12[pl, pr]
-        elseif has_edge(fg, (i, j, 2), (i, j, 1))
-            en21 = copy(get_prop(fg, (i, j, 2), (i, j, 1), :en))
-            pl = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pl))
-            pr = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pr))
-            int_eng = en21[pl, pr]'
-        else
-            int_eng = zeros(1, 1)
-        end
-        E = int_eng .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
+        E = -1 .* energy_2site(fg, i, j) .- reshape(E1, :, 1) .- reshape(E2, 1, :)
         sx, sy = size(E)
         E = reshape(E, sx * sy)
         ind1, ind2 = select_numstate_best(E, sx, num_states)
         push!(states, (i, j, 1) => ind1)
         push!(states, (i, j, 2) => ind2)
     end
-
-    new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
-
-    # sp = empty_spectrum(num_states)
-    for v ∈ vertices(new_fg)
-        cl = get_prop(fg, v, :cluster)
-        sp = get_prop(fg, v, :spectrum)
-        if sp.states == Vector{Int64}[]
-            sp = Spectrum(sp.energies[states[v]], [])
-        else
-            sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
-        end
-        set_props!(new_fg, v, Dict(:cluster => cl, :spectrum => sp))
-    end
-
-    for e ∈ edges(fg)
-        v, w = src(e), dst(e)
-        add_edge!(new_fg, v, w)
-        outer_edges = get_prop(fg, v, w, :outer_edges)
-        pl = get_prop(fg, v, w, :pl)
-        pr = get_prop(fg, v, w, :pr)
-        en = get_prop(fg, v, w, :en)
-        pl = pl[states[v]]
-        pr = pr[states[w]]
-        pl_transition, pl_unique = rank_reveal(pl, :PE)
-        pr_transition, pr_unique = rank_reveal(pr, :PE)
-        en = en[pl_unique, pr_unique]
-
-        set_props!(
-                  new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
-              )
-    end
-
-    new_fg
+    truncate_factor_graph(fg, states)
 end
 
 
-# truncate based on energy in two nods of factor graph; resulting states are a product of states in two nodes, so we have to fine-tune to end up with expected number of states
+# truncate based on energy in two nodes of factor graph; resulting states are a product of states in two nodes, so we have to fine-tune to end up with expected number of states
 function select_numstate_best(E, sx, num_states)
 
     low, high = 1, min(num_states, length(E))
 
     while true
         guess = div(low + high, 2)
-        ind = partialsortperm(E, 1:guess)
+        ind = partialsortperm(E, 1:guess, rev=true)
         ind1 = mod.(ind .- 1, sx) .+ 1
         ind2 = div.(ind .- 1, sx) .+ 1
         ind1 = sort([Set(ind1)...])
@@ -298,17 +198,8 @@ function get_neighbors(graph::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
 end
 
 # Works for Pegasus and Zephyr
-function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta::Real, num_states::Int; tol=1e-6, iter=1) where {S, T}
-    states = Dict()
-    beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
+function truncate_factor_graph(fg::LabelledGraph{S, T}, states::Dict) where {S, T}
 
-    # Truncate the state space based on the belief probabilities
-    for node in vertices(fg)
-        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])), rev=true)
-        push!(states, node => indices)
-    end
-
-    # Create a new factor graph with truncated state space
     new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
     
     for v ∈ vertices(new_fg)
@@ -338,7 +229,102 @@ function truncate_factor_graph_belief_propagation(fg::LabelledGraph{S, T}, beta:
     new_fg
 end
 
-function belief_propagation(fg, beta; tol=1e-6, iter=1)
+function truncate_factor_graph_1site_BP(fg::LabelledGraph{S, T}, num_states::Int; beta=1.0, tol=1e-6, iter=1) where {S, T}
+    states = Dict()
+    beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
+    for node in vertices(fg)
+        indices = partialsortperm(weights[node], 1:min(num_states, length(weights[node])), rev=true)
+        push!(states, node => indices)
+    end
+    truncate_factor_graph(fg, states)
+end
+
+function truncate_factor_graph_2site_BP(fg::LabelledGraph{S, T}, num_states::Int; beta=1.0, tol=1e-6, iter=1) where {S, T}
+    states = Dict()
+    beliefs, messages_av = belief_propagation(fg, beta; tol=tol, iter=iter, output_message=true)
+
+    for node in vertices(fg)
+        if node in keys(states) continue end
+        i, j, _ = node
+        temp = beliefs_2site(fg, i, j, messages_av, beta)
+        sx, sy = size(temp)
+        temp = reshape(temp, sx * sy)
+        ind1, ind2 = select_numstate_best(temp, sx, num_states)
+        push!(states, (i, j, 1) => ind1)
+        push!(states, (i, j, 2) => ind2)
+    end
+    
+    truncate_factor_graph(fg, states)
+end
+
+function beliefs_2site(fg::LabelledGraph{S, T}, i::Int, j::Int, messages_av::Dict, beta::Real) where {S, T}
+    temp = energy_2site(fg, i, j)
+    temp = exp.(-beta*temp)
+    if ((i, j, 1), (i, j, 2)) in keys(messages_av)
+        temp = temp .* reshape(messages_av[(i, j, 1), (i, j, 2)], :, 1) 
+        temp = temp .*reshape(messages_av[(i, j, 2), (i, j, 1)], 1, :)
+    end
+    temp ./= sum(temp)
+end
+
+function energy_2site(fg::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
+    if has_edge(fg, (i, j, 1), (i, j, 2))
+        en12 = copy(get_prop(fg, (i, j, 1), (i, j, 2), :en))
+        pl = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pl))
+        pr = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pr))
+        int_eng = en12[pl, pr]
+    elseif has_edge(fg, (i, j, 2), (i, j, 1))
+        en21 = copy(get_prop(fg, (i, j, 2), (i, j, 1), :en))
+        pl = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pl))
+        pr = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pr))
+        int_eng = en21[pl, pr]'
+    else
+        int_eng = zeros(1, 1)
+    end
+    int_eng
+end
+# Works for Pegasus and Zephyr
+# function truncate_factor_graph_1site(fg::LabelledGraph{S, T}, beta::Real, num_states::Int; tol=1e-6, iter=1) where {S, T}
+#     states = Dict()
+#     beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
+
+#     # Truncate the state space based on the belief probabilities
+#     for node in vertices(fg)
+#         indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])), rev=true)
+#         push!(states, node => indices)
+#     end
+
+#     # Create a new factor graph with truncated state space
+#     new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
+    
+#     for v ∈ vertices(new_fg)
+#         cl = get_prop(fg, v, :cluster)
+#         sp = get_prop(fg, v, :spectrum)
+#         sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
+#         set_props!(new_fg, v, Dict(:cluster => cl, :spectrum => sp))
+#     end
+
+#     for e ∈ edges(fg)
+#         v, w = src(e), dst(e)
+#         add_edge!(new_fg, v, w)
+#         outer_edges = get_prop(fg, v, w, :outer_edges)
+#         pl = get_prop(fg, v, w, :pl)
+#         pr = get_prop(fg, v, w, :pr)
+#         en = get_prop(fg, v, w, :en)
+#         pl = pl[states[v]]
+#         pr = pr[states[w]]
+#         pl_transition, pl_unique = rank_reveal(pl, :PE)
+#         pr_transition, pr_unique = rank_reveal(pr, :PE)
+#         en = en[pl_unique, pr_unique]
+
+#         set_props!(
+#                   new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
+#               )
+#     end
+#     new_fg
+# end
+
+function belief_propagation(fg, beta; tol=1e-6, iter=1, output_message=false)
     messages_va = Dict()
     messages_av = Dict()
     beliefs = Dict()
@@ -372,13 +358,16 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
                 if has_edge(fg, v, neighbor)
                     E_bond = get_prop(fg, v, neighbor, :en)
                     pl, pr = get_prop(fg, v, neighbor, :pl), get_prop(fg, v, neighbor, :pr)
-                    E_bond = E_bond[pl, pr]
                 elseif has_edge(fg, neighbor, v)
-                    E_bond = get_prop(fg, neighbor, v, :en)
-                    pl, pr = get_prop(fg, neighbor, v, :pl), get_prop(fg, neighbor, v, :pr)
-                    E_bond = E_bond[pl, pr]'
+                    E_bond = get_prop(fg, neighbor, v, :en)'
+                    pl, pr = get_prop(fg, neighbor, v, :pr), get_prop(fg, neighbor, v, :pl)
                 end
-                messages_av[neighbor, v] = exp.(-beta * E_bond) * messages_va[neighbor, v]
+                temp = zeros(maximum(pr))
+                for (i, r) in enumerate(pr)
+                    temp[r] += messages_va[neighbor, v][i]
+                end
+                temp = exp.(-beta * E_bond) * temp
+                messages_av[neighbor, v] = temp[pl]
                 messages_av[neighbor, v] ./= sum(messages_av[neighbor, v])
             end
         end
@@ -398,7 +387,7 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
         converged = all([all(abs.(old_beliefs[v] .- beliefs[v]) .< tol) for v in keys(beliefs)])
     end
 
-    beliefs
+    output_message ? (beliefs, messages_av) : beliefs
 end
 
 function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  # TODO: Not going to work without PoolOfProjectors

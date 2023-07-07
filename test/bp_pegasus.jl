@@ -142,6 +142,58 @@ function create_larger_example_factor_graph_tree_pathological()
    ig, fg
 end
 
+"""
+Instance below looks like this:
+
+1 -- 2
+|
+3 -- 4
+
+"""
+function create_larger_example_factor_graph_tree_2site()
+   instance = Dict(
+      (1, 1) => 0.5,
+      (2, 2) => 0.25,
+      (3, 3) => 0.3,
+      (4, 4) => 0.1,
+      (5, 5) => 0.1,
+      (6, 6) => 0.1,
+      (7, 7) => 0.1,
+      (8, 8) => 0.1,
+      (1, 2) => -0.00001,
+      (1, 3) => 1.0,
+      (3, 4) => 1.0,
+      (2, 5) => 1.0,
+      (3, 4) => 1.0,
+      (6, 7) => 1.0,
+      (6, 8) => 1.0,
+      (6, 2) => 1.0
+   )
+
+   ig = ising_graph(instance)
+
+   assignment_rule = Dict(
+      1 => (1, 1, 1),
+      2 => (1, 1, 2),
+      3 => (1, 2, 1),
+      4 => (1, 2, 2),
+      5 => (2, 1, 1),
+      6 => (2, 1, 2),
+      7 => (2, 2, 1),
+      8 => (2, 2, 2)
+   )
+
+   fg = factor_graph(
+      ig,
+      Dict{NTuple{3, Int}, Int}(),
+      spectrum = full_spectrum,
+      cluster_assignment_rule = assignment_rule,
+   )
+
+   ig, fg
+end
+
+
 
 @testset "Belief propagation basic" begin
    ig, fg = create_larger_example_factor_graph_tree_basic()
@@ -181,4 +233,32 @@ end
    for v in keys(beliefs)
       @test beliefs[v] ≈ exact_marginal[v]
    end
+end
+
+@testset "Belief propagation 2site" begin
+   ig, fg = create_larger_example_factor_graph_tree_2site()
+   beta = 1
+   tol = 1e-12
+   iter = 100
+   beliefs, messages_av = belief_propagation(fg, beta; iter=iter, tol=tol, output_message=true)
+   exact_marginal = Dict()
+   for k in keys(beliefs)
+      push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+   end
+   for v in keys(beliefs)
+      @test beliefs[v] ≈ exact_marginal[v]
+   end
+
+   for v in vertices(fg)
+      println("v ", v)
+      i, j, _ = v
+      n1, n2 = length(beliefs[(i, j, 1)]), length(beliefs[(i, j, 2)])
+      exact = [exact_cond_prob(fg, beta, Dict((i, j, 1) => k1, (i, j, 2) => k2)) for k1 in 1:n1, k2 in 1:n2]
+      println("exact ", exact)
+      belief = beliefs_2site(fg, i, j, messages_av, beta)
+      println("belief ", belief)
+
+      # @test beliefs_2site(fg, i, j, messages_av, beta) ≈ exact
+   end
+
 end
