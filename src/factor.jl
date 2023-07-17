@@ -233,7 +233,7 @@ function truncate_factor_graph_1site_BP(fg::LabelledGraph{S, T}, num_states::Int
     states = Dict()
     beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
     for node in vertices(fg)
-        indices = partialsortperm(weights[node], 1:min(num_states, length(weights[node])), rev=true)
+        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])), rev=true)
         push!(states, node => indices)
     end
     truncate_factor_graph(fg, states)
