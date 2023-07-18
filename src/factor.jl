@@ -9,6 +9,7 @@ export
     truncate_factor_graph_2site_energy,
     truncate_factor_graph_1site_BP,
     belief_propagation,
+    belief_propagation_old,
     exact_cond_prob,
     beliefs_2site
 """
@@ -150,7 +151,7 @@ function truncate_factor_graph_2site_energy(fg::LabelledGraph{S, T}, num_states:
         i, j, _ = node
         E1 = copy(get_prop(fg, (i, j, 1), :spectrum).energies)
         E2 = copy(get_prop(fg, (i, j, 2), :spectrum).energies)
-        E = -1 .* energy_2site(fg, i, j) .- reshape(E1, :, 1) .- reshape(E2, 1, :)
+        E = energy_2site(fg, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
         sx, sy = size(E)
         E = reshape(E, sx * sy)
         ind1, ind2 = select_numstate_best(E, sx, num_states)
@@ -168,7 +169,7 @@ function select_numstate_best(E, sx, num_states)
 
     while true
         guess = div(low + high, 2)
-        ind = partialsortperm(E, 1:guess, rev=true)
+        ind = partialsortperm(E, 1:guess)
         ind1 = mod.(ind .- 1, sx) .+ 1
         ind2 = div.(ind .- 1, sx) .+ 1
         ind1 = sort([Set(ind1)...])
@@ -233,7 +234,7 @@ function truncate_factor_graph_1site_BP(fg::LabelledGraph{S, T}, num_states::Int
     states = Dict()
     beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
     for node in vertices(fg)
-        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])), rev=true)
+        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])))
         push!(states, node => indices)
     end
     truncate_factor_graph(fg, states)
@@ -283,6 +284,7 @@ function energy_2site(fg::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
     end
     int_eng
 end
+
 # Works for Pegasus and Zephyr
 # function truncate_factor_graph_1site(fg::LabelledGraph{S, T}, beta::Real, num_states::Int; tol=1e-6, iter=1) where {S, T}
 #     states = Dict()
@@ -324,7 +326,8 @@ end
 #     new_fg
 # end
 
-function belief_propagation(fg, beta; tol=1e-6, iter=1, output_message=false)
+
+function belief_propagation_old(fg, beta; tol=1e-6, iter=1, output_message=false)
     messages_va = Dict()
     messages_av = Dict()
     beliefs = Dict()
@@ -399,3 +402,80 @@ function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::
     prob ./= sum(prob)
     sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
  end
+
+ function belief_propagation(fg, beta; tol=1e-6, iter=1, output_message=false)
+    messages_va = Dict()
+    messages_av = Dict()
+    beliefs = Dict()
+
+    # Initialize messages with uniform probabilities
+    for v in vertices(fg)
+        ns = length(get_prop(fg, v, :spectrum).states)
+        push!(beliefs, v => ones(ns)./ns)
+        for neighbor in get_neighbors(fg, v)
+            pr = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :pr) : get_prop(fg, neighbor, v, :pl)
+            pl = has_edge(fg, neighbor, v) ? get_prop(fg, neighbor, v, :pr) : get_prop(fg, v, neighbor, :pl)
+            temp = zeros(maximum(pr))
+            for (i, r) in enumerate(pr)
+                temp[r] += 1
+            end
+            push!(messages_va, (v, neighbor) => temp ./ sum(temp))
+            push!(messages_av, (neighbor, v) => ones(maximum(pl)))
+        end
+    end 
+
+    # Perform message passing until convergence
+    converged = false
+    iteration = 0
+    while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
+        iteration += 1
+        old_beliefs = deepcopy(beliefs)
+        for v in vertices(fg)
+            for neighbor in get_neighbors(fg, v)
+                #update messages from vertex to edge
+                E_local = get_prop(fg, v, :spectrum).energies
+                E_local = E_local .- minimum(E_local)
+                messages_va[v, neighbor] = exp.(-E_local * beta)
+                for n in get_neighbors(fg, v)
+                    if n != neighbor
+                        pl = has_edge(fg, n, v) ? get_prop(fg, n, v, :pr) : get_prop(fg, v, n, :pl)
+                        messages_va[v, neighbor] .*= messages_av[n, v][pl]
+                    end
+                end
+                messages_va[v, neighbor] ./= sum(messages_va[v, neighbor])
+                pr = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :pl) : get_prop(fg, neighbor, v, :pr)
+                temp = zeros(maximum(pr))
+                for (i, r) in enumerate(pr)
+                    temp[r] += messages_va[v, neighbor][i]
+                end
+                messages_va[v, neighbor] = temp
+            end
+        end
+        for v in vertices(fg)
+            for neighbor in get_neighbors(fg, v)
+                #update messages from edge to vertex
+                E_bond = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :en) : get_prop(fg, neighbor, v, :en)'
+                E_bond = E_bond .- minimum(E_bond)
+                messages_av[neighbor, v] = exp.(-beta * E_bond) * messages_va[neighbor, v]
+            end
+        end
+        
+        for v in vertices(fg)
+            E_local = get_prop(fg, v, :spectrum).energies
+            beliefs[v] = exp.(-E_local * beta)
+            for neighbor in get_neighbors(fg, v)
+                #update beliefs
+                pl = has_edge(fg, neighbor, v) ? get_prop(fg, neighbor, v, :pr) : get_prop(fg, v, neighbor, :pl)
+                beliefs[v] .*= messages_av[neighbor, v][pl]
+            end
+            # Normalize the beliefs
+            beliefs[v] = -log.(beliefs[v])./beta
+            beliefs[v] = beliefs[v] .- minimum(beliefs[v])
+        end
+
+        # Check convergence
+        converged = all([all(abs.(old_beliefs[v] .- beliefs[v]) .< tol) for v in keys(beliefs)])
+    end
+
+    output_message ? (beliefs, messages_av) : beliefs
+end

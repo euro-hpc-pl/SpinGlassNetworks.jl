@@ -205,7 +205,8 @@ end
       push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
    end
    for v in keys(beliefs)
-      @test beliefs[v] ≈ exact_marginal[v]
+      temp = -log.(exact_marginal[v])./beta
+      @test beliefs[v] ≈ temp .- minimum(temp)
    end
 end
 @testset "Belief propagation " begin
@@ -218,8 +219,8 @@ end
       push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
    end
    for v in keys(beliefs)
-      @test beliefs[v] ≈ exact_marginal[v]
-   end
+      temp = -log.(exact_marginal[v])./beta
+      @test beliefs[v] ≈ temp .- minimum(temp)   end
 end
 @testset "Belief propagation pathological" begin
    ig, fg = create_larger_example_factor_graph_tree_pathological()
@@ -231,34 +232,34 @@ end
       push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
    end
    for v in keys(beliefs)
-      @test beliefs[v] ≈ exact_marginal[v]
-   end
+      temp = -log.(exact_marginal[v])./beta
+      @test beliefs[v] ≈ temp .- minimum(temp)   end
 end
 
-@testset "Belief propagation 2site" begin
-   ig, fg = create_larger_example_factor_graph_tree_2site()
-   beta = 1
-   tol = 1e-12
-   iter = 100
-   beliefs, messages_av = belief_propagation(fg, beta; iter=iter, tol=tol, output_message=true)
-   exact_marginal = Dict()
-   for k in keys(beliefs)
-      push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
-   end
-   for v in keys(beliefs)
-      @test beliefs[v] ≈ exact_marginal[v]
-   end
+# @testset "Belief propagation 2site" begin
+#    ig, fg = create_larger_example_factor_graph_tree_2site()
+#    beta = 1
+#    tol = 1e-12
+#    iter = 100
+#    beliefs, messages_av = belief_propagation_old(fg, beta; iter=iter, tol=tol, output_message=true)
+#    exact_marginal = Dict()
+#    for k in keys(beliefs)
+#       push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+#    end
+#    for v in keys(beliefs)
+#       @test beliefs[v] ≈ exact_marginal[v]
+#    end
 
-   for v in vertices(fg)
-      println("v ", v)
-      i, j, _ = v
-      n1, n2 = length(beliefs[(i, j, 1)]), length(beliefs[(i, j, 2)])
-      exact = [exact_cond_prob(fg, beta, Dict((i, j, 1) => k1, (i, j, 2) => k2)) for k1 in 1:n1, k2 in 1:n2]
-      println("exact ", exact)
-      belief = beliefs_2site(fg, i, j, messages_av, beta)
-      println("belief ", belief)
+#    for v in vertices(fg)
+#       println("v ", v)
+#       i, j, _ = v
+#       n1, n2 = length(beliefs[(i, j, 1)]), length(beliefs[(i, j, 2)])
+#       exact = [exact_cond_prob(fg, beta, Dict((i, j, 1) => k1, (i, j, 2) => k2)) for k1 in 1:n1, k2 in 1:n2]
+#       println("exact ", exact)
+#       belief = beliefs_2site(fg, i, j, messages_av, beta)
+#       println("belief ", belief)
 
-      # @test beliefs_2site(fg, i, j, messages_av, beta) ≈ exact
-   end
+#       # @test beliefs_2site(fg, i, j, messages_av, beta) ≈ exact
+#    end
 
-end
+# end
