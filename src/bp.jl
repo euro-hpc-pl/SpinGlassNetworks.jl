@@ -10,15 +10,8 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
 
     # Initialize messages with uniform probabilities
     for v in vertices(fg)
-        for neighbor in get_neighbors(fg, v)
-            pr = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :pr) : get_prop(fg, neighbor, v, :pl)
-            pl = has_edge(fg, neighbor, v) ? get_prop(fg, neighbor, v, :pr) : get_prop(fg, v, neighbor, :pl)
-            temp = zeros(maximum(pr))
-            for (i, r) in enumerate(pr)
-                temp[r] += 1
-            end
-            push!(messages_ve, (v, neighbor) => temp ./ sum(temp))
-            push!(messages_ev, (neighbor, v) => ones(maximum(pl)))
+        for (n, pv, _) in get_neighbors(fg, v)
+            push!(messages_ev, (n, v) => ones(maximum(pv)))
         end
     end
 
@@ -27,51 +20,43 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     iteration = 0
     while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
         iteration += 1
-        old_messages_ve = deepcopy(messages_ve)
+        old_messages_ev = deepcopy(messages_ev)
         for v in vertices(fg)
-            for neighbor in get_neighbors(fg, v)
-                #update messages from vertex to edge
+            #update messages from vertex to edge
+            for (n1, pv1, _) ∈ get_neighbors(fg, v)
                 E_local = get_prop(fg, v, :spectrum).energies
-                E_local = E_local .- minimum(E_local)
-                messages_ve[v, neighbor] = exp.(-E_local * beta)
-                for n in get_neighbors(fg, v)
-                    if n != neighbor
-                        pl = has_edge(fg, n, v) ? get_prop(fg, n, v, :pr) : get_prop(fg, v, n, :pl)
-                        messages_ve[v, neighbor] .*= messages_ev[n, v][pl]
-                    end
+                messages_ve[v, n1] = exp.(-(E_local .- minimum(E_local)) * beta)
+                for (n2, pv2, _) in get_neighbors(fg, v)
+                    if n1 == n2 continue end
+                    messages_ve[v, n1] .*= messages_ev[n2, v][pv2]
                 end
-                messages_ve[v, neighbor] ./= sum(messages_ve[v, neighbor])
-                pr = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :pl) : get_prop(fg, neighbor, v, :pr)
-                temp = zeros(maximum(pr))
-                for (i, r) in enumerate(pr)
-                    temp[r] += messages_ve[v, neighbor][i]
+                messages_ve[v, n1] ./= sum(messages_ve[v, n1])
+                temp = zeros(maximum(pv1))
+                for (i, r) in enumerate(pv1)
+                    temp[r] += messages_ve[v, n1][i]
                 end
-                messages_ve[v, neighbor] = temp
+                messages_ve[v, n1] = temp
             end
         end
+
+        #update messages from edge to verte
         for v in vertices(fg)
-            for neighbor in get_neighbors(fg, v)
-                #update messages from edge to verte
-                # messages_ev[neighbor, v] = exp.(-beta * E_bond) * messages_ve[neighbor, v]
-                E_bond = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :en) : get_prop(fg, neighbor, v, :en)'
-                messages_ev[neighbor, v] = update_message(messages_ve[neighbor, v], E_bond, beta)
+            for (n, _, en) ∈ get_neighbors(fg, v)
+                messages_ev[n, v] = update_message(en, messages_ve[n, v], beta)
             end
         end
 
         # Check convergence
-        # converged = all([all(abs.(old_messages_ve[v] .- messages_ve[v]) .< tol) for v in keys(messages_ve)])
+        converged = all([all(abs.(old_messages_ev[v] .- messages_ev[v]) .< tol) for v in keys(messages_ev)])
     end
 
     beliefs = Dict()
     for v in vertices(fg)
         E_local = get_prop(fg, v, :spectrum).energies
         beliefs[v] = exp.(-E_local * beta)
-        for neighbor in get_neighbors(fg, v)
-            #update beliefs
-            pl = has_edge(fg, neighbor, v) ? get_prop(fg, neighbor, v, :pr) : get_prop(fg, v, neighbor, :pl)
-            beliefs[v] .*= messages_ev[neighbor, v][pl]
+        for (n, pv, _) ∈ get_neighbors(fg, v)
+            beliefs[v] .*= messages_ev[n, v][pv]
         end
-        # Normalize the beliefs
         beliefs[v] = -log.(beliefs[v])./beta
         beliefs[v] = beliefs[v] .- minimum(beliefs[v])
     end
@@ -79,15 +64,18 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     beliefs
 end
 
-
-function get_neighbors(graph::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
+function get_neighbors(fg::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
     neighbors = []
-    for edge in edges(graph)
+    for edge in edges(fg)
         src_node, dst_node = src(edge), dst(edge)
         if src_node == vertex
-            push!(neighbors, dst_node)
+            en = get_prop(fg, src_node, dst_node, :en)
+            pv = get_prop(fg, src_node, dst_node, :pl)
+            push!(neighbors, (dst_node, pv, en))
         elseif dst_node == vertex
-            push!(neighbors, src_node)
+            en = get_prop(fg, src_node, dst_node, :en)'
+            pv = get_prop(fg, src_node, dst_node, :pr)
+            push!(neighbors, (src_node, pv, en))
         end
     end
     return neighbors
@@ -102,51 +90,52 @@ end
 
 Base.adjoint(s::MergedEnergy) = MergedEnergy(s.e11', s.e21', s.e12', s.e22')
 
-function update_message(message::Vector, E_bond::AbstractArray, beta::Real)
+function update_message( E_bond::AbstractArray, message::Vector, beta::Real)
     E_bond = E_bond .- minimum(E_bond)
     exp.(-beta * E_bond) * message
 end
 
-function update_message(message::Vector, E_bond::MergedEnergy, beta::Real)
+function update_message(E_bond::MergedEnergy, message::Vector, beta::Real)
     #  equivalent to
-    #  @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-    #  exp.(-beta * E) * message
-    # but without creating large matrix E if not optimal
+    e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
+    @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
+    exp.(-beta * E) * message
 
-    e11, e12, e21, e22 = E_bond.e11', E_bond.e21', E_bond.e12', E_bond.e22'
-    sbt = length(message)
-    sl1, sl2, sr1, sr2 = size(e11, 1), size(e22, 1), size(e11, 2), size(e22, 2)
-    sinter = sbt * max(sl1 * sl2 * min(sr1, sr2), sr1 * sr2 * min(sl1, sl2))
-    if sl1 * sl2 * sr1 * sr2 < sinter
-        e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
-        @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-        return  exp.(-beta * E) * message
-    elseif sr1 <= sr2 && sl1 <= sl2
-        message = message'
-        message = message .* (exp.(-beta * e21))'
-        message = message * (exp.(-beta * e22))
-        message .*= (exp.(-beta * e11))
-        message .*= (exp.(-beta * e12))
-    elseif sr1 <= sr2 && sl2 <= sl1
-        message = message'
-        message = message .* (exp.(-beta * e11))'
-        message = message * (exp.(-beta * e12))
-        message .*= (exp.(-beta * e21))
-        message .*= (exp.(-beta * e22))
-    elseif sr2 <= sr1 && sl1 <= sl2
-        message = message'
-        message = message .* (exp.(-beta * e22))'
-        message = message * (exp.(-beta * e21))
-        message .*= (exp.(-beta * e11))
-        message .*= (exp.(-beta * e12))
-    else # sr2 <= sr1 && sl2 <= sl1
-        message = message'
-        message = message .* (exp.(-beta * e12))'
-        message = message * (exp.(-beta * e11))
-        message .*= (exp.(-beta * e21))
-        message .*= (exp.(-beta * e22))
-    end
-    reshape(message, sr1 * sr2)
+    # but without creating large matrix E if not optimal
+    # e11, e12, e21, e22 = E_bond.e11', E_bond.e21', E_bond.e12', E_bond.e22'
+    # sbt = length(message)
+    # sl1, sl2, sr1, sr2 = size(e11, 1), size(e22, 1), size(e11, 2), size(e22, 2)
+    # sinter = sbt * max(sl1 * sl2 * min(sr1, sr2), sr1 * sr2 * min(sl1, sl2))
+    # if sl1 * sl2 * sr1 * sr2 < sinter
+    #     e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
+    #     @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
+    #     return  exp.(-beta * E) * message
+    # elseif sr1 <= sr2 && sl1 <= sl2
+    #     message = message'
+    #     message = message .* (exp.(-beta * e21))'
+    #     message = message * (exp.(-beta * e22))
+    #     message .*= (exp.(-beta * e11))
+    #     message .*= (exp.(-beta * e12))
+    # elseif sr1 <= sr2 && sl2 <= sl1
+    #     message = message'
+    #     message = message .* (exp.(-beta * e11))'
+    #     message = message * (exp.(-beta * e12))
+    #     message .*= (exp.(-beta * e21))
+    #     message .*= (exp.(-beta * e22))
+    # elseif sr2 <= sr1 && sl1 <= sl2
+    #     message = message'
+    #     message = message .* (exp.(-beta * e22))'
+    #     message = message * (exp.(-beta * e21))
+    #     message .*= (exp.(-beta * e11))
+    #     message .*= (exp.(-beta * e12))
+    # else # sr2 <= sr1 && sl2 <= sl1
+    #     message = message'
+    #     message = message .* (exp.(-beta * e12))'
+    #     message = message * (exp.(-beta * e11))
+    #     message .*= (exp.(-beta * e21))
+    #     message .*= (exp.(-beta * e22))
+    # end
+    # reshape(message, sr1 * sr2)
 end
 
 
@@ -187,8 +176,8 @@ end
 
 function merge_vertices(fg::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int64}, node2::NTuple{3, Int64}
     ) where {S, T}
-    i1, j1, k1 = node1
-    i2, j2, k2 = node2
+    i1, j1, _ = node1
+    i2, j2, _ = node2
 
     p21l = projector(fg, (i1, j1, 2), (i2, j2, 1))
     p22l = projector(fg, (i1, j1, 2), (i2, j2, 2))
@@ -257,4 +246,3 @@ end
 function outer_projector(p1::Array{T, 1}, p2::Array{T, 1}) where T <: Number
     reshape(reshape(p1, :, 1) .+ maximum(p1) .* reshape(p2 .- 1, 1, :), :)
 end
-
