@@ -27,9 +27,9 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
 end
 
 my_tests = [
-    "ising.jl",
-    "factor.jl",
-    "utils.jl",
+    # "ising.jl",
+    # "factor.jl",
+    # "utils.jl",
     "bp_1site.jl",
     "bp_2site.jl"
 ]

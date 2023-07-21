@@ -89,5 +89,7 @@ module SpinGlassNetworks
     include("spectrum.jl")
     include("lattice.jl")
     include("factor.jl")
+    include("bp.jl")
+    include("truncate.jl")
     include("utils.jl")
 end # module

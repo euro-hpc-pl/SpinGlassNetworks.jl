@@ -5,15 +5,10 @@ export
     split_into_clusters,
     decode_factor_graph_state,
     energy,
+    energy_2site,
     cluster_size,
-    truncate_factor_graph_2site_energy,
-    truncate_factor_graph_1site_BP,
-    truncate_factor_graph_2site_BP,
-    belief_propagation,
-    belief_propagation_old,
-    exact_cond_prob,
-    beliefs_2site,
-    factor_graph_2site
+    truncate_factor_graph,
+    exact_cond_prob
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
@@ -141,81 +136,39 @@ function energy(fg::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_fg
 end
 
+
+function energy_2site(fg::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
+    # matrix of interaction energies between two nodes
+    if has_edge(fg, (i, j, 1), (i, j, 2))
+        en12 = copy(get_prop(fg, (i, j, 1), (i, j, 2), :en))
+        pl = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pl))
+        pr = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pr))
+        int_eng = en12[pl, pr]
+    elseif has_edge(fg, (i, j, 2), (i, j, 1))
+        en21 = copy(get_prop(fg, (i, j, 2), (i, j, 1), :en))
+        pl = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pl))
+        pr = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pr))
+        int_eng = en21[pl, pr]'
+    else
+        int_eng = zeros(1, 1)
+    end
+    int_eng
+end
+
 function cluster_size(factor_graph::LabelledGraph{S, T}, vertex::T) where {S, T}
     length(get_prop(factor_graph, vertex, :spectrum).energies)
 end
 
+function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  # TODO: Not going to work without PoolOfProjectors
+    ver = vertices(factor_graph)
+    rank = cluster_size.(Ref(factor_graph), ver)
+    states = [Dict(ver .=> σ) for σ ∈ Iterators.product([1:r for r ∈ rank]...)]
+    energies = SpinGlassNetworks.energy.(Ref(factor_graph), states)
+    prob = exp.(-beta .* energies)
+    prob ./= sum(prob)
+    sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
+ end
 
-function truncate_factor_graph_2site_energy(fg::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
-    states = Dict()
-    for node in vertices(fg)
-        if node in keys(states) continue end
-        i, j, _ = node
-        E1 = copy(get_prop(fg, (i, j, 1), :spectrum).energies)
-        E2 = copy(get_prop(fg, (i, j, 2), :spectrum).energies)
-        E = energy_2site(fg, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
-        sx, sy = size(E)
-        E = reshape(E, sx * sy)
-        ind1, ind2 = select_numstate_best(E, sx, num_states)
-        push!(states, (i, j, 1) => ind1)
-        push!(states, (i, j, 2) => ind2)
-    end
-    truncate_factor_graph(fg, states)
-end
-
-function truncate_factor_graph_2site_BP(fg::LabelledGraph{S, T}, num_states::Int; beta=1.0, tol=1e-6, iter=1) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
-    new_fg = factor_graph_2site(fg, beta)
-    beliefs = belief_propagation(new_fg, beta; tol, iter)
-    states = Dict()
-    for node in vertices(fg)
-        if node in keys(states) continue end
-        i, j, _ = node
-        sx = length(get_prop(fg, (i, j, 1), :spectrum).energies)
-        E = beliefs[(i,j)]
-        ind1, ind2 = select_numstate_best(E, sx, num_states)
-        push!(states, (i, j, 1) => ind1)
-        push!(states, (i, j, 2) => ind2)
-    end
-    truncate_factor_graph(fg, states)
-end
-
-# truncate based on energy in two nodes of factor graph; resulting states are a product of states in two nodes, so we have to fine-tune to end up with expected number of states
-function select_numstate_best(E, sx, num_states)
-
-    low, high = 1, min(num_states, length(E))
-
-    while true
-        guess = div(low + high, 2)
-        ind = partialsortperm(E, 1:guess)
-        ind1 = mod.(ind .- 1, sx) .+ 1
-        ind2 = div.(ind .- 1, sx) .+ 1
-        ind1 = sort([Set(ind1)...])
-        ind2 = sort([Set(ind2)...])
-        if high - low <= 1
-            return ind1, ind2
-        end
-        if length(ind1) * length(ind2) > num_states
-            high = guess
-        else
-            low = guess
-        end
-    end
-end
-
-function get_neighbors(graph::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
-    neighbors = []
-    for edge in edges(graph)
-        src_node, dst_node = src(edge), dst(edge)
-        if src_node == vertex
-            push!(neighbors, dst_node)
-        elseif dst_node == vertex
-            push!(neighbors, src_node)
-        end
-    end
-    return neighbors
-end
-
-# Works for Pegasus and Zephyr
 function truncate_factor_graph(fg::LabelledGraph{S, T}, states::Dict) where {S, T}
 
     new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
@@ -245,362 +198,4 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, states::Dict) where {S, 
               )
     end
     new_fg
-end
-
-function truncate_factor_graph_1site_BP(fg::LabelledGraph{S, T}, num_states::Int; beta=1.0, tol=1e-6, iter=1) where {S, T}
-    states = Dict()
-    beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
-    for node in vertices(fg)
-        indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])))
-        push!(states, node => indices)
-    end
-    truncate_factor_graph(fg, states)
-end
-
-
-function beliefs_2site(fg::LabelledGraph{S, T}, i::Int, j::Int, messages_av::Dict, beta::Real) where {S, T}
-    temp = energy_2site(fg, i, j)
-    temp = exp.(-beta*temp)
-    if ((i, j, 1), (i, j, 2)) in keys(messages_av)
-        temp = temp .* reshape(messages_av[(i, j, 1), (i, j, 2)], :, 1)
-        temp = temp .*reshape(messages_av[(i, j, 2), (i, j, 1)], 1, :)
-    end
-    temp ./= sum(temp)
-end
-
-function energy_2site(fg::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
-    if has_edge(fg, (i, j, 1), (i, j, 2))
-        en12 = copy(get_prop(fg, (i, j, 1), (i, j, 2), :en))
-        pl = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pl))
-        pr = copy(get_prop(fg, (i, j, 1), (i, j, 2), :pr))
-        int_eng = en12[pl, pr]
-    elseif has_edge(fg, (i, j, 2), (i, j, 1))
-        en21 = copy(get_prop(fg, (i, j, 2), (i, j, 1), :en))
-        pl = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pl))
-        pr = copy(get_prop(fg, (i, j, 2), (i, j, 1), :pr))
-        int_eng = en21[pl, pr]'
-    else
-        int_eng = zeros(1, 1)
-    end
-    int_eng
-end
-
-
-function belief_propagation_old(fg, beta; tol=1e-6, iter=1, output_message=false)
-    messages_va = Dict()
-    messages_av = Dict()
-    beliefs = Dict()
-
-    # Initialize messages with uniform probabilities
-    for v in vertices(fg)
-        ns = length(get_prop(fg, v, :spectrum).states)
-        push!(beliefs, v => ones(ns)./ns)
-        for neighbor in get_neighbors(fg, v)
-            push!(messages_va, (v, neighbor) => ones(ns)./ns)
-            push!(messages_av, (neighbor, v) => ones(ns)./ns)
-        end
-    end
-
-    # Perform message passing until convergence
-    converged = false
-    iteration = 0
-    while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
-        iteration += 1
-        old_beliefs = deepcopy(beliefs)
-        for v in vertices(fg)
-            for neighbor in get_neighbors(fg, v)
-                #update messages from vertex to edge
-                messages_va[v, neighbor] = beliefs[v]./messages_av[neighbor, v]
-                messages_va[v, neighbor] ./= sum(messages_va[v, neighbor])
-            end
-        end
-        for v in vertices(fg)
-            for neighbor in get_neighbors(fg, v)
-                #update messages from edge to vertex
-                if has_edge(fg, v, neighbor)
-                    E_bond = get_prop(fg, v, neighbor, :en)
-                    pl, pr = get_prop(fg, v, neighbor, :pl), get_prop(fg, v, neighbor, :pr)
-                elseif has_edge(fg, neighbor, v)
-                    E_bond = get_prop(fg, neighbor, v, :en)'
-                    pl, pr = get_prop(fg, neighbor, v, :pr), get_prop(fg, neighbor, v, :pl)
-                end
-                temp = zeros(maximum(pr))
-                for (i, r) in enumerate(pr)
-                    temp[r] += messages_va[neighbor, v][i]
-                end
-                temp = exp.(-beta * E_bond) * temp
-                messages_av[neighbor, v] = temp[pl]
-                messages_av[neighbor, v] ./= sum(messages_av[neighbor, v])
-            end
-        end
-
-        for v in vertices(fg)
-            E_local = get_prop(fg, v, :spectrum).energies
-            beliefs[v] = exp.(-E_local * beta)
-            for neighbor in get_neighbors(fg, v)
-                #update beliefs
-                beliefs[v] .*= messages_av[neighbor, v]
-            end
-            # Normalize the beliefs
-            beliefs[v] ./= sum(beliefs[v])
-        end
-
-        # Check convergence
-        converged = all([all(abs.(old_beliefs[v] .- beliefs[v]) .< tol) for v in keys(beliefs)])
-    end
-
-    output_message ? (beliefs, messages_av) : beliefs
-end
-
-function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  # TODO: Not going to work without PoolOfProjectors
-    ver = vertices(factor_graph)
-    rank = cluster_size.(Ref(factor_graph), ver)
-    states = [Dict(ver .=> σ) for σ ∈ Iterators.product([1:r for r ∈ rank]...)]
-    energies = SpinGlassNetworks.energy.(Ref(factor_graph), states)
-    prob = exp.(-beta .* energies)
-    prob ./= sum(prob)
-    sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
- end
-
- function belief_propagation(fg, beta; tol=1e-6, iter=1)
-    messages_va = Dict()
-    messages_av = Dict()
-    beliefs = Dict()
-
-    # Initialize messages with uniform probabilities
-    for v in vertices(fg)
-        ns = length(get_prop(fg, v, :spectrum).energies)
-        push!(beliefs, v => ones(ns)./ns)
-        for neighbor in get_neighbors(fg, v)
-            pr = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :pr) : get_prop(fg, neighbor, v, :pl)
-            pl = has_edge(fg, neighbor, v) ? get_prop(fg, neighbor, v, :pr) : get_prop(fg, v, neighbor, :pl)
-            temp = zeros(maximum(pr))
-            for (i, r) in enumerate(pr)
-                temp[r] += 1
-            end
-            push!(messages_va, (v, neighbor) => temp ./ sum(temp))
-            push!(messages_av, (neighbor, v) => ones(maximum(pl)))
-        end
-    end
-
-    # Perform message passing until convergence
-    converged = false
-    iteration = 0
-    while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
-        iteration += 1
-        old_beliefs = deepcopy(beliefs)
-        for v in vertices(fg)
-            for neighbor in get_neighbors(fg, v)
-                #update messages from vertex to edge
-                E_local = get_prop(fg, v, :spectrum).energies
-                E_local = E_local .- minimum(E_local)
-                messages_va[v, neighbor] = exp.(-E_local * beta)
-                for n in get_neighbors(fg, v)
-                    if n != neighbor
-                        pl = has_edge(fg, n, v) ? get_prop(fg, n, v, :pr) : get_prop(fg, v, n, :pl)
-                        messages_va[v, neighbor] .*= messages_av[n, v][pl]
-                    end
-                end
-                messages_va[v, neighbor] ./= sum(messages_va[v, neighbor])
-                pr = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :pl) : get_prop(fg, neighbor, v, :pr)
-                temp = zeros(maximum(pr))
-                for (i, r) in enumerate(pr)
-                    temp[r] += messages_va[v, neighbor][i]
-                end
-                messages_va[v, neighbor] = temp
-            end
-        end
-        for v in vertices(fg)
-            for neighbor in get_neighbors(fg, v)
-                #update messages from edge to verte
-                # messages_av[neighbor, v] = exp.(-beta * E_bond) * messages_va[neighbor, v]
-                E_bond = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :en) : get_prop(fg, neighbor, v, :en)'
-                messages_av[neighbor, v] = update_message(messages_va[neighbor, v], E_bond, beta)
-            end
-        end
-
-        for v in vertices(fg)
-            E_local = get_prop(fg, v, :spectrum).energies
-            beliefs[v] = exp.(-E_local * beta)
-            for neighbor in get_neighbors(fg, v)
-                #update beliefs
-                pl = has_edge(fg, neighbor, v) ? get_prop(fg, neighbor, v, :pr) : get_prop(fg, v, neighbor, :pl)
-                beliefs[v] .*= messages_av[neighbor, v][pl]
-            end
-            # Normalize the beliefs
-            beliefs[v] = -log.(beliefs[v])./beta
-            beliefs[v] = beliefs[v] .- minimum(beliefs[v])
-        end
-
-        # Check convergence
-        converged = all([all(abs.(old_beliefs[v] .- beliefs[v]) .< tol) for v in keys(beliefs)])
-    end
-
-    beliefs
-end
-
-struct Energy{T <: Real}
-    e11::AbstractMatrix{T}
-    e12::AbstractMatrix{T}
-    e21::AbstractMatrix{T}
-    e22::AbstractMatrix{T}
-end
-
-Base.adjoint(s::Energy) = Energy(s.e11', s.e21', s.e12', s.e22')
-
-function update_message(message::Vector, E_bond::Matrix, beta::Real)
-    E_bond = E_bond .- minimum(E_bond)
-    exp.(-beta * E_bond) * message
-end
-
-# function update_message(message::Vector, E_bond::Energy, beta::Real)
-#     e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
-#     @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-#     exp.(-beta * E) * message
-# end
-
-function update_message(message::Vector, E_bond::Energy, beta::Real)
-    e11, e12, e21, e22 = E_bond.e11', E_bond.e21', E_bond.e12', E_bond.e22'
-    sbt = length(message)
-    sl1, sl2, sr1, sr2 = size(e11, 1), size(e22, 1), size(e11, 2), size(e22, 2)
-    sinter = sbt * max(sl1 * sl2 * min(sr1, sr2), sr1 * sr2 * min(sl1, sl2))
-    if sl1 * sl2 * sr1 * sr2 < sinter
-        e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
-        @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-        return  exp.(-beta * E) * message
-    elseif sr1 <= sr2 && sl1 <= sl2
-        message = message'
-        message = message .* (exp.(-beta * e21))'
-        message = message * (exp.(-beta * e22))
-        message .*= (exp.(-beta * e11))
-        message .*= (exp.(-beta * e12))
-    elseif sr1 <= sr2 && sl2 <= sl1
-        message = message'
-        message = message .* (exp.(-beta * e11))'
-        message = message * (exp.(-beta * e12))
-        message .*= (exp.(-beta * e21))
-        message .*= (exp.(-beta * e22))
-    elseif sr2 <= sr1 && sl1 <= sl2
-        message = message'
-        message = message .* (exp.(-beta * e22))'
-        message = message * (exp.(-beta * e21))
-        message .*= (exp.(-beta * e11))
-        message .*= (exp.(-beta * e12))
-    else # sr2 <= sr1 && sl2 <= sl1
-        message = message'
-        message = message .* (exp.(-beta * e12))'
-        message = message * (exp.(-beta * e11))
-        message .*= (exp.(-beta * e21))
-        message .*= (exp.(-beta * e22))
-    end
-    reshape(message, sr1 * sr2)
-end
-
-function unify_vertices(vertices::Vector{Tuple{Int64, Int64, Int64}})
-    unified_vertices = Vector{Tuple{Int64, Int64}}()
-    for vertex in vertices
-        push!(unified_vertices, vertex[1:2])
-    end
-    return unique(unified_vertices)
-end
-
-function factor_graph_2site(fg::LabelledGraph{S, T}, beta::Real) where {S, T}
-    new_fg = LabelledGraph{MetaDiGraph}(unify_vertices(vertices(fg)))
-
-    for v in vertices(fg)
-        i, j, _ = v
-        E1 = copy(get_prop(fg, (i, j, 1), :spectrum).energies)
-        E2 = copy(get_prop(fg, (i, j, 2), :spectrum).energies)
-        E = energy_2site(fg, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
-        sp = Spectrum(reshape(E, :), [])
-        set_props!(new_fg, (i, j), Dict(:spectrum => sp))
-    end
-
-    edge_states = Set()
-    for e ∈ edges(fg)
-        if e in edge_states continue end
-        v, w = src(e), dst(e)
-        v1, v2, _ = v
-        w1, w2, _ = w
-        if (v1, v2) != (w1, w2)
-            add_edge!(new_fg, (v1, v2), (w1, w2))
-
-            E, pl, pr = merge_vertices(fg, beta, v, w)
-            push!(edge_states, sort([(v1, v2), (w1, w2)]))
-
-            set_props!(
-                  new_fg, (v1, v2), (w1, w2), Dict(:pl => pl, :en => E, :pr => pr)
-              )
-        end
-    end
-    new_fg
-end
-
-function merge_vertices(fg::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int64}, node2::NTuple{3, Int64}
-    ) where {S, T}
-    i1, j1, k1 = node1
-    i2, j2, k2 = node2
-
-    p21l = projector(fg, (i1, j1, 2), (i2, j2, 1))
-    p22l = projector(fg, (i1, j1, 2), (i2, j2, 2))
-    p12l = projector(fg, (i1, j1, 1), (i2, j2, 2))
-    p11l = projector(fg, (i1, j1, 1), (i2, j2, 1))
-
-    p1l, (p11l, p12l) = fuse_projectors((p11l, p12l))
-    p2l, (p21l, p22l) = fuse_projectors((p21l, p22l))
-
-    p11r = projector(fg, (i2, j2, 1), (i1, j1, 1))
-    p21r = projector(fg, (i2, j2, 1), (i1, j1, 2))
-    p12r = projector(fg, (i2, j2, 2), (i1, j1, 1))
-    p22r = projector(fg, (i2, j2, 2), (i1, j1, 2))
-
-    p1r, (p11r, p21r) = fuse_projectors((p11r, p21r))
-    p2r, (p12r, p22r) = fuse_projectors((p12r, p22r))
-
-    pl = outer_projector(p1l, p2l)
-    pr = outer_projector(p1r, p2r)
-
-    e11 = interaction_energy(fg, (i1, j1, 1), (i2, j2, 1))
-    e12 = interaction_energy(fg, (i1, j1, 1), (i2, j2, 2))
-    e21 = interaction_energy(fg, (i1, j1, 2), (i2, j2, 1))
-    e22 = interaction_energy(fg, (i1, j1, 2), (i2, j2, 2))
-
-    e11 = e11[p11l, p11r]
-    e21 = e21[p21l, p21r]
-    e12 = e12[p12l, p12r]
-    e22 = e22[p22l, p22r]
-
-    Energy(e11, e12, e21, e22), pl, pr
-end
-
-function interaction_energy(fg::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
-    if has_edge(fg, w, v)
-        get_prop(fg, w, v, :en)'
-    elseif has_edge(fg, v, w)
-        get_prop(fg, v, w, :en)
-    else
-        zeros(1, 1)
-    end
-end
-
-function projector(fg::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
-    if has_edge(fg, w, v)
-        p = get_prop(fg, w, v, :pr)
-    elseif has_edge(fg, v, w)
-        p = get_prop(fg, v, w, :pl)
-    else
-        p = ones(Int, v ∈ vertices(fg) ? length(get_prop(fg, v, :spectrum).energies) : 1)
-    end
-end
-
-function fuse_projectors(
-    projectors::NTuple{N, K}
-    ) where {N, K}
-    fused, transitions_matrix = rank_reveal(hcat(projectors...), :PE)
-    transitions = Tuple(Array(t) for t ∈ eachcol(transitions_matrix))
-    fused, transitions
-end
-
-function outer_projector(p1::Array{T, 1}, p2::Array{T, 1}) where T <: Number
-    reshape(reshape(p1, :, 1) .+ maximum(p1) .* reshape(p2 .- 1, 1, :), :)
 end

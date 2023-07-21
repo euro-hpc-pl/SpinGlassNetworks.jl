@@ -10,7 +10,7 @@ Instance below looks like this:
 1 -- 2 -- 3
 |
 4 -- 5 -- 6
-| 
+|
 7 -- 8 -- 9
 """
 function create_larger_example_factor_graph_tree()
@@ -59,11 +59,11 @@ function create_larger_example_factor_graph_tree()
 end
 
 ig, fg = create_larger_example_factor_graph_tree()
-beta = 1
+beta = 0.1
 iter = 0
 beliefs = belief_propagation(fg, beta; iter=iter)
-println(beliefs)
-# for v in vertices(fg)
-#    println("vertex ", v)
-#    println(get_prop(fg, v, :spectrum).energies)
-# end
+
+for v in vertices(fg)
+   en = get_prop(fg, v, :spectrum).energies
+   println("vertex ", v, " energy = ", en .- minimum(en), " bp = ", beliefs[v])
+end

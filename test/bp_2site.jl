@@ -71,11 +71,11 @@ end
 """
 Instance below looks like this:
 
-1 -- 2 -- 3
-     |
-     4
-     |
-     5
+12 -- 345 -- 6
+       |
+      789
+       |
+      10
 
 """
 function create_larger_example_factor_graph_tree_2site_pathological()
@@ -175,7 +175,7 @@ end
             @test get_prop(new_fg1, src(e), dst(e), :pr) == get_prop(fg1, src(e), dst(e), :pr)
          end
 
-         beliefs = belief_propagation(new_fg1, beta; iter=iter, tol=tol, output_message=false)
+         beliefs = belief_propagation(new_fg1, beta; iter=iter, tol=tol)
 
          exact_marginal = Dict()
          for k in keys(beliefs)
