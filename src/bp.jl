@@ -96,46 +96,48 @@ function update_message( E_bond::AbstractArray, message::Vector, beta::Real)
 end
 
 function update_message(E_bond::MergedEnergy, message::Vector, beta::Real)
-    #  equivalent to
     e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
-    @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-    exp.(-beta * E) * message
+    # equivalent to
+    # @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
+    # exp.(-beta * E) * message
 
-    # but without creating large matrix E if not optimal
-    # e11, e12, e21, e22 = E_bond.e11', E_bond.e21', E_bond.e12', E_bond.e22'
-    # sbt = length(message)
-    # sl1, sl2, sr1, sr2 = size(e11, 1), size(e22, 1), size(e11, 2), size(e22, 2)
-    # sinter = sbt * max(sl1 * sl2 * min(sr1, sr2), sr1 * sr2 * min(sl1, sl2))
-    # if sl1 * sl2 * sr1 * sr2 < sinter
-    #     e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
-    #     @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-    #     return  exp.(-beta * E) * message
-    # elseif sr1 <= sr2 && sl1 <= sl2
-    #     message = message'
-    #     message = message .* (exp.(-beta * e21))'
-    #     message = message * (exp.(-beta * e22))
-    #     message .*= (exp.(-beta * e11))
-    #     message .*= (exp.(-beta * e12))
-    # elseif sr1 <= sr2 && sl2 <= sl1
-    #     message = message'
-    #     message = message .* (exp.(-beta * e11))'
-    #     message = message * (exp.(-beta * e12))
-    #     message .*= (exp.(-beta * e21))
-    #     message .*= (exp.(-beta * e22))
-    # elseif sr2 <= sr1 && sl1 <= sl2
-    #     message = message'
-    #     message = message .* (exp.(-beta * e22))'
-    #     message = message * (exp.(-beta * e21))
-    #     message .*= (exp.(-beta * e11))
-    #     message .*= (exp.(-beta * e12))
-    # else # sr2 <= sr1 && sl2 <= sl1
-    #     message = message'
-    #     message = message .* (exp.(-beta * e12))'
-    #     message = message * (exp.(-beta * e11))
-    #     message .*= (exp.(-beta * e21))
-    #     message .*= (exp.(-beta * e22))
-    # end
-    # reshape(message, sr1 * sr2)
+    e11 = exp.(-beta .* (e11 .- minimum(e11)))
+    e12 = exp.(-beta .* (e12 .- minimum(e12)))
+    e21 = exp.(-beta .* (e21 .- minimum(e21)))
+    e22 = exp.(-beta .* (e22 .- minimum(e22)))
+    sl1, sl2, sr1, sr2 = size(e11, 1), size(e21, 1), size(e21, 2), size(e22, 2)
+
+    if sl1 * sl2 * sr1 * sr2 < max(sr1 * sr2 * min(sl1, sl2), sl1 * sl2 * min(sr1, sr2))
+        R = reshape(e11, sl1, 1, sr1, 1) .* reshape(e21, 1, sl2, sr1, 1)
+        R = R .* reshape(e12, sl1, 1, 1, sr2)
+        R = R .* reshape(e22, 1, sl2, 1, sr2)
+        R = reshape(R, sl1 * sl2, sr1 * sr2) * message
+    elseif sl1 <= sl2 && sr1 <= sr2
+        R = reshape(e12, sl1, 1, sr2) .* reshape(message, 1, sr1, sr2)
+        R = reshape(reshape(R, sl1 * sr1, sr2) * e22', sl1, sr1, sl2)  # [l1, r1, l2]
+        R .*= reshape(e11, sl1, sr1, 1)  # [l1, r1, l2] .* [l1, r1, :]
+        R .*= reshape(e21', 1, sr1, sl2)  # [l1, r1, l2] .* [:, r1, l2]
+        R = reshape(sum(R, dims=2), sl1 * sl2)
+    elseif sl1 <= sl2 && sr2 <= sr1
+        R = reshape(e11', sr1, sl1, 1) .* reshape(message, sr1, 1, sr2)
+        R = reshape(e21 * reshape(R, sr1, sl1 * sr2), sl2, sl1, sr2)
+        R .*= reshape(e12, 1, sl1, sr2)  # [l2, l1, r2] .* [:, l1, r2]
+        R .*= reshape(e22, sl2, 1, sr2)  # [l2, l1, r2] .* [l2, :, r2]
+        R = reshape(reshape(sum(R, dims=3), sl2, sl1)', sl1 * sl2)
+    elseif sl2 <= sl1 && sr1 <= sr2
+        R = reshape(e22, sl2, 1, sr2) .* reshape(message, 1, sr1, sr2)
+        R = reshape(reshape(R, sl2 * sr1, sr2) * e12', sl2, sr1, sl1)  # [l2, r1, l1]
+        R .*= reshape(e11', 1, sr1, sl1)  # [l2, r1, l1] .* [:, r1, l1]
+        R .*= reshape(e21, sl2, sr1, 1)   # [l2, r1, l1] .* [l2, r1, :]
+        R = reshape(reshape(sum(R, dims=2), sl2, sl1)', sl1 * sl2)
+    else # sl2 <= sl1 && sr2 <= sr1
+        R = reshape(e21', sr1, sl2, 1) .* reshape(message, sr1, 1, sr2)
+        R = reshape(e11 * reshape(R, sr1, sl2 * sr2), sl1, sl2, sr2)
+        R .*= reshape(e12, sl1, 1, sr2)  # [l1, l2, r2] .* [l1, :, r2]
+        R .*= reshape(e22, 1, sl2, sr2)  # [l1, l2, r2] .* [:, l2, r2]
+        R = reshape(sum(R, dims=3), sl1 * sl2)
+    end
+    R
 end
 
 
