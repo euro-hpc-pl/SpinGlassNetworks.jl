@@ -219,7 +219,7 @@ end
 function truncate_factor_graph(fg::LabelledGraph{S, T}, states::Dict) where {S, T}
 
     new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
-    
+
     for v ∈ vertices(new_fg)
         cl = get_prop(fg, v, :cluster)
         sp = get_prop(fg, v, :spectrum)
@@ -257,29 +257,12 @@ function truncate_factor_graph_1site_BP(fg::LabelledGraph{S, T}, num_states::Int
     truncate_factor_graph(fg, states)
 end
 
-# function truncate_factor_graph_2site_BP(fg::LabelledGraph{S, T}, num_states::Int; beta=1.0, tol=1e-6, iter=1) where {S, T}
-#     states = Dict()
-#     beliefs, messages_av = belief_propagation(fg, beta; tol=tol, iter=iter, output_message=true)
-
-#     for node in vertices(fg)
-#         if node in keys(states) continue end
-#         i, j, _ = node
-#         temp = beliefs_2site(fg, i, j, messages_av, beta)
-#         sx, sy = size(temp)
-#         temp = reshape(temp, sx * sy)
-#         ind1, ind2 = select_numstate_best(temp, sx, num_states)
-#         push!(states, (i, j, 1) => ind1)
-#         push!(states, (i, j, 2) => ind2)
-#     end
-    
-#     truncate_factor_graph(fg, states)
-# end
 
 function beliefs_2site(fg::LabelledGraph{S, T}, i::Int, j::Int, messages_av::Dict, beta::Real) where {S, T}
     temp = energy_2site(fg, i, j)
     temp = exp.(-beta*temp)
     if ((i, j, 1), (i, j, 2)) in keys(messages_av)
-        temp = temp .* reshape(messages_av[(i, j, 1), (i, j, 2)], :, 1) 
+        temp = temp .* reshape(messages_av[(i, j, 1), (i, j, 2)], :, 1)
         temp = temp .*reshape(messages_av[(i, j, 2), (i, j, 1)], 1, :)
     end
     temp ./= sum(temp)
@@ -302,47 +285,6 @@ function energy_2site(fg::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
     int_eng
 end
 
-# Works for Pegasus and Zephyr
-# function truncate_factor_graph_1site(fg::LabelledGraph{S, T}, beta::Real, num_states::Int; tol=1e-6, iter=1) where {S, T}
-#     states = Dict()
-#     beliefs = belief_propagation(fg, beta; tol=tol, iter=iter)
-
-#     # Truncate the state space based on the belief probabilities
-#     for node in vertices(fg)
-#         indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])), rev=true)
-#         push!(states, node => indices)
-#     end
-
-#     # Create a new factor graph with truncated state space
-#     new_fg = LabelledGraph{MetaDiGraph}(vertices(fg))
-    
-#     for v ∈ vertices(new_fg)
-#         cl = get_prop(fg, v, :cluster)
-#         sp = get_prop(fg, v, :spectrum)
-#         sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
-#         set_props!(new_fg, v, Dict(:cluster => cl, :spectrum => sp))
-#     end
-
-#     for e ∈ edges(fg)
-#         v, w = src(e), dst(e)
-#         add_edge!(new_fg, v, w)
-#         outer_edges = get_prop(fg, v, w, :outer_edges)
-#         pl = get_prop(fg, v, w, :pl)
-#         pr = get_prop(fg, v, w, :pr)
-#         en = get_prop(fg, v, w, :en)
-#         pl = pl[states[v]]
-#         pr = pr[states[w]]
-#         pl_transition, pl_unique = rank_reveal(pl, :PE)
-#         pr_transition, pr_unique = rank_reveal(pr, :PE)
-#         en = en[pl_unique, pr_unique]
-
-#         set_props!(
-#                   new_fg, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
-#               )
-#     end
-#     new_fg
-# end
-
 
 function belief_propagation_old(fg, beta; tol=1e-6, iter=1, output_message=false)
     messages_va = Dict()
@@ -357,7 +299,7 @@ function belief_propagation_old(fg, beta; tol=1e-6, iter=1, output_message=false
             push!(messages_va, (v, neighbor) => ones(ns)./ns)
             push!(messages_av, (neighbor, v) => ones(ns)./ns)
         end
-    end 
+    end
 
     # Perform message passing until convergence
     converged = false
@@ -391,7 +333,7 @@ function belief_propagation_old(fg, beta; tol=1e-6, iter=1, output_message=false
                 messages_av[neighbor, v] ./= sum(messages_av[neighbor, v])
             end
         end
-        
+
         for v in vertices(fg)
             E_local = get_prop(fg, v, :spectrum).energies
             beliefs[v] = exp.(-E_local * beta)
@@ -420,7 +362,7 @@ function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::
     sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
  end
 
- function belief_propagation(fg, beta; tol=1e-6, iter=1, output_message=false)
+ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     messages_va = Dict()
     messages_av = Dict()
     beliefs = Dict()
@@ -439,7 +381,7 @@ function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::
             push!(messages_va, (v, neighbor) => temp ./ sum(temp))
             push!(messages_av, (neighbor, v) => ones(maximum(pl)))
         end
-    end 
+    end
 
     # Perform message passing until convergence
     converged = false
@@ -473,10 +415,10 @@ function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::
                 #update messages from edge to verte
                 # messages_av[neighbor, v] = exp.(-beta * E_bond) * messages_va[neighbor, v]
                 E_bond = has_edge(fg, v, neighbor) ? get_prop(fg, v, neighbor, :en) : get_prop(fg, neighbor, v, :en)'
-                messages_av[neighbor, v] = update_message(messages_va[neighbor, v], E_bond, v, neighbor, beta)
+                messages_av[neighbor, v] = update_message(messages_va[neighbor, v], E_bond, beta)
             end
         end
-        
+
         for v in vertices(fg)
             E_local = get_prop(fg, v, :spectrum).energies
             beliefs[v] = exp.(-E_local * beta)
@@ -494,10 +436,10 @@ function exact_cond_prob(factor_graph::LabelledGraph{S, T}, beta, target_state::
         converged = all([all(abs.(old_beliefs[v] .- beliefs[v]) .< tol) for v in keys(beliefs)])
     end
 
-    output_message ? (beliefs, messages_av) : beliefs
+    beliefs
 end
 
-struct Energy{T <: Real} 
+struct Energy{T <: Real}
     e11::AbstractMatrix{T}
     e12::AbstractMatrix{T}
     e21::AbstractMatrix{T}
@@ -506,18 +448,18 @@ end
 
 Base.adjoint(s::Energy) = Energy(s.e11', s.e21', s.e12', s.e22')
 
-function update_message(message::Vector, E_bond, v, neighbor, beta)
+function update_message(message::Vector, E_bond::Matrix, beta::Real)
     E_bond = E_bond .- minimum(E_bond)
     exp.(-beta * E_bond) * message
 end
 
-# function update_message(message::Vector, E_bond::Energy, v, neighbor, beta)
+# function update_message(message::Vector, E_bond::Energy, beta::Real)
 #     e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
 #     @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
 #     exp.(-beta * E) * message
 # end
 
-function update_message(message::Vector, E_bond::Energy, v, neighbor, beta)
+function update_message(message::Vector, E_bond::Energy, beta::Real)
     e11, e12, e21, e22 = E_bond.e11', E_bond.e21', E_bond.e12', E_bond.e22'
     sbt = length(message)
     sl1, sl2, sr1, sr2 = size(e11, 1), size(e22, 1), size(e11, 2), size(e22, 2)
@@ -525,31 +467,31 @@ function update_message(message::Vector, E_bond::Energy, v, neighbor, beta)
     if sl1 * sl2 * sr1 * sr2 < sinter
         e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
         @cast E[(l1, l2), (r1, r2)] := e11[l1, r1] + e21[l2, r1] + e12[l1, r2] + e22[l2, r2]
-        return  exp.(-beta * E) * message 
+        return  exp.(-beta * E) * message
     elseif sr1 <= sr2 && sl1 <= sl2
         message = message'
-        message = message .* (exp.(-beta * e21))'  
-        message = message * (exp.(-beta * e22))  
-        message .*= (exp.(-beta * e11))  
+        message = message .* (exp.(-beta * e21))'
+        message = message * (exp.(-beta * e22))
+        message .*= (exp.(-beta * e11))
         message .*= (exp.(-beta * e12))
     elseif sr1 <= sr2 && sl2 <= sl1
         message = message'
-        message = message .* (exp.(-beta * e11))' 
-        message = message * (exp.(-beta * e12))  
-        message .*= (exp.(-beta * e21))  
+        message = message .* (exp.(-beta * e11))'
+        message = message * (exp.(-beta * e12))
+        message .*= (exp.(-beta * e21))
         message .*= (exp.(-beta * e22))
     elseif sr2 <= sr1 && sl1 <= sl2
         message = message'
-        message = message .* (exp.(-beta * e22))'  
-        message = message * (exp.(-beta * e21))  
-        message .*= (exp.(-beta * e11))  
+        message = message .* (exp.(-beta * e22))'
+        message = message * (exp.(-beta * e21))
+        message .*= (exp.(-beta * e11))
         message .*= (exp.(-beta * e12))
     else # sr2 <= sr1 && sl2 <= sl1
         message = message'
-        message = message .* (exp.(-beta * e12))'  
-        message = message * (exp.(-beta * e11))  
-        message .*= (exp.(-beta * e21))  
-        message .*= (exp.(-beta * e22))  
+        message = message .* (exp.(-beta * e12))'
+        message = message * (exp.(-beta * e11))
+        message .*= (exp.(-beta * e21))
+        message .*= (exp.(-beta * e22))
     end
     reshape(message, sr1 * sr2)
 end
@@ -580,9 +522,9 @@ function factor_graph_2site(fg::LabelledGraph{S, T}, beta::Real) where {S, T}
         v, w = src(e), dst(e)
         v1, v2, _ = v
         w1, w2, _ = w
-        if (v1, v2) != (w1, w2) 
+        if (v1, v2) != (w1, w2)
             add_edge!(new_fg, (v1, v2), (w1, w2))
-      
+
             E, pl, pr = merge_vertices(fg, beta, v, w)
             push!(edge_states, sort([(v1, v2), (w1, w2)]))
 
