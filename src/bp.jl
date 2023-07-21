@@ -25,17 +25,13 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
             #update messages from vertex to edge
             for (n1, pv1, _) ∈ get_neighbors(fg, v)
                 E_local = get_prop(fg, v, :spectrum).energies
-                messages_ve[v, n1] = exp.(-(E_local .- minimum(E_local)) * beta)
+                temp = exp.(-(E_local .- minimum(E_local)) * beta)
                 for (n2, pv2, _) in get_neighbors(fg, v)
                     if n1 == n2 continue end
-                    messages_ve[v, n1] .*= messages_ev[n2, v][pv2]
+                    temp .*= messages_ev[n2, v][pv2]
                 end
-                messages_ve[v, n1] ./= sum(messages_ve[v, n1])
-                temp = zeros(maximum(pv1))
-                for (i, r) in enumerate(pv1)
-                    temp[r] += messages_ve[v, n1][i]
-                end
-                messages_ve[v, n1] = temp
+                temp ./= sum(temp)
+                messages_ve[v, n1] = SparseCSC(eltype(temp), pv1) * temp
             end
         end
 
@@ -247,4 +243,12 @@ end
 
 function outer_projector(p1::Array{T, 1}, p2::Array{T, 1}) where T <: Number
     reshape(reshape(p1, :, 1) .+ maximum(p1) .* reshape(p2 .- 1, 1, :), :)
+end
+
+function SparseCSC(::Type{R}, p::Vector{Int64}) where R <: Real
+    n = length(p)
+    mp = maximum(p)
+    cn = collect(1:n)
+    co = ones(R, n)
+    sparse(p, cn, co, mp, n)
 end

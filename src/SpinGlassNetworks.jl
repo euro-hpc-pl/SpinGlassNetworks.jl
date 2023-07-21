@@ -6,7 +6,7 @@ module SpinGlassNetworks
     using DocStringExtensions
     using LinearAlgebra, MKL
     using Base.Cartesian
-    using TensorOperations, TensorCast
+    using SparseArrays
 
     import Base.Prehashed
 
