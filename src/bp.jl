@@ -23,12 +23,16 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
         old_messages_ev = deepcopy(messages_ev)
         for v in vertices(fg)
             #update messages from vertex to edge
+            node_messages = Dict()
+            for (n1, pv1, _) ∈ get_neighbors(fg, v)
+                node_messages[n1, v] = messages_ev[n1, v][pv1]
+            end
             for (n1, pv1, _) ∈ get_neighbors(fg, v)
                 E_local = get_prop(fg, v, :spectrum).energies
                 temp = exp.(-(E_local .- minimum(E_local)) * beta)
                 for (n2, pv2, _) in get_neighbors(fg, v)
                     if n1 == n2 continue end
-                    temp .*= messages_ev[n2, v][pv2]
+                    temp .*= node_messages[n2, v] # messages_ev[n2, v][pv2]
                 end
                 temp ./= sum(temp)
                 messages_ve[v, n1] = SparseCSC(eltype(temp), pv1) * temp
