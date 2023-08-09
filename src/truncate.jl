@@ -31,7 +31,7 @@ function truncate_factor_graph_2site_energy(fg::LabelledGraph{S, T}, num_states:
     truncate_factor_graph(fg, states)
 end
 
-function truncate_factor_graph_2site_BP(fg::LabelledGraph{S, T}, beliefs::Dict, num_states::Int; beta=1.0, tol=1e-6) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
+function truncate_factor_graph_2site_BP(fg::LabelledGraph{S, T}, beliefs::Dict, num_states::Int; beta=1.0) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
     # new_fg = factor_graph_2site(fg, beta)
     # beliefs = belief_propagation(new_fg, beta; tol, iter)
     states = Dict()
