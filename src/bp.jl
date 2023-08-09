@@ -39,7 +39,7 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
             end
         end
 
-        #update messages from edge to verte
+        #update messages from edge to vertex
         for v in vertices(fg)
             for (n, _, en) ∈ get_neighbors(fg, v)
                 messages_ev[n, v] = update_message(en, messages_ve[n, v], beta)
