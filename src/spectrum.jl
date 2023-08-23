@@ -7,7 +7,8 @@ export
     Spectrum,
     idx,
     local_basis,
-    energy
+    energy,
+    matrix_to_integers
 
 @inline idx(σ::Int) = (σ == -1) ? 1 : σ + 1
 @inline local_basis(d::Int) = union(-1, 1:d-1)
@@ -17,6 +18,20 @@ const State = Vector{Int}
 struct Spectrum
     energies::Vector{<:Real}
     states::AbstractArray{State}
+    states_int::Vector{Int}
+    function Spectrum(energies, states, states_int)
+        new(energies, states, states_int)
+    end
+    function Spectrum(energies, states)
+        states_int = matrix_to_integers(states)
+        new(energies, states, states_int)
+    end
+end
+
+function matrix_to_integers(matrix::Vector{Vector{Int}})
+    nrows = length(matrix[1])
+    multipliers = 2 .^ collect(0:nrows-1)
+    div.((hcat(matrix...)' .+ 1) , 2) * multipliers
 end
 
 function energy(σ::AbstractArray{State}, ig::IsingGraph)
@@ -53,7 +68,7 @@ end
 
 function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
     L = nv(ig)
-    if L == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
+    if L == 0 return Spectrum(zeros(1), Vector{Int}[], zeros(Int, 1)) end
     sp = Spectrum(ig)
     num_states = min(num_states, prod(rank_vec(ig)))
     idx = partialsortperm(vec(sp.energies), 1:num_states)
@@ -62,7 +77,7 @@ end
 
 #TODO: to be removed
 function full_spectrum(ig::IsingGraph; num_states::Int=1)
-    if nv(ig) == 0 return Spectrum(zeros(1), Vector{Vector{Int}}[]) end
+    if nv(ig) == 0 return Spectrum(zeros(1), Vector{Int}[], zeros(Int, 1)) end
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
     σ = collect.(all_states(ig_rank))
