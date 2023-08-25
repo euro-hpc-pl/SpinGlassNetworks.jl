@@ -186,7 +186,7 @@ end
             @test beliefs[v] ≈ exact_marginal[v]
          end
 
-         truncate_factor_graph_2site_BP(fg2, num_states; beta=beta, iter=iter)
+         truncate_factor_graph_2site_BP(fg2, beliefs, num_states; beta=beta)
       end
    end
  end

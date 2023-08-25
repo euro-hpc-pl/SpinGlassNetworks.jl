@@ -153,7 +153,7 @@ function factor_graph_2site(fg::LabelledGraph{S, T}, beta::Real) where {S, T}
         E1 = local_energy(fg, (i, j, 1))
         E2 = local_energy(fg, (i, j, 2))
         E = energy_2site(fg, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
-        sp = Spectrum(reshape(E, :), [])
+        sp = Spectrum(reshape(E, :), [], [])
         set_props!(new_fg, (i, j), Dict(:spectrum => sp))
         push!(vertx, (i, j))
     end
