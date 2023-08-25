@@ -28,7 +28,7 @@ struct Spectrum
     end
 end
 
-function matrix_to_integers(matrix::Vector{Vector{Int}})
+function matrix_to_integers(matrix::Vector{Vector{T}}) where T
     nrows = length(matrix[1])
     multipliers = 2 .^ collect(0:nrows-1)
     div.((hcat(matrix...)' .+ 1) , 2) * multipliers

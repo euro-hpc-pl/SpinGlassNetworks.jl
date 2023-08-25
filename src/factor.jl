@@ -177,7 +177,7 @@ function truncate_factor_graph(fg::LabelledGraph{S, T}, states::Dict) where {S, 
         cl = get_prop(fg, v, :cluster)
         sp = get_prop(fg, v, :spectrum)
         if sp.states == Vector{Int64}[]
-            sp = Spectrum(sp.energies[states[v]], sp.states)
+            sp = Spectrum(sp.energies[states[v]], sp.states, [])
         else
             sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
         end
