@@ -6,7 +6,7 @@ Instance below looks like this:
 3 -- 4
 
 """
-function create_larger_example_factor_graph_tree_basic()
+function create_larger_example_clustered_hamiltonian_tree_basic()
    instance = Dict(
       (1, 1) => -0.50,
       (2, 2) =>  0.25,
@@ -26,14 +26,14 @@ function create_larger_example_factor_graph_tree_basic()
       4 => (2, 2, 2)
    )
 
-   fg = factor_graph(
+   cl_h = clustered_hamiltonian(
       ig,
       Dict{NTuple{3, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
 
-   ig, fg
+   ig, cl_h
 end
 
 """
@@ -45,7 +45,7 @@ Instance below looks like this:
 |
 7 -- 8 -- 9
 """
-function create_larger_example_factor_graph_tree()
+function create_larger_example_clustered_hamiltonian_tree()
    instance = Dict(
       (1, 1) =>  0.53,
       (2, 2) => -0.25,
@@ -79,14 +79,14 @@ function create_larger_example_factor_graph_tree()
       9 => (3, 3, 1)
    )
 
-   fg = factor_graph(
+   cl_h = clustered_hamiltonian(
       ig,
       Dict{NTuple{3, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
 
-   ig, fg
+   ig, cl_h
 end
 
 """
@@ -97,7 +97,7 @@ Instance below looks like this:
 7      8
 
 """
-function create_larger_example_factor_graph_tree_pathological()
+function create_larger_example_clustered_hamiltonian_tree_pathological()
    instance = Dict(
       (1, 1) =>  0.52,
       (2, 2) =>  0.25,
@@ -130,26 +130,26 @@ function create_larger_example_factor_graph_tree_pathological()
       8 => (2, 2)
    )
 
-   fg = factor_graph(
+   cl_h = clustered_hamiltonian(
       ig,
       Dict{NTuple{2, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
 
-   ig, fg
+   ig, cl_h
 end
 
 @testset "Belief propagation" begin
-   for (ig, fg) ∈ [create_larger_example_factor_graph_tree_basic(),
-                   create_larger_example_factor_graph_tree(),
-                   create_larger_example_factor_graph_tree_pathological()]
+   for (ig, cl_h) ∈ [create_larger_example_clustered_hamiltonian_tree_basic(),
+                   create_larger_example_clustered_hamiltonian_tree(),
+                   create_larger_example_clustered_hamiltonian_tree_pathological()]
       for beta ∈ [0.5, 1]
          iter = 16
-         beliefs = belief_propagation(fg, beta; iter=iter)
+         beliefs = belief_propagation(cl_h, beta; iter=iter)
          exact_marginal = Dict()
          for k in keys(beliefs)
-            push!(exact_marginal, k => [exact_cond_prob(fg, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+            push!(exact_marginal, k => [exact_cond_prob(cl_h, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
          end
          for v in keys(beliefs)
             temp = -log.(exact_marginal[v])./beta

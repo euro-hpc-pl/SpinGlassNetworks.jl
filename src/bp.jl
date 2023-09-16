@@ -1,16 +1,16 @@
 
 export
     belief_propagation,
-    factor_graph_2site
+    clustered_hamiltonian_2site
 
 
-function belief_propagation(fg, beta; tol=1e-6, iter=1)
+function belief_propagation(cl_h, beta; tol=1e-6, iter=1)
     messages_ve = Dict()
     messages_ev = Dict()
 
     # Initialize messages with uniform probabilities
-    for v in vertices(fg)
-        for (n, pv, _) in get_neighbors(fg, v)
+    for v in vertices(cl_h)
+        for (n, pv, _) in get_neighbors(cl_h, v)
             push!(messages_ev, (n, v) => ones(maximum(pv)))
         end
     end
@@ -21,16 +21,16 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     while !converged && iteration < iter  # Set an appropriate number of iterations and convergence threshold
         iteration += 1
         old_messages_ev = deepcopy(messages_ev)
-        for v in vertices(fg)
+        for v in vertices(cl_h)
             #update messages from vertex to edge
             node_messages = Dict()
-            for (n1, pv1, _) ∈ get_neighbors(fg, v)
+            for (n1, pv1, _) ∈ get_neighbors(cl_h, v)
                 node_messages[n1, v] = messages_ev[n1, v][pv1]
             end
-            for (n1, pv1, _) ∈ get_neighbors(fg, v)
-                E_local = get_prop(fg, v, :spectrum).energies
+            for (n1, pv1, _) ∈ get_neighbors(cl_h, v)
+                E_local = get_prop(cl_h, v, :spectrum).energies
                 temp = exp.(-(E_local .- minimum(E_local)) * beta)
-                for (n2, pv2, _) in get_neighbors(fg, v)
+                for (n2, pv2, _) in get_neighbors(cl_h, v)
                     if n1 == n2 continue end
                     temp .*= node_messages[n2, v] # messages_ev[n2, v][pv2]
                 end
@@ -40,8 +40,8 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
         end
 
         #update messages from edge to vertex
-        for v in vertices(fg)
-            for (n, _, en) ∈ get_neighbors(fg, v)
+        for v in vertices(cl_h)
+            for (n, _, en) ∈ get_neighbors(cl_h, v)
                 messages_ev[n, v] = update_message(en, messages_ve[n, v], beta)
             end
         end
@@ -51,10 +51,10 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     end
 
     beliefs = Dict()
-    for v in vertices(fg)
-        E_local = get_prop(fg, v, :spectrum).energies
+    for v in vertices(cl_h)
+        E_local = get_prop(cl_h, v, :spectrum).energies
         beliefs[v] = exp.(-E_local * beta)
-        for (n, pv, _) ∈ get_neighbors(fg, v)
+        for (n, pv, _) ∈ get_neighbors(cl_h, v)
             beliefs[v] .*= messages_ev[n, v][pv]
         end
         beliefs[v] = -log.(beliefs[v])./beta
@@ -64,17 +64,17 @@ function belief_propagation(fg, beta; tol=1e-6, iter=1)
     beliefs
 end
 
-function get_neighbors(fg::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
+function get_neighbors(cl_h::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
     neighbors = []
-    for edge in edges(fg)
+    for edge in edges(cl_h)
         src_node, dst_node = src(edge), dst(edge)
         if src_node == vertex
-            en = get_prop(fg, src_node, dst_node, :en)
-            pv = get_prop(fg, src_node, dst_node, :pl)
+            en = get_prop(cl_h, src_node, dst_node, :en)
+            pv = get_prop(cl_h, src_node, dst_node, :pl)
             push!(neighbors, (dst_node, pv, en))
         elseif dst_node == vertex
-            en = get_prop(fg, src_node, dst_node, :en)'
-            pv = get_prop(fg, src_node, dst_node, :pr)
+            en = get_prop(cl_h, src_node, dst_node, :en)'
+            pv = get_prop(cl_h, src_node, dst_node, :pr)
             push!(neighbors, (src_node, pv, en))
         end
     end
@@ -141,25 +141,25 @@ function update_message(E_bond::MergedEnergy, message::Vector, beta::Real)
 end
 
 
-function factor_graph_2site(fg::LabelledGraph{S, T}, beta::Real) where {S, T}
+function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) where {S, T}
 
-    unified_vertices = unique([vertex[1:2] for vertex in vertices(fg)])
-    new_fg = LabelledGraph{MetaDiGraph}(unified_vertices)
+    unified_vertices = unique([vertex[1:2] for vertex in vertices(cl_h)])
+    new_cl_h = LabelledGraph{MetaDiGraph}(unified_vertices)
 
     vertx = Set()
-    for v in vertices(fg)
+    for v in vertices(cl_h)
         i, j, _ = v
         if (i, j) ∈ vertx continue end
-        E1 = local_energy(fg, (i, j, 1))
-        E2 = local_energy(fg, (i, j, 2))
-        E = energy_2site(fg, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
+        E1 = local_energy(cl_h, (i, j, 1))
+        E2 = local_energy(cl_h, (i, j, 2))
+        E = energy_2site(cl_h, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
         sp = Spectrum(reshape(E, :), [], [])
-        set_props!(new_fg, (i, j), Dict(:spectrum => sp))
+        set_props!(new_cl_h, (i, j), Dict(:spectrum => sp))
         push!(vertx, (i, j))
     end
 
     edge_states = Set()
-    for e ∈ edges(fg)
+    for e ∈ edges(cl_h)
         if e in edge_states continue end
         v, w = src(e), dst(e)
         v1, v2, _ = v
@@ -167,32 +167,32 @@ function factor_graph_2site(fg::LabelledGraph{S, T}, beta::Real) where {S, T}
 
         if (v1, v2) == (w1, w2) continue end
 
-        add_edge!(new_fg, (v1, v2), (w1, w2))
+        add_edge!(new_cl_h, (v1, v2), (w1, w2))
 
-        E, pl, pr = merge_vertices(fg, beta, v, w)
-        set_props!(new_fg, (v1, v2), (w1, w2), Dict(:pl => pl, :en => E, :pr => pr))
+        E, pl, pr = merge_vertices(cl_h, beta, v, w)
+        set_props!(new_cl_h, (v1, v2), (w1, w2), Dict(:pl => pl, :en => E, :pr => pr))
         push!(edge_states, sort([(v1, v2), (w1, w2)]))
     end
-    new_fg
+    new_cl_h
 end
 
-function merge_vertices(fg::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int64}, node2::NTuple{3, Int64}
+function merge_vertices(cl_h::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int64}, node2::NTuple{3, Int64}
     ) where {S, T}
     i1, j1, _ = node1
     i2, j2, _ = node2
 
-    p21l = projector(fg, (i1, j1, 2), (i2, j2, 1))
-    p22l = projector(fg, (i1, j1, 2), (i2, j2, 2))
-    p12l = projector(fg, (i1, j1, 1), (i2, j2, 2))
-    p11l = projector(fg, (i1, j1, 1), (i2, j2, 1))
+    p21l = projector(cl_h, (i1, j1, 2), (i2, j2, 1))
+    p22l = projector(cl_h, (i1, j1, 2), (i2, j2, 2))
+    p12l = projector(cl_h, (i1, j1, 1), (i2, j2, 2))
+    p11l = projector(cl_h, (i1, j1, 1), (i2, j2, 1))
 
     p1l, (p11l, p12l) = fuse_projectors((p11l, p12l))
     p2l, (p21l, p22l) = fuse_projectors((p21l, p22l))
 
-    p11r = projector(fg, (i2, j2, 1), (i1, j1, 1))
-    p21r = projector(fg, (i2, j2, 1), (i1, j1, 2))
-    p12r = projector(fg, (i2, j2, 2), (i1, j1, 1))
-    p22r = projector(fg, (i2, j2, 2), (i1, j1, 2))
+    p11r = projector(cl_h, (i2, j2, 1), (i1, j1, 1))
+    p21r = projector(cl_h, (i2, j2, 1), (i1, j1, 2))
+    p12r = projector(cl_h, (i2, j2, 2), (i1, j1, 1))
+    p22r = projector(cl_h, (i2, j2, 2), (i1, j1, 2))
 
     p1r, (p11r, p21r) = fuse_projectors((p11r, p21r))
     p2r, (p12r, p22r) = fuse_projectors((p12r, p22r))
@@ -200,10 +200,10 @@ function merge_vertices(fg::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int6
     pl = outer_projector(p1l, p2l)
     pr = outer_projector(p1r, p2r)
 
-    e11 = interaction_energy(fg, (i1, j1, 1), (i2, j2, 1))
-    e12 = interaction_energy(fg, (i1, j1, 1), (i2, j2, 2))
-    e21 = interaction_energy(fg, (i1, j1, 2), (i2, j2, 1))
-    e22 = interaction_energy(fg, (i1, j1, 2), (i2, j2, 2))
+    e11 = interaction_energy(cl_h, (i1, j1, 1), (i2, j2, 1))
+    e12 = interaction_energy(cl_h, (i1, j1, 1), (i2, j2, 2))
+    e21 = interaction_energy(cl_h, (i1, j1, 2), (i2, j2, 1))
+    e22 = interaction_energy(cl_h, (i1, j1, 2), (i2, j2, 2))
 
     e11 = e11[p11l, p11r]
     e21 = e21[p21l, p21r]
@@ -213,27 +213,27 @@ function merge_vertices(fg::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int6
     MergedEnergy(e11, e12, e21, e22), pl, pr
 end
 
-function local_energy(fg::LabelledGraph{S, T}, v::NTuple{3, Int64}) where {S, T}
-    has_vertex(fg, v) ? get_prop(fg, v, :spectrum).energies : zeros(1)
+function local_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}) where {S, T}
+    has_vertex(cl_h, v) ? get_prop(cl_h, v, :spectrum).energies : zeros(1)
 end
 
-function interaction_energy(fg::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
-    if has_edge(fg, w, v)
-        get_prop(fg, w, v, :en)'
-    elseif has_edge(fg, v, w)
-        get_prop(fg, v, w, :en)
+function interaction_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
+    if has_edge(cl_h, w, v)
+        get_prop(cl_h, w, v, :en)'
+    elseif has_edge(cl_h, v, w)
+        get_prop(cl_h, v, w, :en)
     else
         zeros(1, 1)
     end
 end
 
-function projector(fg::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
-    if has_edge(fg, w, v)
-        p = get_prop(fg, w, v, :pr)
-    elseif has_edge(fg, v, w)
-        p = get_prop(fg, v, w, :pl)
+function projector(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
+    if has_edge(cl_h, w, v)
+        p = get_prop(cl_h, w, v, :pr)
+    elseif has_edge(cl_h, v, w)
+        p = get_prop(cl_h, v, w, :pl)
     else
-        p = ones(Int, v ∈ vertices(fg) ? length(get_prop(fg, v, :spectrum).energies) : 1)
+        p = ones(Int, v ∈ vertices(cl_h) ? length(get_prop(cl_h, v, :spectrum).energies) : 1)
     end
 end
 

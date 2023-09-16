@@ -13,7 +13,7 @@ Instance below looks like this:
 |
 7 -- 8 -- 9
 """
-function create_larger_example_factor_graph_tree()
+function create_larger_example_clustered_hamiltonian_tree()
    instance = Dict(
       (1, 1) => 0.5,
       (2, 2) => 0.25,
@@ -48,22 +48,22 @@ function create_larger_example_factor_graph_tree()
       9 => (3, 3, 1)
    )
 
-   fg = factor_graph(
+   cl_h = clustered_hamiltonian(
       ig,
       Dict{NTuple{3, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
 
-   ig, fg
+   ig, cl_h
 end
 
-ig, fg = create_larger_example_factor_graph_tree()
+ig, cl_h = create_larger_example_clustered_hamiltonian_tree()
 beta = 0.1
 iter = 0
-beliefs = belief_propagation(fg, beta; iter=iter)
+beliefs = belief_propagation(cl_h, beta; iter=iter)
 
-for v in vertices(fg)
-   en = get_prop(fg, v, :spectrum).energies
+for v in vertices(cl_h)
+   en = get_prop(cl_h, v, :spectrum).energies
    println("vertex ", v, " energy = ", en .- minimum(en), " bp = ", beliefs[v])
 end

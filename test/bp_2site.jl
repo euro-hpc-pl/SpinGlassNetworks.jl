@@ -8,7 +8,7 @@ Instance below looks like this:
 56 -- 78
 
 """
-function create_larger_example_factor_graph_tree_2site()
+function create_larger_example_clustered_hamiltonian_tree_2site()
    instance = Dict(
       (1, 1) =>  0.50,
       (2, 2) => -0.25,
@@ -51,21 +51,21 @@ function create_larger_example_factor_graph_tree_2site()
       8 => (2, 2, 2)
    )
 
-   fg1 = factor_graph(
+   cl_h1 = clustered_hamiltonian(
       ig,
       Dict{NTuple{2, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule1,
    )
 
-   fg2 = factor_graph(
+   cl_h2 = clustered_hamiltonian(
       ig,
       Dict{NTuple{3, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule2,
    )
 
-   ig, fg1, fg2
+   ig, cl_h1, cl_h2
 end
 
 """
@@ -78,7 +78,7 @@ Instance below looks like this:
       10
 
 """
-function create_larger_example_factor_graph_tree_2site_pathological()
+function create_larger_example_clustered_hamiltonian_tree_2site_pathological()
    instance = Dict(
       (1, 1) => -0.50,
       (2, 2) =>  0.25,
@@ -131,62 +131,62 @@ function create_larger_example_factor_graph_tree_2site_pathological()
       10 => (3, 2, 2)
    )
 
-   fg1 = factor_graph(
+   cl_h1 = clustered_hamiltonian(
       ig,
       Dict{NTuple{2, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule1,
    )
 
-   fg2 = factor_graph(
+   cl_h2 = clustered_hamiltonian(
       ig,
       Dict{NTuple{3, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule2,
    )
 
-   ig, fg1, fg2
+   ig, cl_h1, cl_h2
 end
 
 
 @testset "Belief propagation 2site" begin
 
-    for (ig, fg1, fg2) ∈ [create_larger_example_factor_graph_tree_2site(),
-                          create_larger_example_factor_graph_tree_2site_pathological()]
+    for (ig, cl_h1, cl_h2) ∈ [create_larger_example_clustered_hamiltonian_tree_2site(),
+                          create_larger_example_clustered_hamiltonian_tree_2site_pathological()]
       for beta ∈ [0.6, 1.1]
          tol = 1e-12
          iter = 16
          num_states=10
 
-         new_fg1 = factor_graph_2site(fg2, beta)
+         new_cl_h1 = clustered_hamiltonian_2site(cl_h2, beta)
 
-         @test vertices(new_fg1) == vertices(fg1)
-         @test edges(new_fg1) == edges(fg1)
-         for e ∈ vertices(new_fg1)
-            @test get_prop(new_fg1, e, :spectrum).energies ≈ get_prop(fg1, e, :spectrum).energies
+         @test vertices(new_cl_h1) == vertices(cl_h1)
+         @test edges(new_cl_h1) == edges(cl_h1)
+         for e ∈ vertices(new_cl_h1)
+            @test get_prop(new_cl_h1, e, :spectrum).energies ≈ get_prop(cl_h1, e, :spectrum).energies
          end
-         for e ∈ edges(new_fg1)
-            E = get_prop(new_fg1, src(e), dst(e), :en)
+         for e ∈ edges(new_cl_h1)
+            E = get_prop(new_cl_h1, src(e), dst(e), :en)
             @cast E[(l1, l2), (r1, r2)] := E.e11[l1, r1] + E.e21[l2, r1] + E.e12[l1, r2] + E.e22[l2, r2]
-            @test E == get_prop(fg1, src(e), dst(e), :en)
+            @test E == get_prop(cl_h1, src(e), dst(e), :en)
          end
-         for e ∈ edges(new_fg1)
-            @test get_prop(new_fg1, src(e), dst(e), :pl) == get_prop(fg1, src(e), dst(e), :pl)
-            @test get_prop(new_fg1, src(e), dst(e), :pr) == get_prop(fg1, src(e), dst(e), :pr)
+         for e ∈ edges(new_cl_h1)
+            @test get_prop(new_cl_h1, src(e), dst(e), :pl) == get_prop(cl_h1, src(e), dst(e), :pl)
+            @test get_prop(new_cl_h1, src(e), dst(e), :pr) == get_prop(cl_h1, src(e), dst(e), :pr)
          end
 
-         beliefs = belief_propagation(new_fg1, beta; iter=iter, tol=tol)
+         beliefs = belief_propagation(new_cl_h1, beta; iter=iter, tol=tol)
 
          exact_marginal = Dict()
          for k in keys(beliefs)
-            temp = -1/beta .* log.([exact_cond_prob(fg1, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
+            temp = -1/beta .* log.([exact_cond_prob(cl_h1, beta, Dict(k => a)) for a in 1:length(beliefs[k])])
             push!(exact_marginal, k => temp .- minimum(temp))
          end
          for v in keys(beliefs)
             @test beliefs[v] ≈ exact_marginal[v]
          end
 
-         truncate_factor_graph_2site_BP(fg2, beliefs, num_states; beta=beta)
+         truncate_clustered_hamiltonian_2site_BP(cl_h2, beliefs, num_states; beta=beta)
       end
    end
  end

@@ -14,16 +14,16 @@ enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
 
    ig = ising_graph(instance)
 
-   fg = factor_graph(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t))    )
+   cl_h = clustered_hamiltonian(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t))    )
 
-   @test collect(vertices(fg)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
+   @test collect(vertices(cl_h)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
 
    clv = []
    cle = []
    rank = rank_vec(ig)
 
-   for v ∈ vertices(fg)
-      cl = get_prop(fg, v, :cluster)
+   for v ∈ vertices(cl_h)
+      cl = get_prop(cl_h, v, :cluster)
       push!(clv, vertices(cl))
       push!(cle, collect(edges(cl)))
 
@@ -80,19 +80,19 @@ end
 
    bond_dimensions = [2, 2, 8, 4, 2, 2, 8]
 
-   fg = factor_graph(
+   cl_h = clustered_hamiltonian(
       ising_graph(instance),
       spectrum=full_spectrum,
       cluster_assignment_rule=super_square_lattice((m, n, t)),
    )
 
-   for (bd, e) in zip(bond_dimensions, edges(fg))
-      pl, en, pr = get_prop(fg, e, :pl), get_prop(fg, e, :en), get_prop(fg, e, :pr)
+   for (bd, e) in zip(bond_dimensions, edges(cl_h))
+      pl, en, pr = get_prop(cl_h, e, :pl), get_prop(cl_h, e, :en), get_prop(cl_h, e, :pr)
       @test minimum(size(en)) == bd
    end
 
    for ((i, j), cedge) ∈ cedges
-      pl, en, pr = get_prop(fg, i, j, :pl), get_prop(fg, i, j, :en), get_prop(fg, i, j, :pr)
+      pl, en, pr = get_prop(cl_h, i, j, :pl), get_prop(cl_h, i, j, :en), get_prop(cl_h, i, j, :pr)
       base_i = all_states(rank[i])
       base_j = all_states(rank[j])
 
@@ -118,23 +118,23 @@ end
    end
 
    @testset "each cluster comprises expected cells" begin
-   for v ∈ vertices(fg)
-      cl = get_prop(fg, v, :cluster)
+   for v ∈ vertices(cl_h)
+      cl = get_prop(cl_h, v, :cluster)
 
       @test issetequal(vertices(cl), cells[v])
    end
    end
 
    @testset "each edge comprises expected bunch of edges from source Ising graph" begin
-   for e ∈ edges(fg)
-      outer_edges = get_prop(fg, e, :outer_edges)
+   for e ∈ edges(cl_h)
+      outer_edges = get_prop(cl_h, e, :outer_edges)
 
       @test issetequal(cedges[(src(e), dst(e))], [(src(oe), dst(oe)) for oe ∈ outer_edges])
    end
    end
 end
 
-function create_example_factor_graph()
+function create_example_clustered_hamiltonian()
    J12 = -1.0
    h1 = 0.5
    h2 = 0.75
@@ -142,7 +142,7 @@ function create_example_factor_graph()
    D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
    ig = ising_graph(D)
 
-   factor_graph(
+   clustered_hamiltonian(
       ig,
       Dict((1, 1) => 2, (1, 2) => 2),
       spectrum = full_spectrum,
@@ -150,14 +150,14 @@ function create_example_factor_graph()
   )
 end
 
-fg_state_to_spin = [
+cl_h_state_to_spin = [
    ([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])
 ]
 
 @testset "Decoding solution gives correct spin assignment" begin
-   fg = create_example_factor_graph()
-   for (state, spin_values) ∈ fg_state_to_spin
-      d = decode_factor_graph_state(fg, state)
+   cl_h = create_example_clustered_hamiltonian()
+   for (state, spin_values) ∈ cl_h_state_to_spin
+      d = decode_clustered_hamiltonian_state(cl_h, state)
       states = collect(values(d))[collect(keys(d))]
       @test states == spin_values
    end
@@ -174,7 +174,7 @@ Instance below looks like this:
 
 And we group the following spins together: [1, 2, 4, 5], [3, 6], [7, 8], [9].
 """
-function create_larger_example_factor_graph()
+function create_larger_example_clustered_hamiltonian()
    instance = Dict(
       (1, 1) => 0.5,
       (2, 2) => 0.25,
@@ -213,30 +213,30 @@ function create_larger_example_factor_graph()
       9 => (2, 2)
    )
 
-   fg = factor_graph(
+   cl_h = clustered_hamiltonian(
       ig,
       Dict{NTuple{2, Int}, Int}(),
       spectrum = full_spectrum,
       cluster_assignment_rule = assignment_rule,
    )
 
-   ig, fg
+   ig, cl_h
 end
 
-function factor_graph_energy(fg, state)
+function clustered_hamiltonian_energy(cl_h, state)
    # This is highly inefficient, but simple, which makes it suitable for testing.
    # If such a function is needed elsewhere, we need to implement it properly.
    total_en = 0.0
 
    # Collect local terms from each cluster
-   for (s, v) ∈ zip(state, vertices(fg))
-      total_en += get_prop(fg, v, :spectrum).energies[s]
+   for (s, v) ∈ zip(state, vertices(cl_h))
+      total_en += get_prop(cl_h, v, :spectrum).energies[s]
    end
 
    # Collect inter-cluster terms
-   for edge ∈ edges(fg)
-      i, j = fg.reverse_label_map[src(edge)], fg.reverse_label_map[dst(edge)]
-      pl, en, pr = get_prop(fg, edge, :pl), get_prop(fg, edge, :en), get_prop(fg, edge, :pr)
+   for edge ∈ edges(cl_h)
+      i, j = cl_h.reverse_label_map[src(edge)], cl_h.reverse_label_map[dst(edge)]
+      pl, en, pr = get_prop(cl_h, edge, :pl), get_prop(cl_h, edge, :en), get_prop(cl_h, edge, :pr)
       edge_energy = en[pl, pr]
       total_en += edge_energy[state[i], state[j]]
    end
@@ -246,17 +246,17 @@ end
 
 
 @testset "Decoding solution gives spins configuration with corresponding energies" begin
-   ig, fg = create_larger_example_factor_graph()
+   ig, cl_h = create_larger_example_clustered_hamiltonian()
 
    # Corresponding bases sizes for each cluster are 16, 4, 4, 2.
    all_states = [[i, j, k, l] for i ∈ 1:16 for j ∈ 1:4 for k ∈ 1:4 for l ∈ 1:2]
 
    for state ∈ all_states
-      d = decode_factor_graph_state(fg, state)
+      d = decode_clustered_hamiltonian_state(cl_h, state)
       spins = zeros(length(d))
       for (k, v) ∈ d
          spins[k] = v
       end
-      @test factor_graph_energy(fg, state) ≈ energy([Int.(spins)], ig)[]
+      @test clustered_hamiltonian_energy(cl_h, state) ≈ energy([Int.(spins)], ig)[]
    end
 end
