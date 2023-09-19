@@ -32,6 +32,62 @@ function clustered_hamiltonian(
     clustered_hamiltonian(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
+# function clustered_hamiltonian(
+#     ig::IsingGraph,
+#     num_states_cl::Dict{T, Int};
+#     spectrum::Function=full_spectrum,
+#     cluster_assignment_rule::Dict{Int, T}
+# ) where T
+#     L = maximum(values(cluster_assignment_rule))
+#     cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
+#     lp = PoolOfProjectors2{Int}()
+
+#     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
+#         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
+#         set_props!(cl_h, v, Dict(:cluster => cl, :spectrum => sp))
+#     end
+
+#     for (i, v) ∈ enumerate(vertices(cl_h)), w ∈ vertices(cl_h)[i+1:end]
+#         cl1, cl2 = get_prop(cl_h, v, :cluster), get_prop(cl_h, w, :cluster)
+#         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
+
+#         if !isempty(outer_edges)
+#             ind1 = any(i -> i != 0, J, dims=2)
+#             ind2 = any(i -> i != 0, J, dims=1)
+#             ind1 = reshape(ind1, length(ind1))
+#             ind2 = reshape(ind2, length(ind2))
+#             JJ = J[ind1, ind2]
+
+#             states_v = get_prop(cl_h, v, :spectrum).states
+#             states_w = get_prop(cl_h, w, :spectrum).states
+
+#             pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
+#             pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
+#             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
+#             add_projector2!(lp, pl)
+#             add_edge!(cl_h, v, w)
+#             set_props!(
+#                 cl_h, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
+#             )
+#         end
+#     end
+#     cl_h
+# end
+
+function get_projector_index(lp::PoolOfProjectors2{T}, proj::Proj{T}) where T
+    for (device, device_data) in lp.data
+        for (size, proj_dict) in device_data
+            for (index, p) in enumerate(proj_dict)
+                if p == proj
+                    return index
+                end
+            end
+        end
+    end
+    return 0  # Return 0 if the projector is not found
+end
+
+
 function clustered_hamiltonian(
     ig::IsingGraph,
     num_states_cl::Dict{T, Int};
@@ -40,6 +96,7 @@ function clustered_hamiltonian(
 ) where T
     L = maximum(values(cluster_assignment_rule))
     cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
+    lp = PoolOfProjectors2{Int}()
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
@@ -63,13 +120,21 @@ function clustered_hamiltonian(
             pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
             pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
+            add_projector2!(lp, pl)
+            add_projector2!(lp, pr)
+            ipl = get_projector_index(lp, pl)
+            ipr = get_projector_index(lp, pr)
 
             add_edge!(cl_h, v, w)
             set_props!(
                 cl_h, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
             )
+            set_props!(
+                cl_h, v, w, Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr)
+            )
         end
     end
+    set_props!(cl_h, Dict(:pool_of_projectors => lp))
     cl_h
 end
 
