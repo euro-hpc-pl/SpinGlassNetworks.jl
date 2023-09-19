@@ -1,14 +1,14 @@
 export
     clustered_hamiltonian,
     rank_reveal,
-    projectors,
     split_into_clusters,
     decode_clustered_hamiltonian_state,
     energy,
     energy_2site,
     cluster_size,
     truncate_clustered_hamiltonian,
-    exact_cond_prob
+    exact_cond_prob,
+    bond_energy
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
@@ -153,6 +153,22 @@ function energy_2site(cl_h::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
         int_eng = zeros(1, 1)
     end
     int_eng
+end
+
+function bond_energy(cl_h::LabelledGraph{S, T}, cl_h_u::NTuple{N, Int64}, cl_h_v::NTuple{N, Int64}, σ::Int) where {S, T, N}
+    if has_edge(cl_h, cl_h_u, cl_h_v)
+        pu, en, pv = get_prop.(
+                        Ref(cl_h), Ref(cl_h_u), Ref(cl_h_v), (:pl, :en, :pr)
+                    )
+        @inbounds energies = en[pu, pv[σ]]
+    elseif has_edge(cl_h, cl_h_v, cl_h_u)
+        pv, en, pu = get_prop.(
+                        Ref(cl_h), Ref(cl_h_v), Ref(cl_h_u), (:pl, :en, :pr)
+                    )
+        @inbounds energies = en[pv[σ], pu]
+    else
+        energies = zeros(cluster_size(cl_h, cl_h_u))
+    end
 end
 
 function cluster_size(clustered_hamiltonian::LabelledGraph{S, T}, vertex::T) where {S, T}

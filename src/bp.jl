@@ -1,7 +1,8 @@
 
 export
     belief_propagation,
-    clustered_hamiltonian_2site
+    clustered_hamiltonian_2site,
+    projector
 
 
 function belief_propagation(cl_h, beta; tol=1e-6, iter=1)
@@ -227,7 +228,7 @@ function interaction_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::N
     end
 end
 
-function projector(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
+function projector(cl_h::LabelledGraph{S, T}, v::NTuple{N, Int64}, w::NTuple{N, Int64}) where {S, T, N}
     if has_edge(cl_h, w, v)
         p = get_prop(cl_h, w, v, :pr)
     elseif has_edge(cl_h, v, w)
