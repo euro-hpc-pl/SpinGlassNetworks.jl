@@ -12,6 +12,8 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+NNlibCUDA = "a00861dc-f156-4864-bf3c-e6376f28a68d"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 
 [compat]
 CSV = "0.8"

@@ -7,6 +7,7 @@ module SpinGlassNetworks
     using LinearAlgebra, MKL
     using Base.Cartesian
     using SparseArrays
+    using CUDA, CUDA.CUSPARSE
 
     import Base.Prehashed
 
