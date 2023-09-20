@@ -8,7 +8,6 @@ module SpinGlassNetworks
     using Base.Cartesian
     using SparseArrays
     using CUDA, CUDA.CUSPARSE
-
     import Base.Prehashed
 
     export unique_neighbors

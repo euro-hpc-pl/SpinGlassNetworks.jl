@@ -40,7 +40,7 @@ end
 # ) where T
 #     L = maximum(values(cluster_assignment_rule))
 #     cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
-#     lp = PoolOfProjectors2{Int}()
+#     lp = PoolOfProjectors{Int}()
 
 #     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
 #         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
@@ -64,7 +64,7 @@ end
 #             pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
 #             pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
 #             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
-#             add_projector2!(lp, pl)
+#             add_projector!(lp, pl)
 #             add_edge!(cl_h, v, w)
 #             set_props!(
 #                 cl_h, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
@@ -83,7 +83,7 @@ function clustered_hamiltonian(
 ) where T
     L = maximum(values(cluster_assignment_rule))
     cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
-    lp = PoolOfProjectors2{Int}()
+    lp = PoolOfProjectors{Int}()
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
@@ -107,8 +107,8 @@ function clustered_hamiltonian(
             pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
             pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
-            ipl = add_projector2!(lp, pl)
-            ipr = add_projector2!(lp, pr)
+            ipl = add_projector!(lp, pl)
+            ipr = add_projector!(lp, pr)
 
             add_edge!(cl_h, v, w)
             set_props!(
@@ -180,9 +180,9 @@ function energy(cl_h::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     for v ∈ vertices(cl_h) en_cl_h += get_prop(cl_h, v, :spectrum).energies[σ[v]] end
     for edge ∈ edges(cl_h)
         idx_pl = get_prop(cl_h, edge, :ipl)
-        pl = get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU)
+        pl = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU)
         idx_pr = get_prop(cl_h, edge, :ipr)
-        pr = get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU)
+        pr = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU)
         en = get_prop(cl_h, edge, :en)
         en_cl_h += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
     end
@@ -195,16 +195,16 @@ function energy_2site(cl_h::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
     if has_edge(cl_h, (i, j, 1), (i, j, 2))
         en12 = copy(get_prop(cl_h, (i, j, 1), (i, j, 2), :en))
         idx_pl = get_prop(cl_h, (i, j, 1), (i, j, 2), :ipl)
-        pl = copy(get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU))
+        pl = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU))
         idx_pr = get_prop(cl_h, (i, j, 1), (i, j, 2), :ipr)
-        pr = copy(get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU))
+        pr = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU))
         int_eng = en12[pl, pr]
     elseif has_edge(cl_h, (i, j, 2), (i, j, 1))
         en21 = copy(get_prop(cl_h, (i, j, 2), (i, j, 1), :en))
         idx_pl = get_prop(cl_h, (i, j, 2), (i, j, 1), :ipl)
-        pl = copy(get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU))
+        pl = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU))
         idx_pr = get_prop(cl_h, (i, j, 2), (i, j, 1), :ipr)
-        pr = copy(get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU))
+        pr = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU))
         int_eng = en21[pl, pr]'
     else
         int_eng = zeros(1, 1)
@@ -217,15 +217,15 @@ function bond_energy(cl_h::LabelledGraph{S, T}, cl_h_u::NTuple{N, Int64}, cl_h_v
         ipu, en, ipv = get_prop.(
                         Ref(cl_h), Ref(cl_h_u), Ref(cl_h_v), (:ipl, :en, :ipr)
                     )
-        pu = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
-        pv = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
+        pu = get_projector!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
+        pv = get_projector!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
         @inbounds energies = en[pu, pv[σ]]
     elseif has_edge(cl_h, cl_h_v, cl_h_u)
         ipv, en, ipu = get_prop.(
                         Ref(cl_h), Ref(cl_h_v), Ref(cl_h_u), (:ipl, :en, :ipr)
                     )
-        pu = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
-        pv = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
+        pu = get_projector!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
+        pv = get_projector!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
         @inbounds energies = en[pv[σ], pu]
     else
         energies = zeros(cluster_size(cl_h, cl_h_u))
@@ -249,7 +249,7 @@ function exact_cond_prob(clustered_hamiltonian::LabelledGraph{S, T}, beta, targe
 function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict) where {S, T}
 
     new_cl_h = LabelledGraph{MetaDiGraph}(vertices(cl_h))
-    new_lp = PoolOfProjectors2{Int}()
+    new_lp = PoolOfProjectors{Int}()
 
     for v ∈ vertices(new_cl_h)
         cl = get_prop(cl_h, v, :cluster)
@@ -267,17 +267,17 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
         add_edge!(new_cl_h, v, w)
         outer_edges = get_prop(cl_h, v, w, :outer_edges)
         ipl = get_prop(cl_h, v, w, :ipl)
-        pl = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
+        pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
         ipr = get_prop(cl_h, v, w, :ipr)
-        pr = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+        pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
         en = get_prop(cl_h, v, w, :en)
         pl = pl[states[v]]
         pr = pr[states[w]]
         pl_transition, pl_unique = rank_reveal(pl, :PE)
         pr_transition, pr_unique = rank_reveal(pr, :PE)
         en = en[pl_unique, pr_unique]
-        ipl = add_projector2!(new_lp, pl_transition)
-        ipr = add_projector2!(new_lp, pr_transition)
+        ipl = add_projector!(new_lp, pl_transition)
+        ipr = add_projector!(new_lp, pr_transition)
         set_props!(
                   new_cl_h, v, w, Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr)
               )
