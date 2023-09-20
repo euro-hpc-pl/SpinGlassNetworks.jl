@@ -5,6 +5,7 @@ using MetaGraphs
 using Logging
 using Test
 using TensorCast
+using CUDA
 
 Base.:(==)(e1::LabelledEdge, e2::LabelledEdge) = src(e1) == src(e2) && dst(e1) == dst(e2)
 
@@ -32,7 +33,8 @@ my_tests = [
     "clustered_hamiltonian.jl",
     "bp_1site.jl",
     "bp_2site.jl",
-    "utils.jl"
+    "utils.jl",
+    "projectors.jl"
     ]
 
 for my_test ∈ my_tests
