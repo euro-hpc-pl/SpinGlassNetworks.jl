@@ -72,10 +72,14 @@ function get_neighbors(cl_h::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
         if src_node == vertex
             en = get_prop(cl_h, src_node, dst_node, :en)
             pv = get_prop(cl_h, src_node, dst_node, :pl)
+            # idx_pv = get_prop(cl_h, src_node, dst_node, :ipl)
+            # pv = get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pv, :CPU)
             push!(neighbors, (dst_node, pv, en))
         elseif dst_node == vertex
             en = get_prop(cl_h, src_node, dst_node, :en)'
             pv = get_prop(cl_h, src_node, dst_node, :pr)
+            # idx_pv = get_prop(cl_h, src_node, dst_node, :ipr)
+            # pv = get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_pv, :CPU)
             push!(neighbors, (src_node, pv, en))
         end
     end
@@ -230,9 +234,11 @@ end
 
 function projector(cl_h::LabelledGraph{S, T}, v::NTuple{N, Int64}, w::NTuple{N, Int64}) where {S, T, N}
     if has_edge(cl_h, w, v)
-        p = get_prop(cl_h, w, v, :pr)
+        idx_p = get_prop(cl_h, w, v, :ipr)
+        p = get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_p, :CPU)
     elseif has_edge(cl_h, v, w)
-        p = get_prop(cl_h, v, w, :pl)
+        idx_p = get_prop(cl_h, v, w, :ipl)
+        p = get_projector2!(get_prop(cl_h, :pool_of_projectors), idx_p, :CPU)
     else
         p = ones(Int, v ∈ vertices(cl_h) ? length(get_prop(cl_h, v, :spectrum).energies) : 1)
     end

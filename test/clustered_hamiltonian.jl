@@ -87,12 +87,17 @@ end
    )
 
    for (bd, e) in zip(bond_dimensions, edges(cl_h))
-      pl, en, pr = get_prop(cl_h, e, :pl), get_prop(cl_h, e, :en), get_prop(cl_h, e, :pr)
+      ipl, en, ipr = get_prop(cl_h, e, :ipl), get_prop(cl_h, e, :en), get_prop(cl_h, e, :ipr)
+      pl = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
+      pr = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+
       @test minimum(size(en)) == bd
    end
 
    for ((i, j), cedge) ∈ cedges
-      pl, en, pr = get_prop(cl_h, i, j, :pl), get_prop(cl_h, i, j, :en), get_prop(cl_h, i, j, :pr)
+      ipl, en, ipr = get_prop(cl_h, i, j, :ipl), get_prop(cl_h, i, j, :en), get_prop(cl_h, i, j, :ipr)
+      pl = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
+      pr = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
       base_i = all_states(rank[i])
       base_j = all_states(rank[j])
 
@@ -236,7 +241,9 @@ function clustered_hamiltonian_energy(cl_h, state)
    # Collect inter-cluster terms
    for edge ∈ edges(cl_h)
       i, j = cl_h.reverse_label_map[src(edge)], cl_h.reverse_label_map[dst(edge)]
-      pl, en, pr = get_prop(cl_h, edge, :pl), get_prop(cl_h, edge, :en), get_prop(cl_h, edge, :pr)
+      ipl, en, ipr = get_prop(cl_h, edge, :ipl), get_prop(cl_h, edge, :en), get_prop(cl_h, edge, :ipr)
+      pl = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
+      pr = get_projector2!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
       edge_energy = en[pl, pr]
       total_en += edge_energy[state[i], state[j]]
    end
