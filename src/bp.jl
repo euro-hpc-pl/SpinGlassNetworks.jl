@@ -71,15 +71,13 @@ function get_neighbors(cl_h::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
         src_node, dst_node = src(edge), dst(edge)
         if src_node == vertex
             en = get_prop(cl_h, src_node, dst_node, :en)
-            pv = get_prop(cl_h, src_node, dst_node, :pl)
-            # idx_pv = get_prop(cl_h, src_node, dst_node, :ipl)
-            # pv = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pv, :CPU)
+            idx_pv = get_prop(cl_h, src_node, dst_node, :ipl)
+            pv = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pv, :CPU)
             push!(neighbors, (dst_node, pv, en))
         elseif dst_node == vertex
             en = get_prop(cl_h, src_node, dst_node, :en)'
-            pv = get_prop(cl_h, src_node, dst_node, :pr)
-            # idx_pv = get_prop(cl_h, src_node, dst_node, :ipr)
-            # pv = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pv, :CPU)
+            idx_pv = get_prop(cl_h, src_node, dst_node, :ipr)
+            pv = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pv, :CPU)
             push!(neighbors, (src_node, pv, en))
         end
     end
@@ -150,6 +148,7 @@ function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) wher
 
     unified_vertices = unique([vertex[1:2] for vertex in vertices(cl_h)])
     new_cl_h = LabelledGraph{MetaDiGraph}(unified_vertices)
+    new_lp = PoolOfProjectors{Int}()
 
     vertx = Set()
     for v in vertices(cl_h)
@@ -175,9 +174,12 @@ function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) wher
         add_edge!(new_cl_h, (v1, v2), (w1, w2))
 
         E, pl, pr = merge_vertices(cl_h, beta, v, w)
-        set_props!(new_cl_h, (v1, v2), (w1, w2), Dict(:pl => pl, :en => E, :pr => pr))
+        ipl = add_projector!(new_lp, pl)
+        ipr = add_projector!(new_lp, pr)
+        set_props!(new_cl_h, (v1, v2), (w1, w2), Dict(:ipl => ipl, :en => E, :ipr => ipr))
         push!(edge_states, sort([(v1, v2), (w1, w2)]))
     end
+    set_props!(new_cl_h, Dict(:pool_of_projectors => new_lp))
     new_cl_h
 end
 

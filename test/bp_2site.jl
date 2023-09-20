@@ -171,8 +171,13 @@ end
             @test E == get_prop(cl_h1, src(e), dst(e), :en)
          end
          for e ∈ edges(new_cl_h1)
-            @test get_prop(new_cl_h1, src(e), dst(e), :pl) == get_prop(cl_h1, src(e), dst(e), :pl)
-            @test get_prop(new_cl_h1, src(e), dst(e), :pr) == get_prop(cl_h1, src(e), dst(e), :pr)
+            il1 = get_prop(new_cl_h1, src(e), dst(e), :ipl)
+            il2 = get_prop(cl_h1, src(e), dst(e), :ipl)
+            ir1 = get_prop(new_cl_h1, src(e), dst(e), :ipr)
+            ir2 = get_prop(cl_h1, src(e), dst(e), :ipr)
+
+            @test get_projector!(get_prop(new_cl_h1, :pool_of_projectors), il1, :CPU) == get_projector!(get_prop(cl_h1, :pool_of_projectors), il2, :CPU)
+            @test get_projector!(get_prop(new_cl_h1, :pool_of_projectors), ir1, :CPU) == get_projector!(get_prop(cl_h1, :pool_of_projectors), ir2, :CPU)
          end
 
          beliefs = belief_propagation(new_cl_h1, beta; iter=iter, tol=tol)

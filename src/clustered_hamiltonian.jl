@@ -112,9 +112,6 @@ function clustered_hamiltonian(
 
             add_edge!(cl_h, v, w)
             set_props!(
-                cl_h, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
-            )
-            set_props!(
                 cl_h, v, w, Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr)
             )
         end
@@ -280,9 +277,6 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
         ipr = add_projector!(new_lp, pr_transition)
         set_props!(
                   new_cl_h, v, w, Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr)
-              )
-        set_props!(
-                  new_cl_h, v, w, Dict(:outer_edges => outer_edges, :pl => pl_transition, :en => en, :pr => pr_transition)
               )
     end
     set_props!(new_cl_h, Dict(:pool_of_projectors => new_lp))
