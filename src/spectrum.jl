@@ -15,6 +15,7 @@ export
 all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)...)
 
 const State = Vector{Int}
+
 struct Spectrum
     energies::Vector{<:Real}
     states::AbstractArray{State}
@@ -39,11 +40,25 @@ function energy(σ::AbstractArray{State}, ig::IsingGraph)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
-function Spectrum(ig::IsingGraph)
+function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
+    en = zero(T)
+    for (i, σ) ∈ ig_state
+        en += get_prop(ig, i, :h) * σ
+        for (j, η) ∈ ig_state
+            if has_edge(ig, i, j)
+                en += T(1/2) * σ * get_prop(ig, i, j, :J) * η
+            elseif has_edge(ig, j, i)
+                en += T(1/2) * σ * get_prop(ig, j, i, :J) * η
+            end
+        end
+    end
+    en
+end
+
+function Spectrum(ig::IsingGraph{T}) where T
     L = nv(ig)
     N = 2^L
-
-    energies = zeros(Float64, N)
+    energies = zeros(T, N)
     states = Vector{State}(undef, N)
 
     J, h = couplings(ig), biases(ig)
@@ -55,8 +70,7 @@ function Spectrum(ig::IsingGraph)
     Spectrum(energies, states)
 end
 
-#Only for testing purposes
-function gibbs_tensor(ig::IsingGraph, β::Real=1.0)
+function gibbs_tensor(ig::IsingGraph{T}, β::T=1) where T
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))
     ρ ./ sum(ρ)
@@ -66,18 +80,18 @@ function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
     brute_force(ig, Val(s); num_states)
 end
 
-function brute_force(ig::IsingGraph, ::Val{:CPU}; num_states::Int=1)
+#TODO only one of brute_force and full_spectrum should remain
+function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
     L = nv(ig)
-    if L == 0 return Spectrum(zeros(1), Vector{Int}[], zeros(Int, 1)) end
+    L == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[], zeros(T, 1))
     sp = Spectrum(ig)
     num_states = min(num_states, prod(rank_vec(ig)))
     idx = partialsortperm(vec(sp.energies), 1:num_states)
     Spectrum(sp.energies[idx], sp.states[idx])
 end
 
-#TODO: to be removed
-function full_spectrum(ig::IsingGraph; num_states::Int=1)
-    if nv(ig) == 0 return Spectrum(zeros(1), Vector{Int}[], zeros(Int, 1)) end
+function full_spectrum(ig::IsingGraph{T}; num_states::Int=1) where T
+    nv(ig) == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[], zeros(T, 1))
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
     σ = collect.(all_states(ig_rank))
@@ -85,10 +99,6 @@ function full_spectrum(ig::IsingGraph; num_states::Int=1)
     Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 
-function inter_cluster_energy(
-    cl1_states::Vector{State},
-    J::Matrix{<:Real},
-    cl2_states::Vector{State}
-)
+function inter_cluster_energy(cl1_states::Vector{State}, J::Matrix{<:Real}, cl2_states::Vector{State})
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end

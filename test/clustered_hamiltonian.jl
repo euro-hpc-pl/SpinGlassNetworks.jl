@@ -12,27 +12,29 @@ enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
 
    instance = "$(@__DIR__)/instances/chimera_droplets/$(L)power/001.txt"
 
-   ig = ising_graph(instance)
+   for T ∈ [Float16, Float32, Float64]
+        ig = ising_graph(T, instance)
 
    cl_h = clustered_hamiltonian(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t))    )
 
    @test collect(vertices(cl_h)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
 
-   clv = []
-   cle = []
-   rank = rank_vec(ig)
+        clv = []
+        cle = []
+        rank = rank_vec(ig)
 
    for v ∈ vertices(cl_h)
       cl = get_prop(cl_h, v, :cluster)
       push!(clv, vertices(cl))
       push!(cle, collect(edges(cl)))
 
-      @test rank_vec(cl) == get_prop.(Ref(ig), vertices(cl), :rank)
-   end
+            @test rank_vec(cl) == get_prop.(Ref(ig), vertices(cl), :rank)
+        end
 
-   # Check if graph is factored correctly
-   @test isempty(intersect(clv...))
-   @test isempty(intersect(cle...))
+        # Check if graph is factored correctly
+        @test isempty(intersect(clv...))
+        @test isempty(intersect(cle...))
+    end
 end
 
 @testset "Factor graph builds on pathological instance" begin
@@ -73,99 +75,101 @@ end
    )
 
    d = 2
-   rank = Dict(
-      c => fill(d, length(idx))
-      for (c,idx) ∈ cells if !isempty(idx)
-   )
-
+   rank = Dict(c => fill(d, length(idx)) for (c, idx) ∈ cells if !isempty(idx))
    bond_dimensions = [2, 2, 8, 4, 2, 2, 8]
 
-   cl_h = clustered_hamiltonian(
-      ising_graph(instance),
-      spectrum=full_spectrum,
-      cluster_assignment_rule=super_square_lattice((m, n, t)),
-   )
+   for T ∈ [Float16, Float32, Float64]
+        ig = ising_graph(T, instance)
+        @test eltype(ig) == T
 
-   for (bd, e) in zip(bond_dimensions, edges(cl_h))
-      ipl, en, ipr = get_prop(cl_h, e, :ipl), get_prop(cl_h, e, :en), get_prop(cl_h, e, :ipr)
-      pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
-      pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+        cl_h = clustered_hamiltonian(
+            ig,
+            spectrum=full_spectrum,
+            cluster_assignment_rule=super_square_lattice((m, n, t)),
+        )
 
-      @test minimum(size(en)) == bd
-   end
+        for (bd, e) in zip(bond_dimensions, edges(cl_h))
+            ipl, en, ipr = get_prop(cl_h, e, :ipl), get_prop(cl_h, e, :en), get_prop(cl_h, e, :ipr)
+            pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
+            pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
 
-   for ((i, j), cedge) ∈ cedges
-      ipl, en, ipr = get_prop(cl_h, i, j, :ipl), get_prop(cl_h, i, j, :en), get_prop(cl_h, i, j, :ipr)
-      pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
-      pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
-      base_i = all_states(rank[i])
-      base_j = all_states(rank[j])
+            @test minimum(size(en)) == bd
+            @test maximum(pl) == size(en, 1)
+            @test maximum(pr) == size(en, 2)
+        end
 
-      idx_i = enum(cells[i])
-      idx_j = enum(cells[j])
+        for ((i, j), cedge) ∈ cedges
+            ipl, en, ipr = get_prop(cl_h, i, j, :ipl), get_prop(cl_h, i, j, :en), get_prop(cl_h, i, j, :ipr)
+            pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
+            pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+            base_i = all_states(rank[i])
+            base_j = all_states(rank[j])
 
-      # Change it to test if energy is calculated using passed 'energy' function
-      energy = zeros(prod(rank[i]), prod(rank[j]))
+            idx_i = enum(cells[i])
+            idx_j = enum(cells[j])
 
-      for (ii, σ) ∈ enumerate(base_i)
-         for (jj, η) ∈ enumerate(base_j)
-            eij = 0.
-            for (k, l) ∈ values(cedge)
-               kk, ll = enum(cells[i])[k], enum(cells[j])[l]
-               s, r = σ[idx_i[k]], η[idx_j[l]]
-               J = couplings[k, l]
-               eij += s * J * r
+            # Change it to test if energy is calculated using passed 'energy' function
+            energy = zeros(T, prod(rank[i]), prod(rank[j]))
+
+            for (ii, σ) ∈ enumerate(base_i), (jj, η) ∈ enumerate(base_j)
+                eij = zero(T)
+                for (k, l) ∈ values(cedge)
+                    kk = enum(cells[i])[k]
+                    ll = enum(cells[j])[l]
+                    s = σ[idx_i[k]]
+                    r = η[idx_j[l]]
+                    J = couplings[k, l]
+                    eij += s * J * r
+                end
+                energy[ii, jj] = eij
             end
-            energy[ii, jj] = eij
-         end
-      end
-      @test energy ≈ en[pl, pr]
-   end
-
-   @testset "each cluster comprises expected cells" begin
-   for v ∈ vertices(cl_h)
-      cl = get_prop(cl_h, v, :cluster)
-
-      @test issetequal(vertices(cl), cells[v])
-   end
-   end
-
-   @testset "each edge comprises expected bunch of edges from source Ising graph" begin
-   for e ∈ edges(cl_h)
-      outer_edges = get_prop(cl_h, e, :outer_edges)
-
-      @test issetequal(cedges[(src(e), dst(e))], [(src(oe), dst(oe)) for oe ∈ outer_edges])
-   end
-   end
+            @test eltype(energy) == T == eltype(en)
+            @test energy ≈ en[pl, pr]
+        end
+        @testset "each cluster comprises expected cells" begin
+            for v ∈ vertices(cl_h)
+                cl = get_prop(cl_h, v, :cluster)
+                @test issetequal(vertices(cl), cells[v])
+            end
+        end
+        @testset "each edge comprises expected bunch of edges from source Ising graph" begin
+            for e ∈ edges(cl_h)
+                outer_edges = get_prop(cl_h, e, :outer_edges)
+                @test issetequal(cedges[(src(e), dst(e))], [(src(oe), dst(oe)) for oe ∈ outer_edges])
+            end
+        end
+    end
 end
 
-function create_example_clustered_hamiltonian()
-   J12 = -1.0
-   h1 = 0.5
-   h2 = 0.75
+function create_example_clustered_hamiltonian(::Type{T}) where T
+    J12 = -1
+    h1 = 1/2
+    h2 = 0.75
 
-   D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
-   ig = ising_graph(D)
+    D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
+    ig = ising_graph(T, D)
 
-   clustered_hamiltonian(
-      ig,
-      Dict((1, 1) => 2, (1, 2) => 2),
-      spectrum = full_spectrum,
-      cluster_assignment_rule = Dict(1 => (1, 1), 2 => (1, 2)),
-  )
+    clustered_hamiltonian(
+        ig,
+        Dict((1, 1) => 2, (1, 2) => 2),
+        spectrum = full_spectrum,
+        cluster_assignment_rule = Dict(1 => (1, 1), 2 => (1, 2)),
+    )
 end
 
-cl_h_state_to_spin = [
-   ([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])
-]
+cl_h_state_to_spin = [([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])]
 
 @testset "Decoding solution gives correct spin assignment" begin
-   cl_h = create_example_clustered_hamiltonian()
-   for (state, spin_values) ∈ cl_h_state_to_spin
-      d = decode_clustered_hamiltonian_state(cl_h, state)
-      states = collect(values(d))[collect(keys(d))]
-      @test states == spin_values
-   end
+
+   for T ∈ [Float16, Float32, Float64]
+        cl_h = create_example_clustered_hamiltonian(T)
+        @test all(eltype(get_prop(cl_h, e, :en)) == T for e ∈ edges(cl_h))
+        for (state, spin_values) ∈ cl_h_state_to_spin
+            d = decode_clustered_hamiltonian_state(cl_h, state)
+            states = collect(values(d))[collect(keys(d))]
+            @test states == spin_values
+        end
+    end
 end
 
 """
@@ -203,7 +207,6 @@ function create_larger_example_clustered_hamiltonian()
       (3, 6) => 1.1,
       (6, 9) => 0.7
    )
-
    ig = ising_graph(instance)
 
    assignment_rule = Dict(
@@ -231,7 +234,7 @@ end
 function clustered_hamiltonian_energy(cl_h, state)
    # This is highly inefficient, but simple, which makes it suitable for testing.
    # If such a function is needed elsewhere, we need to implement it properly.
-   total_en = 0.0
+   total_en = 0
 
    # Collect local terms from each cluster
    for (s, v) ∈ zip(state, vertices(cl_h))
@@ -247,10 +250,8 @@ function clustered_hamiltonian_energy(cl_h, state)
       edge_energy = en[pl, pr]
       total_en += edge_energy[state[i], state[j]]
    end
-
    total_en
 end
-
 
 @testset "Decoding solution gives spins configuration with corresponding energies" begin
    ig, cl_h = create_larger_example_clustered_hamiltonian()
@@ -261,9 +262,8 @@ end
    for state ∈ all_states
       d = decode_clustered_hamiltonian_state(cl_h, state)
       spins = zeros(length(d))
-      for (k, v) ∈ d
-         spins[k] = v
-      end
-      @test clustered_hamiltonian_energy(cl_h, state) ≈ energy([Int.(spins)], ig)[]
-   end
+      for (k, v) ∈ d spins[k] = v end
+      σ = [Int.(spins)]
+      @test clustered_hamiltonian_energy(cl_h, state) ≈ energy(σ, ig)[]
+    end
 end

@@ -9,11 +9,13 @@ export
     truncate_clustered_hamiltonian,
     exact_cond_prob,
     bond_energy
+
 """
 Groups spins into clusters: Dict(factor graph coordinates -> group of spins in Ising graph)
 """
-function split_into_clusters(ig::LabelledGraph{S, T}, assignment_rule) where {S, T}
-    cluster_id_to_verts = Dict(i => T[] for i in values(assignment_rule))
+
+function split_into_clusters(ig::LabelledGraph{G, L}, assignment_rule) where {G, L}
+    cluster_id_to_verts = Dict(i => L[] for i in values(assignment_rule))
     for v in vertices(ig) push!(cluster_id_to_verts[assignment_rule[v]], v) end
     Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
 end
@@ -26,53 +28,11 @@ function clustered_hamiltonian(
     ig::IsingGraph,
     num_states_cl::Int;
     spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T} # e.g. square lattice
-) where T
+    cluster_assignment_rule::Dict{Int, L} # e.g. square lattice
+) where L
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
     clustered_hamiltonian(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
-
-# function clustered_hamiltonian(
-#     ig::IsingGraph,
-#     num_states_cl::Dict{T, Int};
-#     spectrum::Function=full_spectrum,
-#     cluster_assignment_rule::Dict{Int, T}
-# ) where T
-#     L = maximum(values(cluster_assignment_rule))
-#     cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
-#     lp = PoolOfProjectors{Int}()
-
-#     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
-#         sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
-#         set_props!(cl_h, v, Dict(:cluster => cl, :spectrum => sp))
-#     end
-
-#     for (i, v) ∈ enumerate(vertices(cl_h)), w ∈ vertices(cl_h)[i+1:end]
-#         cl1, cl2 = get_prop(cl_h, v, :cluster), get_prop(cl_h, w, :cluster)
-#         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
-
-#         if !isempty(outer_edges)
-#             ind1 = any(i -> i != 0, J, dims=2)
-#             ind2 = any(i -> i != 0, J, dims=1)
-#             ind1 = reshape(ind1, length(ind1))
-#             ind2 = reshape(ind2, length(ind2))
-#             JJ = J[ind1, ind2]
-
-#             states_v = get_prop(cl_h, v, :spectrum).states
-#             states_w = get_prop(cl_h, w, :spectrum).states
-
-#             pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
-#             pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
-#             en = inter_cluster_energy(unique_states_v, JJ, unique_states_w)
-#             add_projector!(lp, pl)
-#             add_edge!(cl_h, v, w)
-#             set_props!(
-#                 cl_h, v, w, Dict(:outer_edges => outer_edges, :pl => pl, :en => en, :pr => pr)
-#             )
-#         end
-#     end
-#     cl_h
-# end
 
 
 function clustered_hamiltonian(
@@ -81,8 +41,10 @@ function clustered_hamiltonian(
     spectrum::Function=full_spectrum,
     cluster_assignment_rule::Dict{Int, T}
 ) where T
-    L = maximum(values(cluster_assignment_rule))
-    cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
+    cl_h = LabelledGraph{MetaDiGraph}(
+        sort(unique(values(cluster_assignment_rule)))
+    )
+
     lp = PoolOfProjectors{Int}()
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
@@ -120,15 +82,11 @@ function clustered_hamiltonian(
     cl_h
 end
 
-function clustered_hamiltonian(
-    ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}
-) where T
-    clustered_hamiltonian(
-      ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule
-    )
+function clustered_hamiltonian(ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}) where T
+    clustered_hamiltonian(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
-function rank_reveal(energy, order=:PE)
+function rank_reveal(energy, order=:PE) where T <: Real
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2
     E, idx = unique_dims(energy, dim)
@@ -154,23 +112,6 @@ function decode_clustered_hamiltonian_state(cl_h, state::Vector{Int})
     ret
 end
 
-"""
-TODO: write it better (for now this is only for testing).
-"""
-function energy(ig::IsingGraph, ig_state::Dict{Int, Int})
-    en = 0.0
-    for (i, σ) ∈ ig_state
-        en += get_prop(ig, i, :h) * σ
-        for (j, η) ∈ ig_state
-            if has_edge(ig, i, j)
-                en += σ * get_prop(ig, i, j, :J) * η / 2.0
-            elseif has_edge(ig, j, i)
-                en += σ * get_prop(ig, j, i, :J) * η / 2.0
-            end
-        end
-    end
-    en
-end
 
 function energy(cl_h::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
     en_cl_h = 0.0

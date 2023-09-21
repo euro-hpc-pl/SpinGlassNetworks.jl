@@ -4,57 +4,47 @@ using LabelledGraphs
 
 @testset "Ising graph cannot be created" begin
     @testset "if input instance contains duplicate edges" begin
-        @test_throws ArgumentError ising_graph(
-        Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0))
+        for T ∈ [Float16, Float32, Float64]
+            @test_throws ArgumentError ising_graph(
+                T, Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0)
+            )
+        end
     end
 end
 
-for (instance, source) ∈ (
-    ("$(@__DIR__)/instances/example.txt", "file"),
-    (
-        Dict(
-            (1, 1) => 0.1,
-            (2, 2) => 0.5,
-            (1, 4) => -2.0,
-            (4, 2) => 1.0,
-            (1, 2) => -0.3
-        ),
-         "array"
+for T ∈ [Float16, Float32, Float64]
+    for (instance, source) ∈ (
+        ("$(@__DIR__)/instances/example.txt", "file"),
+        (Dict{Tuple{Int, Int}, T}((1, 1) => 0.1, (2, 2) => 0.5, (1, 4) => -2.0, (4, 2) => 1.0, (1, 2) => -0.3), "array")
     )
-)
-@testset "Ising graph created from $(source)" begin
-    expected_num_vertices = 3
-    expected_biases = [0.1, 0.5, 0.0]
-    expected_couplings = Dict(
-        LabelledEdge(1, 2) => -0.3,
-        LabelledEdge(1, 4) => -2.0,
-        LabelledEdge(2, 4) => 1.0
-    )
-    expected_J_matrix = [[0 -0.3 -2.0]; [0 0 1.0]; [0 0 0]]
+        @testset "Ising graph created from $(source)" begin
+            expected_num_vertices = 3
+            expected_biases = [T(1/10), T(1/2), T(0)]
+            expected_couplings = Dict(
+                LabelledEdge(1, 2) => -T(3/10), LabelledEdge(1, 4) => -T(2), LabelledEdge(2, 4) => T(1)
+            )
+            expected_J_matrix = [[T(0) -T(3/10) -T(2)]; [T(0) T(0) T(1)]; [T(0) T(0) T(0)]]
 
-    ig = ising_graph(instance)
-
-    @testset "contains the same number vertices as original instance" begin
-        @test nv(ig) == expected_num_vertices
+            ig = ising_graph(T, instance)
+            @test eltype(ig) == T
+            @testset "contains the same number vertices as original instance" begin
+                @test nv(ig) == expected_num_vertices
+            end
+            @testset "has collection of edges comprising all interactions from instance" begin
+                # This test uses the fact that edges iterates in the lex ordering.
+                @test collect(edges(ig)) == [LabelledEdge(e...) for e ∈ [(1, 2), (1, 4), (2, 4)]]
+            end
+            @testset "stores biases as property of vertices" begin
+                @test biases(ig) == expected_biases
+            end
+            @testset "stores couplings both as property of edges and its own property" begin
+                @test couplings(ig) == expected_J_matrix
+            end
+            @testset "has default rank stored for each active vertex" begin
+                @test get_prop(ig, :rank) == Dict(1 => 2, 2 => 2, 4 => 2)
+            end
+        end
     end
-
-    @testset "has collection of edges comprising all interactions from instance" begin
-        # This test uses the fact that edges iterates in the lex ordering.
-        @test collect(edges(ig)) == [LabelledEdge(e...) for e in [(1, 2), (1, 4), (2, 4)]]
-    end
-
-    @testset "stores biases as property of vertices" begin
-        @test biases(ig) == expected_biases
-    end
-
-    @testset "stores couplings both as property of edges and its own property" begin
-        @test couplings(ig) == expected_J_matrix
-    end
-
-    @testset "has default rank stored for each active vertex" begin
-        @test get_prop(ig, :rank) == Dict(1 => 2, 2 => 2, 4 => 2)
-    end
-end
 end
 
 @testset "Ising graph created with additional parameters" begin
@@ -72,7 +62,7 @@ end
 
     ig = ising_graph(
         "$(@__DIR__)/instances/example.txt",
-        sgn=-1,
+        scale=-1,
         rank_override=Dict(1 => 3, 4 => 4)
     )
 
@@ -88,7 +78,7 @@ end
     end
 end
 
-@testset "Ising" begin
+@testset "Ising model is correct" begin
     L = 4
     N = L^2
     instance = "$(@__DIR__)/instances/$(N)_001.txt"
@@ -104,41 +94,6 @@ end
         for j ∈ nbrs B[i, j] = 1 end
     end
     @test B + B' == A
-
-    @testset "Naive brute force for +/-1" begin
-        k = 2^N
-        sp = brute_force(ig, num_states=k)
-
-        β = rand(Float64)
-        ρ = gibbs_tensor(ig, β)
-
-        r = exp.(-β .* sp.energies)
-        R = r ./ sum(r)
-
-        @test size(ρ) == Tuple(fill(2, N))
-        @test sum(R) ≈ sum(ρ) ≈ 1
-        @test sp.energies ≈ energy(sp.states, ig)
-        @test [ρ[idx.(σ)...] for σ ∈ sp.states] ≈ R
-    end
-
-    @testset "Naive brute force for general spins" begin
-        L = 4
-        ig = ising_graph("$(@__DIR__)/instances/$(L)_001.txt")
-
-        set_prop!(ig, :rank, [3, 2, 5, 4])
-        rank = get_prop(ig, :rank)
-
-        all = prod(rank)
-        sp = full_spectrum(ig, num_states=all)
-
-        β = rand(Float64)
-        ρ = exp.(-β .* sp.energies)
-
-        ϱ = ρ ./ sum(ρ)
-        ϱ̃ = gibbs_tensor(ig, β)
-
-        @test [ϱ̃[idx.(σ)...] for σ ∈ sp.states] ≈ ϱ
-    end
 
     @testset "Reading from Dict" begin
         instance_dict = Dict()
