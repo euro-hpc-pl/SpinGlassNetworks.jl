@@ -86,7 +86,7 @@ function clustered_hamiltonian(ig::IsingGraph; spectrum::Function=full_spectrum,
     clustered_hamiltonian(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
-function rank_reveal(energy, order=:PE) where T <: Real
+function rank_reveal(energy, order=:PE) where T <: Real #TODO: add type
     @assert order ∈ (:PE, :EP)
     dim = order == :PE ? 1 : 2
     E, idx = unique_dims(energy, dim)
@@ -99,7 +99,7 @@ Returns Dict(vertex of ising graph -> spin value)
 Assumes that state has the same order as vertices in factor graph!
 TODO: check the order consistency over external packages.
 """
-function decode_clustered_hamiltonian_state(cl_h, state::Vector{Int})
+function decode_clustered_hamiltonian_state(cl_h::LabelledGraph{S, T}, state::Vector{Int}) where {S, T}
     ret = Dict{Int, Int}()
     for (i, vert) ∈ zip(state, vertices(cl_h))
         spins = get_prop(cl_h, vert, :cluster).labels

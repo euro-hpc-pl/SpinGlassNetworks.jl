@@ -5,7 +5,7 @@ export
     projector
 
 
-function belief_propagation(cl_h, beta; tol=1e-6, iter=1)
+function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, iter=1)  where {S, T}
     messages_ve = Dict()
     messages_ev = Dict()
 
@@ -93,7 +93,7 @@ end
 
 Base.adjoint(s::MergedEnergy) = MergedEnergy(s.e11', s.e21', s.e12', s.e22')
 
-function update_message( E_bond::AbstractArray, message::Vector, beta::Real)
+function update_message(E_bond::AbstractArray, message::Vector, beta::Real)
     E_bond = E_bond .- minimum(E_bond)
     exp.(-beta * E_bond) * message
 end
@@ -246,9 +246,7 @@ function projector(cl_h::LabelledGraph{S, T}, v::NTuple{N, Int64}, w::NTuple{N, 
     end
 end
 
-function fuse_projectors(
-    projectors::NTuple{N, K}
-    ) where {N, K}
+function fuse_projectors(projectors::NTuple{N, K}) where {N, K}
     fused, transitions_matrix = rank_reveal(hcat(projectors...), :PE)
     transitions = Tuple(Array(t) for t ∈ eachcol(transitions_matrix))
     fused, transitions
