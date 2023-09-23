@@ -176,8 +176,12 @@ end
             ir1 = get_prop(new_cl_h1, src(e), dst(e), :ipr)
             ir2 = get_prop(cl_h1, src(e), dst(e), :ipr)
 
-            @test get_projector!(get_prop(new_cl_h1, :pool_of_projectors), il1, :CPU) == get_projector!(get_prop(cl_h1, :pool_of_projectors), il2, :CPU)
-            @test get_projector!(get_prop(new_cl_h1, :pool_of_projectors), ir1, :CPU) == get_projector!(get_prop(cl_h1, :pool_of_projectors), ir2, :CPU)
+            pl1 = get_projector!(get_prop(new_cl_h1, :pool_of_projectors), il1, :CPU)
+            pl2 = get_projector!(get_prop(cl_h1, :pool_of_projectors), il2, :CPU)
+            pr1 = get_projector!(get_prop(new_cl_h1, :pool_of_projectors), ir1, :CPU)
+            pr2 = get_projector!(get_prop(cl_h1, :pool_of_projectors), ir2, :CPU)
+            @test pl1 == pl2
+            @test pr1 == pr2
          end
 
          beliefs = belief_propagation(new_cl_h1, beta; iter=iter, tol=tol)

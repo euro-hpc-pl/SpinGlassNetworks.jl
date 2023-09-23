@@ -15,7 +15,7 @@ enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
    for T ∈ [Float16, Float32, Float64]
         ig = ising_graph(T, instance)
 
-   cl_h = clustered_hamiltonian(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t))    )
+   cl_h = clustered_hamiltonian(ig, 2, cluster_assignment_rule=super_square_lattice((m, n, 2*t)))
 
    @test collect(vertices(cl_h)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
 

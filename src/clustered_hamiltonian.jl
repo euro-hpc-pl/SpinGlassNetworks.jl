@@ -82,7 +82,11 @@ function clustered_hamiltonian(
     cl_h
 end
 
-function clustered_hamiltonian(ig::IsingGraph; spectrum::Function=full_spectrum, cluster_assignment_rule::Dict{Int, T}) where T
+function clustered_hamiltonian(
+    ig::IsingGraph; 
+    spectrum::Function=full_spectrum, 
+    cluster_assignment_rule::Dict{Int, T}
+    ) where T
     clustered_hamiltonian(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
 end
 
@@ -150,7 +154,12 @@ function energy_2site(cl_h::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
     int_eng
 end
 
-function bond_energy(cl_h::LabelledGraph{S, T}, cl_h_u::NTuple{N, Int64}, cl_h_v::NTuple{N, Int64}, σ::Int) where {S, T, N}
+function bond_energy(
+    cl_h::LabelledGraph{S, T}, 
+    cl_h_u::NTuple{N, Int64}, 
+    cl_h_v::NTuple{N, Int64}, 
+    σ::Int
+    ) where {S, T, N}
     if has_edge(cl_h, cl_h_u, cl_h_v)
         ipu, en, ipv = get_prop.(
                         Ref(cl_h), Ref(cl_h_u), Ref(cl_h_v), (:ipl, :en, :ipr)
@@ -174,7 +183,8 @@ function cluster_size(clustered_hamiltonian::LabelledGraph{S, T}, vertex::T) whe
     length(get_prop(clustered_hamiltonian, vertex, :spectrum).energies)
 end
 
-function exact_cond_prob(clustered_hamiltonian::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  # TODO: Not going to work without PoolOfProjectors
+function exact_cond_prob(clustered_hamiltonian::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  
+    # TODO: Not going to work without PoolOfProjectors
     ver = vertices(clustered_hamiltonian)
     rank = cluster_size.(Ref(clustered_hamiltonian), ver)
     states = [Dict(ver .=> σ) for σ ∈ Iterators.product([1:r for r ∈ rank]...)]

@@ -4,7 +4,13 @@ export
     truncate_clustered_hamiltonian_2site_BP
 
 
-function truncate_clustered_hamiltonian_1site_BP(cl_h::LabelledGraph{S, T}, num_states::Int; beta=1.0, tol=1e-10, iter=1) where {S, T}
+function truncate_clustered_hamiltonian_1site_BP(
+    cl_h::LabelledGraph{S, T}, 
+    num_states::Int; 
+    beta=1.0, 
+    tol=1e-10, 
+    iter=1
+    ) where {S, T}
     states = Dict()
     beliefs = belief_propagation(cl_h, beta; tol=tol, iter=iter)
     for node in vertices(cl_h)
@@ -14,7 +20,8 @@ function truncate_clustered_hamiltonian_1site_BP(cl_h::LabelledGraph{S, T}, num_
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
-function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, num_states::Int) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
+function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, num_states::Int) where {S, T}
+    # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
     for node in vertices(cl_h)
         if node in keys(states) continue end
@@ -31,9 +38,13 @@ function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, 
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
-function truncate_clustered_hamiltonian_2site_BP(cl_h::LabelledGraph{S, T}, beliefs::Dict, num_states::Int; beta=1.0) where {S, T}  # TODO: name to be clean to make it consistent with square2 and squarestar2
-    # new_cl_h = clustered_hamiltonian_2site(cl_h, beta)
-    # beliefs = belief_propagation(new_cl_h, beta; tol, iter)
+function truncate_clustered_hamiltonian_2site_BP(
+    cl_h::LabelledGraph{S, T}, 
+    beliefs::Dict, 
+    num_states::Int; 
+    beta=1.0
+    ) where {S, T}
+    # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
     for node in vertices(cl_h)
         if node in keys(states) continue end
@@ -49,7 +60,8 @@ end
 
 function select_numstate_best(E, sx, num_states)
     # truncate based on energy in two nodes of factor graph;
-    # resulting states are a product of states in two nodes, so we have to fine-tune to end up with expected number of states
+    # resulting states are a product of states in two nodes, 
+    # so we have to fine-tune to end up with expected number of states
 
     low, high = 1, min(num_states, length(E))
 
