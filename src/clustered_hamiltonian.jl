@@ -203,7 +203,7 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
         cl = get_prop(cl_h, v, :cluster)
         sp = get_prop(cl_h, v, :spectrum)
         if sp.states == Vector{Int64}[]
-            sp = Spectrum(sp.energies[states[v]], sp.states, [])
+            sp = Spectrum(sp.energies[states[v]], sp.states, [1,])
         else
             sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
         end
