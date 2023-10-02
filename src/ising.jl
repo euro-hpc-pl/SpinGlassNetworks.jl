@@ -10,7 +10,8 @@ export
     biases,
     couplings,
     IsingGraph,
-    prune
+    prune,
+    inter_cluster_edges
 
 const Instance = Union{String, Dict}
 const IsingGraph{T} = LabelledGraph{MetaGraph{Int, T}}
@@ -20,7 +21,21 @@ function unique_nodes(ising_tuples)
 end
 
 """
-Creates Ising graph, convention: H = scale * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
+Create an Ising graph from interaction data.
+
+This function creates an Ising graph from interaction data provided in the form of an `inst` argument. The Ising graph represents a system of spins, where each spin is associated with a vertex, and interactions between spins are represented as edges with corresponding weights.
+
+# Arguments:
+- `::Type{T}`: The type of the edge weights, typically `Float64` or `Float32`.
+- `inst::Instance`: Interaction data, which can be either a file path to a CSV file or a collection of triples `(i, j, J)` representing interactions between spins, where `i` and `j` are spin indices, and `J` is the interaction strength.
+- `scale::Real`: A scaling factor applied to interaction strengths (default is 1).
+- `rank_override::Dict`: A dictionary specifying the rank (number of states) for each vertex. If not provided, a default rank of 2 is used for all vertices.
+
+# Returns:
+- `ig::IsingGraph{T}`: The Ising graph representing the spin system.
+
+The function reads interaction data and constructs an Ising graph `ig`. It assigns interaction strengths to edges between spins and optionally scales them by the `scale` factor. The `rank_override` dictionary can be used to specify the rank (number of states) for individual vertices, allowing customization of the Ising model.
+Convention: H = scale * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
 """
 function ising_graph(::Type{T}, inst::Instance; scale::Real=1, rank_override::Dict=Dict{Int, Int}()) where T
     if inst isa String
@@ -55,6 +70,19 @@ rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(rank_vec(ig))
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
+"""
+Return the coupling strengths between vertices of an Ising graph.
+
+This function computes and returns the coupling strengths (interaction energies) between pairs of vertices in an Ising graph `ig`. The coupling strengths are represented as a matrix, where each element `(i, j)` corresponds to the interaction energy between vertex `i` and vertex `j`.
+
+# Arguments:
+- `ig::IsingGraph{T}`: The Ising graph representing a system of spins with associated interaction strengths.
+
+# Returns:
+- `J::Matrix{T}`: A matrix of coupling strengths between vertices of the Ising graph.
+
+The function iterates over the edges of the Ising graph and extracts the interaction strengths associated with each edge, populating the `J` matrix accordingly.
+"""
 function couplings(ig::IsingGraph{T}) where T
     J = zeros(T, nv(ig), nv(ig))
     for edge ∈ edges(ig)
@@ -67,7 +95,20 @@ end
 cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
 
 """
-Returns dense adjacency matrix between clusters.
+Return the dense adjacency matrix between clusters of vertices in an Ising graph.
+
+This function computes and returns the dense adjacency matrix `J` between clusters of vertices represented by two Ising graphs, `cl1` and `cl2`, within the context of the larger Ising graph `ig`. The adjacency matrix represents the interaction strengths between clusters of vertices, where each element `(i, j)` corresponds to the interaction strength between cluster `i` in `cl1` and cluster `j` in `cl2`.
+
+# Arguments:
+- `ig::IsingGraph{T}`: The Ising graph representing a system of spins with associated interaction strengths.
+- `cl1::IsingGraph{T}`: The first Ising graph representing one cluster of vertices.
+- `cl2::IsingGraph{T}`: The second Ising graph representing another cluster of vertices.
+
+# Returns:
+- `outer_edges::Vector{LabelledEdge}`: A vector of labeled edges representing the interactions between clusters.
+- `J::Matrix{T}`: A dense adjacency matrix representing interaction strengths between clusters.
+
+The function first identifies the outer edges that connect vertices between the two clusters in the context of the larger Ising graph `ig`. It then computes the interaction strengths associated with these outer edges and populates the dense adjacency matrix `J` accordingly.
 """
 function inter_cluster_edges(ig::IsingGraph{T}, cl1::IsingGraph{T}, cl2::IsingGraph{T}) where T
     outer_edges = [LabelledEdge(i, j) for i ∈ vertices(cl1), j ∈ vertices(cl2) if has_edge(ig, i, j)]
@@ -80,8 +121,19 @@ function inter_cluster_edges(ig::IsingGraph{T}, cl1::IsingGraph{T}, cl2::IsingGr
 end
 
 """
-Get rid of non-existing spins.
 Used only in MPS_search, would be obsolete if MPS_search uses QMps.
+Remove non-existing spins from an Ising graph.
+
+This function removes non-existing spins from the given Ising graph `ig`. Non-existing spins are those that have zero degree (no connections to other spins) and also have an external magnetic field (`h`) that is not approximately equal to zero within the specified tolerance `atol`.
+
+# Arguments:
+- `ig::IsingGraph`: The Ising graph to be pruned.
+- `atol::Real`: The tolerance for considering the external magnetic field as zero. The default value is `1e-14`.
+
+# Returns:
+- `pruned_graph::IsingGraph`: A new Ising graph with non-existing spins removed.
+
+The function returns a pruned version of the input Ising graph, where non-existing spins and their associated properties are removed.
 """
 function prune(ig::IsingGraph; atol::Real=1e-14)
     to_keep = vcat(

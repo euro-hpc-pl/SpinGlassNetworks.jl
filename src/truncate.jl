@@ -1,9 +1,25 @@
 export
     truncate_clustered_hamiltonian_2site_energy,
     truncate_clustered_hamiltonian_1site_BP,
-    truncate_clustered_hamiltonian_2site_BP
+    truncate_clustered_hamiltonian_2site_BP,
+    select_numstate_best
 
+"""
+Truncates a clustered Hamiltonian using belief propagation (BP) for a single site cluster.
 
+This function employs belief propagation (BP) to approximate the most probable states and energies for a clustered Hamiltonian
+associated with a single-site cluster. It then truncates the clustered Hamiltonian based on the most probable states.
+
+# Arguments:
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `num_states::Int`: The maximum number of most probable states to keep.
+- `beta::Real (optional)`: The inverse temperature parameter for the BP algorithm. Default is 1.0.
+- `tol::Real (optional)`: The tolerance value for convergence in BP. Default is 1e-10.
+- `iter::Int (optional)`: The maximum number of BP iterations. Default is 1.
+
+# Returns:
+- `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
+"""
 function truncate_clustered_hamiltonian_1site_BP(
     cl_h::LabelledGraph{S, T}, 
     num_states::Int; 
@@ -20,6 +36,19 @@ function truncate_clustered_hamiltonian_1site_BP(
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
+"""
+Truncate a clustered Hamiltonian based on 2-site energy states.
+
+This function truncates a clustered Hamiltonian by considering 2-site energy states and selecting the most probable states 
+to keep. It computes the energies for all 2-site combinations and selects the states that maximize the probability.
+
+# Arguments:
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `num_states::Int`: The maximum number of most probable states to keep.
+
+# Returns:
+- `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
+"""
 function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, num_states::Int) where {S, T}
     # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
@@ -38,6 +67,21 @@ function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, 
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
+"""
+Truncate a clustered Hamiltonian based on 2-site belief propagation states.
+
+This function truncates a clustered Hamiltonian by considering 2-site belief propagation states and selecting the most probable states 
+to keep. It computes the beliefs for all 2-site combinations and selects the states that maximize the probability.
+
+# Arguments:
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `beliefs::Dict`: A dictionary containing belief values for 2-site interactions.
+- `num_states::Int`: The maximum number of most probable states to keep.
+- `beta::Real (optional)`: The inverse temperature parameter (default is 1.0).
+
+# Returns:
+- `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
+"""
 function truncate_clustered_hamiltonian_2site_BP(
     cl_h::LabelledGraph{S, T}, 
     beliefs::Dict, 
@@ -58,11 +102,20 @@ function truncate_clustered_hamiltonian_2site_BP(
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
-function select_numstate_best(E, sx, num_states)
-    # truncate based on energy in two nodes of factor graph;
-    # resulting states are a product of states in two nodes, 
-    # so we have to fine-tune to end up with expected number of states
+"""
+Select a specified number of best states based on energy.
 
+This function selects a specified number of best states from a list of energies based on energy values in two nodes of clustered hamiltonian. It fine-tunes the selection to ensure that the resulting states have the expected number.
+
+# Arguments:
+- `E::Vector{Real}`: A vector of energy values.
+- `sx::Int`: The size of the factor graph for one of the nodes.
+- `num_states::Int`: The desired number of states to select.
+
+# Returns:
+- `Tuple{Vector{Int}, Vector{Int}}`: A tuple containing two vectors of indices, `ind1` and `ind2`, which represent the selected states for two nodes of a factor graph.
+"""
+function select_numstate_best(E, sx, num_states)
     low, high = 1, min(num_states, length(E))
 
     while true

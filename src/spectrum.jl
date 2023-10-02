@@ -16,6 +16,20 @@ all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)..
 
 const State = Vector{Int}
 
+"""
+A `Spectrum` represents the energy spectrum of a system.
+
+A `Spectrum` consists of energy levels, their corresponding states, and integer representations of the states.
+
+# Fields:
+- `energies::Vector{<:Real}`: An array of energy levels.
+- `states::AbstractArray{State}`: An array of states.
+- `states_int::Vector{Int}`: An array of integer representations of states.
+
+# Constructors:
+- `Spectrum(energies, states, states_int)`: Creates a `Spectrum` object with the specified energy levels, states, and integer representations.
+- `Spectrum(energies, states)`: Creates a `Spectrum` object with the specified energy levels and states, automatically generating integer representations.
+"""
 struct Spectrum
     energies::Vector{<:Real}
     states::AbstractArray{State}
@@ -29,17 +43,52 @@ struct Spectrum
     end
 end
 
+"""
+Converts a matrix of binary vectors to their integer representations.
+
+This function takes a matrix of binary vectors, where each row represents a binary vector, and converts them into their corresponding integer representations.
+
+# Arguments:
+- `matrix::Vector{Vector{T}}`: A matrix of binary vectors.
+
+# Returns:
+- `Vector{Int}`: An array of integer representations of the binary vectors.
+"""
 function matrix_to_integers(matrix::Vector{Vector{T}}) where T
     nrows = length(matrix[1])
     multipliers = 2 .^ collect(0:nrows-1)
     div.((hcat(matrix...)' .+ 1) , 2) * multipliers
 end
 
+"""
+Calculates the energy of a state in an Ising graph.
+
+This function calculates the energy of a given state in the context of an Ising graph. The energy is computed based on the interactions between spins and their associated biases.
+
+# Arguments:
+- `σ::AbstractArray{State}`: An array representing the state of spins in the Ising graph.
+- `ig::IsingGraph`: The Ising graph defining the interactions and biases.
+
+# Returns:
+- `Vector{Float64}`: An array of energy values for each state.
+"""
 function energy(σ::AbstractArray{State}, ig::IsingGraph)
     J, h = couplings(ig), biases(ig)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
 
+"""
+Calculates the energy of a state in an Ising graph.
+
+This function computes the energy of a given state in the context of an Ising graph. The energy is calculated based on the interactions between spins and their associated biases.
+
+# Arguments:
+- `ig::IsingGraph{T}`: The Ising graph defining the interactions and biases.
+- `ig_state::Dict{Int, Int}`: A dictionary mapping spin indices to their corresponding states.
+
+# Returns:
+- `T`: The energy of the state in the Ising graph.
+"""
 function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
     en = zero(T)
     for (i, σ) ∈ ig_state
@@ -55,6 +104,17 @@ function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
     en
 end
 
+"""
+Generates the energy spectrum for an Ising graph.
+
+This function computes the energy spectrum (energies and corresponding states) for a given Ising graph. The energy spectrum represents all possible energy levels and their associated states in the Ising graph.
+    
+# Arguments:
+- `ig::IsingGraph{T}`: The Ising graph for which the energy spectrum is generated.
+    
+# Returns:
+- `Spectrum`: An instance of the `Spectrum` type containing the energy levels and states.    
+"""
 function Spectrum(ig::IsingGraph{T}) where T
     L = nv(ig)
     N = 2^L
@@ -70,6 +130,18 @@ function Spectrum(ig::IsingGraph{T}) where T
     Spectrum(energies, states)
 end
 
+"""
+Computes the Gibbs tensor for an Ising graph at a given inverse temperature.
+
+This function calculates the Gibbs tensor for an Ising graph at a specified inverse temperature (β). The Gibbs tensor represents the conditional probabilities of states given the inverse temperature and the Ising graph.
+    
+# Arguments:
+- `ig::IsingGraph{T}`: The Ising graph for which the Gibbs tensor is computed.
+- `β::T (optional)`: The inverse temperature parameter. Default is 1.
+    
+# Returns:
+- `Matrix{T}`: A matrix representing the Gibbs tensor with conditional probabilities.    
+"""
 function gibbs_tensor(ig::IsingGraph{T}, β::T=1) where T
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))
@@ -80,7 +152,22 @@ function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
     brute_force(ig, Val(s); num_states)
 end
 
-#TODO only one of brute_force and full_spectrum should remain
+"""
+TODO only one of brute_force and full_spectrum should remain
+
+Performs brute-force calculation of the lowest-energy states and their energies for an Ising graph.
+
+This function exhaustively computes the lowest-energy states and their corresponding energies for an Ising graph.
+The calculation is done using brute-force enumeration, making it feasible only for small Ising graphs.
+
+# Arguments:
+- `ig::IsingGraph{T}`: The Ising graph for which the lowest-energy states are computed.
+- `::Val{:CPU}`: A value indicating that the computation is performed on the CPU.
+- `num_states::Int (optional)`: The maximum number of lowest-energy states to calculate. Default is 1.
+
+# Returns:
+- `Spectrum`: A `Spectrum` object containing the lowest-energy states and their energies.
+"""
 function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
     L = nv(ig)
     L == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[], zeros(T, 1))
