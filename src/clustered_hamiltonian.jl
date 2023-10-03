@@ -12,17 +12,19 @@ export
     cluster_size
 
 """
-Group spins into clusters based on an assignment rule, mapping factor graph coordinates to groups of spins in the Ising graph.
-Dict(factor graph coordinates -> group of spins in Ising graph)
+$(TYPEDSIGNATURES)
+
+Group spins into clusters based on an assignment rule, mapping clustered Hamiltonian coordinates to groups of spins in the Ising graph.
+Dict(clustered Hamiltonian coordinates -> group of spins in Ising graph)
 
 # Arguments:
 - `ig::LabelledGraph{G, L}`: The Ising graph represented as a labeled graph.
-- `assignment_rule`: A mapping that assigns Ising graph vertices to clusters based on factor graph coordinates.
+- `assignment_rule`: A mapping that assigns Ising graph vertices to clusters based on clustered Hamiltonian coordinates.
 
 # Returns:
 - `clusters::Dict{L, Vertex}`: A dictionary mapping cluster identifiers to representative vertices in the Ising graph.
 
-This function groups spins in the Ising graph into clusters based on an assignment rule. The assignment rule defines how factor graph coordinates correspond to clusters of spins in the Ising graph. Each cluster is represented by a vertex from the Ising graph.
+This function groups spins in the Ising graph into clusters based on an assignment rule. The assignment rule defines how clustered Hamiltonian coordinates correspond to clusters of spins in the Ising graph. Each cluster is represented by a vertex from the Ising graph.
 
 The `split_into_clusters` function is useful for organizing and analyzing spins in complex spin systems, particularly in the context of clustered Hamiltonian.
 
@@ -34,6 +36,8 @@ function split_into_clusters(ig::LabelledGraph{G, L}, assignment_rule) where {G,
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Create a clustered Hamiltonian.
 
 This function constructs a clustered Hamiltonian from an Ising graph by introducing a natural order in clustered Hamiltonian coordinates.
@@ -62,6 +66,8 @@ function clustered_hamiltonian(
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Create a clustered Hamiltonian.
 
 This function constructs a clustered Hamiltonian from an Ising graph by introducing a natural order in clustered Hamiltonian coordinates.
@@ -128,6 +134,8 @@ function clustered_hamiltonian(
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Create a clustered Hamiltonian with optional cluster sizes.
 
 This function constructs a clustered Hamiltonian from an Ising graph by introducing a natural order in clustered Hamiltonian coordinates.
@@ -155,6 +163,8 @@ function clustered_hamiltonian(
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Reveal ranks and energies in a specified order.
 
 This function calculates and reveals the ranks and energies of a set of states in either the 'PE' (Projector Energy) or 'EP' (Energy Projector) order.
@@ -180,6 +190,8 @@ function rank_reveal(energy, order=:PE) #TODO: add type
 end
 
 """
+$(TYPEDSIGNATURES)
+
 TODO: check the order consistency over external packages.
 
 Decode a clustered Hamiltonian state into Ising graph spin values.
@@ -193,7 +205,7 @@ This function decodes a state from a clustered Hamiltonian into Ising graph spin
 # Returns:
 - `spin_values::Dict{Int, Int}`: A dictionary mapping each Ising graph vertex to its corresponding spin value.
 
-This function assumes that the state has the same order as the vertices in the factor graph (clustered Hamiltonian). It decodes the state consistently based on the cluster assignments and spectra of the clustered Hamiltonian.
+This function assumes that the state has the same order as the vertices in the clustered Hamiltonian. It decodes the state consistently based on the cluster assignments and spectra of the clustered Hamiltonian.
 """
 function decode_clustered_hamiltonian_state(cl_h::LabelledGraph{S, T}, state::Vector{Int}) where {S, T}
     ret = Dict{Int, Int}()
@@ -209,6 +221,8 @@ function decode_clustered_hamiltonian_state(cl_h::LabelledGraph{S, T}, state::Ve
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Calculate the energy of a clustered Hamiltonian state.
 
 This function calculates the energy of a given state in a clustered Hamiltonian. The state is represented as a dictionary mapping each Ising graph vertex to its corresponding spin value.
@@ -237,6 +251,8 @@ function energy(cl_h::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Calculate the interaction energy between two nodes in a clustered Hamiltonian.
 
 This function computes the interaction energy between two specified nodes in a clustered Hamiltonian, represented as a labeled graph.
@@ -274,6 +290,8 @@ function energy_2site(cl_h::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Calculate the bond energy between two clusters in a clustered Hamiltonian.
 
 This function computes the bond energy between two specified clusters (cluster nodes) in a clustered Hamiltonian, represented as a labeled graph.
@@ -282,10 +300,10 @@ This function computes the bond energy between two specified clusters (cluster n
 - `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
 - `cl_h_u::NTuple{N, Int64}`: The coordinates of the first cluster.
 - `cl_h_v::NTuple{N, Int64}`: The coordinates of the second cluster.
-- `σ::Int`: The Ising spin value for which the bond energy is calculated.
+- `σ::Int`: Index for which the bond energy is calculated.
 
 # Returns:
-- `energies::AbstractVector{T}`: The bond energy vector between the two clusters for the specified Ising spin value.
+- `energies::AbstractVector{T}`: The bond energy vector between the two clusters for the specified index.
 
 The function checks if there is an edge between the two clusters (u -> v and v -> u). If such edges exist, it retrieves the bond energy matrix and projectors and calculates the bond energy. If no bond edge is found, it returns a zero vector.
 """
@@ -315,6 +333,8 @@ function bond_energy(
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Get the size of a cluster in a clustered Hamiltonian.
 
 This function returns the size (number of states) of a cluster in a clustered Hamiltonian, represented as a labeled graph.
@@ -333,9 +353,11 @@ function cluster_size(clustered_hamiltonian::LabelledGraph{S, T}, vertex::T) whe
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Calculate the exact conditional probability of a target state in a clustered Hamiltonian.
 
-This function computes the exact conditional probability of a specified target state in a clustered Hamiltonian, represented as a labeled graph.
+This function computes the exact conditional probability of a specified target state in a clustered Hamiltonian, represented as a labelled graph.
 
 # Arguments:
 - `clustered_hamiltonian::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
@@ -359,6 +381,8 @@ function exact_cond_prob(clustered_hamiltonian::LabelledGraph{S, T}, beta, targe
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Truncate a clustered Hamiltonian based on specified states.
 
 This function truncates a given clustered Hamiltonian by selecting a subset of states for each cluster based on the provided `states` dictionary. 

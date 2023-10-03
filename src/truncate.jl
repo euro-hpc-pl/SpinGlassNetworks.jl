@@ -5,6 +5,8 @@ export
     select_numstate_best
 
 """
+$(TYPEDSIGNATURES)
+
 Truncates a clustered Hamiltonian using belief propagation (BP) for a single site cluster.
 
 This function employs belief propagation (BP) to approximate the most probable states and energies for a clustered Hamiltonian
@@ -37,6 +39,8 @@ function truncate_clustered_hamiltonian_1site_BP(
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Truncate a clustered Hamiltonian based on 2-site energy states.
 
 This function truncates a clustered Hamiltonian by considering 2-site energy states and selecting the most probable states 
@@ -68,6 +72,8 @@ function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, 
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Truncate a clustered Hamiltonian based on 2-site belief propagation states.
 
 This function truncates a clustered Hamiltonian by considering 2-site belief propagation states and selecting the most probable states 
@@ -103,17 +109,19 @@ function truncate_clustered_hamiltonian_2site_BP(
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Select a specified number of best states based on energy.
 
 This function selects a specified number of best states from a list of energies based on energy values in two nodes of clustered hamiltonian. It fine-tunes the selection to ensure that the resulting states have the expected number.
 
 # Arguments:
 - `E::Vector{Real}`: A vector of energy values.
-- `sx::Int`: The size of the factor graph for one of the nodes.
+- `sx::Int`: The size of the clustered Hamiltonian for one of the nodes.
 - `num_states::Int`: The desired number of states to select.
 
 # Returns:
-- `Tuple{Vector{Int}, Vector{Int}}`: A tuple containing two vectors of indices, `ind1` and `ind2`, which represent the selected states for two nodes of a factor graph.
+- `Tuple{Vector{Int}, Vector{Int}}`: A tuple containing two vectors of indices, `ind1` and `ind2`, which represent the selected states for two nodes of a clustered Hamiltonian.
 """
 function select_numstate_best(E, sx, num_states)
     low, high = 1, min(num_states, length(E))

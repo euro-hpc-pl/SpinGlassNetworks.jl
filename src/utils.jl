@@ -5,6 +5,8 @@ export
 import Base.Prehashed
 
 """
+$(TYPEDSIGNATURES)
+
 Rewriten from Dwave-networkx
 m - Grid parameter for the Zephyr lattice.
 t - Tile parameter for the Zephyr lattice; must be even.

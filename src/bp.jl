@@ -12,6 +12,7 @@ export
     SparseCSC 
 
 """
+$(TYPEDSIGNATURES)
 Perform belief propagation on a given clustered hamiltonian.
 
 # Arguments:
@@ -89,6 +90,7 @@ function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, ite
 end
 
 """
+$(TYPEDSIGNATURES)
 Returns the neighbors of a given vertex in a clustered Hamiltonian.
 
 # Arguments:
@@ -123,6 +125,8 @@ function get_neighbors(cl_h::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
 end
 
 """
+$(TYPEDSIGNATURES)
+
 A custom Julia struct representing energy values in a merged format for use in specific calculations.
 
 # Fields:
@@ -145,6 +149,8 @@ end
 Base.adjoint(s::MergedEnergy) = MergedEnergy(s.e11', s.e21', s.e12', s.e22')
 
 """
+$(TYPEDSIGNATURES)
+
 Update a message using energy values and temperature.
 
 # Arguments:
@@ -165,6 +171,8 @@ function update_message(E_bond::AbstractArray, message::Vector, beta::Real)
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Update a message using energy values and temperature in a merged energy format.
 
 # Arguments:
@@ -225,6 +233,8 @@ function update_message(E_bond::MergedEnergy, message::Vector, beta::Real)
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Constructs a clustered Hamiltonian for a given clustered Hamiltonian with a 2-site cluster approximation.
 
 # Arguments:
@@ -278,6 +288,8 @@ function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) wher
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Merge two vertices in a clustered Hamiltonian to create a single merged vertex.
 
 # Arguments:
@@ -333,6 +345,8 @@ function merge_vertices_cl_h(cl_h::LabelledGraph{S, T}, β::Real, node1::NTuple{
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Get the local energy associated with a vertex in a clustered Hamiltonian.
 
 # Arguments:
@@ -351,6 +365,8 @@ function local_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}) where {S, 
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Get the interaction energy between two vertices in a clustered Hamiltonian.
 
 # Arguments:
@@ -375,6 +391,8 @@ function interaction_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::N
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Get the projector associated with an edge between two vertices in a clustered Hamiltonian.
 
 # Arguments:
@@ -410,6 +428,8 @@ function outer_projector(p1::Array{T, 1}, p2::Array{T, 1}) where T <: Number
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Create a sparse column-compressed (CSC) matrix with specified column indices and values.
 
 # Arguments:

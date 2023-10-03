@@ -7,6 +7,8 @@ export
 const Proj{T} = Union{Vector{T}, CuArray{T, 1}}
 
 """
+$(TYPEDSIGNATURES)
+
 `PoolOfProjectors` is a data structure for managing projectors associated with Ising model sites. It allows efficient storage and retrieval of projectors based on their indices and provides support for different computational devices.
 
     # Fields:
@@ -39,6 +41,8 @@ Base.length(lp::PoolOfProjectors) = length(lp.data[lp.default_device])
 Base.length(lp::PoolOfProjectors, device::Symbol) = length(lp.data[device])
 
 """
+$(TYPEDSIGNATURES)
+
 Empty the pool of projectors associated with a specific computational device.
 
 This function removes all projectors stored on the specified computational device, freeing up memory resources.
@@ -59,6 +63,8 @@ Base.size(lp::PoolOfProjectors, index::Int) = lp.sizes[index]
 get_projector!(lp::PoolOfProjectors, index::Int) = get_projector!(lp, index, lp.default_device)
 
 """
+$(TYPEDSIGNATURES)
+
 TODO This is version for only one GPU
 
 Retrieve or create a projector from the `PoolOfProjectors` associated with a specific device.
@@ -92,6 +98,8 @@ function get_projector!(lp::PoolOfProjectors{T}, index::Int, device::Symbol) whe
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Add a projector to the `PoolOfProjectors` and associate it with an index.
 
 This function adds a projector `p` to the `PoolOfProjectors`. The `PoolOfProjectors` stores projectors based on their computational device (e.g., CPU or GPU) and assigns a unique index to each projector. The index can be used to retrieve the projector later using `get_projector!`.

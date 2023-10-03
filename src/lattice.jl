@@ -10,18 +10,20 @@ export
     periodic_lattice
 
 """
-Create a mapping from factor graph coordinates to a super square lattice arrangement.
+$(TYPEDSIGNATURES)
+
+Create a mapping from clustered Hamiltonian coordinates to a super square lattice arrangement.
 Variable number of Ising graph -> Factor graph coordinate system
 
-This function generates a mapping that relates factor graph coordinates to a super square lattice arrangement. The super square lattice is defined by the size of five dimensions: `(m, um, n, un, t)`.
+This function generates a mapping that relates clustered Hamiltonian coordinates to a super square lattice arrangement. The super square lattice is defined by the size of five dimensions: `(m, um, n, un, t)`.
 
 # Arguments:
 - `size::NTuple{5, Int}`: A tuple specifying the size of the super square lattice in five dimensions: `(m, um, n, un, t)`.
 
 # Returns:
-- `coord_map::Dict`: A dictionary that maps factor graph coordinates to the corresponding lattice coordinates.
+- `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding lattice coordinates.
 
-The `size` tuple represents the dimensions of the super square lattice. The function creates a dictionary where factor graph coordinates are associated with their corresponding lattice coordinates.
+The `size` tuple represents the dimensions of the super square lattice. The function creates a dictionary where clustered Hamiltonian coordinates are associated with their corresponding lattice coordinates.
 """
 function super_square_lattice(size::NTuple{5, Int})
     m, um, n, un, t = size
@@ -30,15 +32,17 @@ function super_square_lattice(size::NTuple{5, Int})
 end
 
 """
-Create a mapping from factor graph coordinates to a simplified super square lattice arrangement.
+$(TYPEDSIGNATURES)
 
-This function generates a mapping that relates factor graph coordinates to a simplified super square lattice arrangement. The simplified super square lattice is defined by the size of three dimensions: `(m, n, t)`.
+Create a mapping from clustered Hamiltonian coordinates to a simplified super square lattice arrangement.
+
+This function generates a mapping that relates clustered Hamiltonian coordinates to a simplified super square lattice arrangement. The simplified super square lattice is defined by the size of three dimensions: `(m, n, t)`.
 
 # Arguments:
 - `size::NTuple{3, Int}`: A tuple specifying the size of the simplified super square lattice in three dimensions: `(m, n, t)`.
 
 # Returns:
-- `coord_map::Dict`: A dictionary that maps factor graph coordinates to the corresponding lattice coordinates.
+- `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding lattice coordinates.
 
 The `size` tuple represents the dimensions of the simplified super square lattice. The function internally adds the required dimensions `(1, 1)` to make it compatible with the `super_square_lattice` function, which deals with five dimensions.
 """
@@ -50,17 +54,19 @@ end
 pegasus_lattice(size::NTuple{2, Int}) = pegasus_lattice((size[1], size[2], 3))
 
 """
-Create a mapping from factor graph coordinates to Pegasus lattice coordinates.
+$(TYPEDSIGNATURES)
 
-This function generates a mapping that relates factor graph coordinates to Pegasus lattice coordinates based on the specified size of the Pegasus lattice in three dimensions: `(m, n, t)`.
+Create a mapping from clustered Hamiltonian coordinates to Pegasus lattice coordinates.
+
+This function generates a mapping that relates clustered Hamiltonian coordinates to Pegasus lattice coordinates based on the specified size of the Pegasus lattice in three dimensions: `(m, n, t)`.
 
 # Arguments:
 - `size::NTuple{3, Int}`: A tuple specifying the size of the Pegasus lattice in three dimensions: `(m, n, t)`.
 
 # Returns:
-- `coord_map::Dict`: A dictionary that maps factor graph coordinates to the corresponding Pegasus lattice coordinates.
+- `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding Pegasus lattice coordinates.
 
-The Pegasus lattice is a specialized lattice used in quantum computing, and this function allows you to convert between factor graph coordinates and Pegasus lattice coordinates.
+The Pegasus lattice is a specialized lattice used in quantum computing, and this function allows you to convert between clustered Hamiltonian coordinates and Pegasus lattice coordinates.
 """
 function pegasus_lattice(size::NTuple{3, Int})
     m, n, t = size
@@ -122,17 +128,19 @@ end
 zephyr_lattice(size::NTuple{2, Int}) = zephyr_lattice((size[1], size[2], 4))
 
 """
-Create a mapping from factor graph coordinates to Zephyr lattice coordinates.
+$(TYPEDSIGNATURES)
 
-This function generates a mapping that relates factor graph coordinates to Zephyr lattice coordinates based on the specified size of the Zephyr lattice in three dimensions: `(m, n, t)`.
+Create a mapping from clustered Hamiltonian coordinates to Zephyr lattice coordinates.
+
+This function generates a mapping that relates clustered Hamiltonian coordinates to Zephyr lattice coordinates based on the specified size of the Zephyr lattice in three dimensions: `(m, n, t)`.
 
 # Arguments:
 - `size::NTuple{3, Int}`: A tuple specifying the size of the Zephyr lattice in three dimensions: `(m, n, t)`.
 
 # Returns:
-- `coord_map::Dict`: A dictionary that maps factor graph coordinates to the corresponding Zephyr lattice coordinates.
+- `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding Zephyr lattice coordinates.
 
-The Zephyr lattice is a specialized lattice used in quantum computing, and this function allows you to convert between factor graph coordinates and Zephyr lattice coordinates.
+The Zephyr lattice is a specialized lattice used in quantum computing, and this function allows you to convert between clustered Hamiltonian coordinates and Zephyr lattice coordinates.
 """
 function zephyr_lattice(size::NTuple{3, Int})
     m, n, t = size

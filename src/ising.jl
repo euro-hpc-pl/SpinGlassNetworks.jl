@@ -21,6 +21,8 @@ function unique_nodes(ising_tuples)
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Create an Ising graph from interaction data.
 
 This function creates an Ising graph from interaction data provided in the form of an `inst` argument. The Ising graph represents a system of spins, where each spin is associated with a vertex, and interactions between spins are represented as edges with corresponding weights.
@@ -71,6 +73,8 @@ basis_size(ig::IsingGraph) = prod(rank_vec(ig))
 biases(ig::IsingGraph) = get_prop.(Ref(ig), vertices(ig), :h)
 
 """
+$(TYPEDSIGNATURES)
+
 Return the coupling strengths between vertices of an Ising graph.
 
 This function computes and returns the coupling strengths (interaction energies) between pairs of vertices in an Ising graph `ig`. The coupling strengths are represented as a matrix, where each element `(i, j)` corresponds to the interaction energy between vertex `i` and vertex `j`.
@@ -95,6 +99,8 @@ end
 cluster(ig::IsingGraph, verts) = induced_subgraph(ig, collect(verts))
 
 """
+$(TYPEDSIGNATURES)
+
 Return the dense adjacency matrix between clusters of vertices in an Ising graph.
 
 This function computes and returns the dense adjacency matrix `J` between clusters of vertices represented by two Ising graphs, `cl1` and `cl2`, within the context of the larger Ising graph `ig`. The adjacency matrix represents the interaction strengths between clusters of vertices, where each element `(i, j)` corresponds to the interaction strength between cluster `i` in `cl1` and cluster `j` in `cl2`.
@@ -121,6 +127,8 @@ function inter_cluster_edges(ig::IsingGraph{T}, cl1::IsingGraph{T}, cl2::IsingGr
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Used only in MPS_search, would be obsolete if MPS_search uses QMps.
 Remove non-existing spins from an Ising graph.
 

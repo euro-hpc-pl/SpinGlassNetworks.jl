@@ -1,7 +1,7 @@
 instance_dir = "$(@__DIR__)/instances/pegasus/"
 instances = ["P2"] #, "P4", "P8", "P16"]
 
-@testset verbose = true "Renumerated instances generate correct factor graph" begin
+@testset verbose = true "Renumerated instances generate correct clustered Hamiltonian" begin
     size = [2, 4, 8, 16]
 
     @testset "$instance" for (i, instance) ∈ enumerate(instances)

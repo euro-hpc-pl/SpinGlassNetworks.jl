@@ -65,7 +65,7 @@ instance = Dict((1, 1) => 1.0, (2, 2) => 0.5, (3, 3) => -0.25,
 (1, 2) => -1.0, (2, 3) => 1.0)
 ig = ising_graph(instance)
 
-# Create factor graph.
+# Create clustered Hamiltonian.
 cl_h = clustered_hamiltonian(
     ig,
     cluster_assignment_rule = super_square_lattice((3, 1, 1))
@@ -95,7 +95,7 @@ cl_h = clustered_hamiltonian(
     cluster_assignment_rule = pegasus_lattice((m, n, t))
 )
 
-println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in factor graph: ", length(LabelledGraphs.vertices(cl_h)))
+println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in clustered Hamiltonian: ", length(LabelledGraphs.vertices(cl_h)))
 ```
 
 
@@ -121,5 +121,5 @@ cl_h = clustered_hamiltonian(
     cluster_assignment_rule = zephyr_lattice((m, n, t))
 )
 
-println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in factor graph: ", length(LabelledGraphs.vertices(cl_h)))
+println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in clustered Hamiltonian: ", length(LabelledGraphs.vertices(cl_h)))
 ```

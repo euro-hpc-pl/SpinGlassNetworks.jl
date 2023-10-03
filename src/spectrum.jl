@@ -17,6 +17,8 @@ all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)..
 const State = Vector{Int}
 
 """
+$(TYPEDSIGNATURES)
+
 A `Spectrum` represents the energy spectrum of a system.
 
 A `Spectrum` consists of energy levels, their corresponding states, and integer representations of the states.
@@ -44,6 +46,8 @@ struct Spectrum
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Converts a matrix of binary vectors to their integer representations.
 
 This function takes a matrix of binary vectors, where each row represents a binary vector, and converts them into their corresponding integer representations.
@@ -61,6 +65,8 @@ function matrix_to_integers(matrix::Vector{Vector{T}}) where T
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Calculates the energy of a state in an Ising graph.
 
 This function calculates the energy of a given state in the context of an Ising graph. The energy is computed based on the interactions between spins and their associated biases.
@@ -78,6 +84,8 @@ function energy(σ::AbstractArray{State}, ig::IsingGraph)
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Calculates the energy of a state in an Ising graph.
 
 This function computes the energy of a given state in the context of an Ising graph. The energy is calculated based on the interactions between spins and their associated biases.
@@ -105,6 +113,8 @@ function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Generates the energy spectrum for an Ising graph.
 
 This function computes the energy spectrum (energies and corresponding states) for a given Ising graph. The energy spectrum represents all possible energy levels and their associated states in the Ising graph.
@@ -131,6 +141,8 @@ function Spectrum(ig::IsingGraph{T}) where T
 end
 
 """
+$(TYPEDSIGNATURES)
+
 Computes the Gibbs tensor for an Ising graph at a given inverse temperature.
 
 This function calculates the Gibbs tensor for an Ising graph at a specified inverse temperature (β). The Gibbs tensor represents the conditional probabilities of states given the inverse temperature and the Ising graph.
@@ -153,6 +165,8 @@ function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
 end
 
 """
+$(TYPEDSIGNATURES)
+
 TODO only one of brute_force and full_spectrum should remain
 
 Performs brute-force calculation of the lowest-energy states and their energies for an Ising graph.
