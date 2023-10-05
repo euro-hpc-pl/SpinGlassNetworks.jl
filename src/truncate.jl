@@ -113,7 +113,8 @@ $(TYPEDSIGNATURES)
 
 Select a specified number of best states based on energy.
 
-This function selects a specified number of best states from a list of energies based on energy values in two nodes of clustered hamiltonian. It fine-tunes the selection to ensure that the resulting states have the expected number.
+This function selects a specified number of best states from a list of energies based on energy values in two nodes of clustered hamiltonian. 
+It fine-tunes the selection to ensure that the resulting states have the expected number.
 
 # Arguments:
 - `E::Vector{Real}`: A vector of energy values.
@@ -121,7 +122,8 @@ This function selects a specified number of best states from a list of energies 
 - `num_states::Int`: The desired number of states to select.
 
 # Returns:
-- `Tuple{Vector{Int}, Vector{Int}}`: A tuple containing two vectors of indices, `ind1` and `ind2`, which represent the selected states for two nodes of a clustered Hamiltonian.
+- `Tuple{Vector{Int}, Vector{Int}}`: A tuple containing two vectors of indices, `ind1` and `ind2`, 
+which represent the selected states for two nodes of a clustered Hamiltonian.
 """
 function select_numstate_best(E, sx, num_states)
     low, high = 1, min(num_states, length(E))

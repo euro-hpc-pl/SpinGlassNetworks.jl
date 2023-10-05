@@ -9,16 +9,20 @@ const Proj{T} = Union{Vector{T}, CuArray{T, 1}}
 """
 $(TYPEDSIGNATURES)
 
-`PoolOfProjectors` is a data structure for managing projectors associated with Ising model sites. It allows efficient storage and retrieval of projectors based on their indices and provides support for different computational devices.
+`PoolOfProjectors` is a data structure for managing projectors associated with Ising model sites. 
+It allows efficient storage and retrieval of projectors based on their indices and provides support for different computational devices.
 
-    # Fields:
-    - `data::Dict{Symbol, Dict{Int, Proj{T}}}`: A dictionary that stores projectors associated with different computational devices (`:CPU`, `:GPU`, etc.). The inner dictionary maps site indices to projectors.
-    - `default_device::Symbol`: A symbol representing the default computational device for projectors in the pool.
-    - `sizes::Dict{Int, Int}`: A dictionary that maps site indices to the maximum projector size for each site.
+# Fields:
+- `data::Dict{Symbol, Dict{Int, Proj{T}}}`: A dictionary that stores projectors associated with different 
+computational devices (`:CPU`, `:GPU`, etc.). The inner dictionary maps site indices to projectors.
+- `default_device::Symbol`: A symbol representing the default computational device for projectors in the pool.
+- `sizes::Dict{Int, Int}`: A dictionary that maps site indices to the maximum projector size for each site.
     
-    # Constructors:
-    - `PoolOfProjectors(data::Dict{Int, Dict{Int, Vector{T}}}) where T`: Create a `PoolOfProjectors` with initial data for projectors. The data is provided as a dictionary that maps site indices to projectors stored in different computational devices. The `sizes` dictionary is automatically populated based on the maximum projector size for each site.
-    - `PoolOfProjectors{T}() where T`: Create an empty `PoolOfProjectors` with no projectors initially stored.    
+# Constructors:
+- `PoolOfProjectors(data::Dict{Int, Dict{Int, Vector{T}}}) where T`: Create a `PoolOfProjectors` with initial data for projectors. 
+The data is provided as a dictionary that maps site indices to projectors stored in different computational devices. 
+The `sizes` dictionary is automatically populated based on the maximum projector size for each site.
+- `PoolOfProjectors{T}() where T`: Create an empty `PoolOfProjectors` with no projectors initially stored.    
 """
 struct PoolOfProjectors{T <: Integer}
     data::Dict{Symbol, Dict{Int, Proj{T}}}
@@ -69,7 +73,8 @@ TODO This is version for only one GPU
 
 Retrieve or create a projector from the `PoolOfProjectors` associated with a specific device.
 
-This function retrieves a projector from the `PoolOfProjectors` if it already exists. If the projector does not exist in the pool, it creates a new one and stores it for future use on the specified computational device.
+This function retrieves a projector from the `PoolOfProjectors` if it already exists. 
+If the projector does not exist in the pool, it creates a new one and stores it for future use on the specified computational device.
 
 # Arguments:
 - `lp::PoolOfProjectors{T}`: The `PoolOfProjectors` object containing projectors.
@@ -102,7 +107,9 @@ $(TYPEDSIGNATURES)
 
 Add a projector to the `PoolOfProjectors` and associate it with an index.
 
-This function adds a projector `p` to the `PoolOfProjectors`. The `PoolOfProjectors` stores projectors based on their computational device (e.g., CPU or GPU) and assigns a unique index to each projector. The index can be used to retrieve the projector later using `get_projector!`.
+This function adds a projector `p` to the `PoolOfProjectors`. 
+The `PoolOfProjectors` stores projectors based on their computational device (e.g., CPU or GPU) and assigns a unique index to each projector. 
+The index can be used to retrieve the projector later using `get_projector!`.
 
 # Arguments:
 - `lp::PoolOfProjectors{T}`: The `PoolOfProjectors` object to which the projector should be added.

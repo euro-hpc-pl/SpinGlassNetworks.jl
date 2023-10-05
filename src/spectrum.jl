@@ -69,7 +69,8 @@ $(TYPEDSIGNATURES)
 
 Calculates the energy of a state in an Ising graph.
 
-This function calculates the energy of a given state in the context of an Ising graph. The energy is computed based on the interactions between spins and their associated biases.
+This function calculates the energy of a given state in the context of an Ising graph. 
+The energy is computed based on the interactions between spins and their associated biases.
 
 # Arguments:
 - `σ::AbstractArray{State}`: An array representing the state of spins in the Ising graph.
@@ -88,7 +89,8 @@ $(TYPEDSIGNATURES)
 
 Calculates the energy of a state in an Ising graph.
 
-This function computes the energy of a given state in the context of an Ising graph. The energy is calculated based on the interactions between spins and their associated biases.
+This function computes the energy of a given state in the context of an Ising graph. 
+The energy is calculated based on the interactions between spins and their associated biases.
 
 # Arguments:
 - `ig::IsingGraph{T}`: The Ising graph defining the interactions and biases.
@@ -117,7 +119,8 @@ $(TYPEDSIGNATURES)
 
 Generates the energy spectrum for an Ising graph.
 
-This function computes the energy spectrum (energies and corresponding states) for a given Ising graph. The energy spectrum represents all possible energy levels and their associated states in the Ising graph.
+This function computes the energy spectrum (energies and corresponding states) for a given Ising graph. 
+The energy spectrum represents all possible energy levels and their associated states in the Ising graph.
     
 # Arguments:
 - `ig::IsingGraph{T}`: The Ising graph for which the energy spectrum is generated.
@@ -145,7 +148,8 @@ $(TYPEDSIGNATURES)
 
 Computes the Gibbs tensor for an Ising graph at a given inverse temperature.
 
-This function calculates the Gibbs tensor for an Ising graph at a specified inverse temperature (β). The Gibbs tensor represents the conditional probabilities of states given the inverse temperature and the Ising graph.
+This function calculates the Gibbs tensor for an Ising graph at a specified inverse temperature (β). 
+The Gibbs tensor represents the conditional probabilities of states given the inverse temperature and the Ising graph.
     
 # Arguments:
 - `ig::IsingGraph{T}`: The Ising graph for which the Gibbs tensor is computed.

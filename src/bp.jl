@@ -18,11 +18,13 @@ Perform belief propagation on a given clustered hamiltonian.
 # Arguments:
 - `cl_h::LabelledGraph{S, T}`: The clustered hamiltonian represented as a labeled graph.
 - `beta::Real`: The temperature parameter for the belief propagation algorithm.
-- `tol::Real (optional, default=1e-6)`: The convergence tolerance. The algorithm stops when the message updates between iterations are smaller than this value.
+- `tol::Real (optional, default=1e-6)`: The convergence tolerance. 
+The algorithm stops when the message updates between iterations are smaller than this value.
 - `iter::Int (optional, default=1)`: The maximum number of iterations to perform.
 
 # Returns:
-- `beliefs::Dict`: A dictionary where keys are vertices of clustered hamiltonian, and values are the resulting beliefs after belief propagation.
+- `beliefs::Dict`: A dictionary where keys are vertices of clustered hamiltonian, and values are the 
+resulting beliefs after belief propagation.
 
 The function implements belief propagation on the given clustered hamiltonian `cl_h` to calculate beliefs for each vertex.
 Belief propagation is an iterative algorithm that computes beliefs by passing messages between vertices and edges of the clustered hamiltonian. 
@@ -98,12 +100,15 @@ Returns the neighbors of a given vertex in a clustered Hamiltonian.
 - `vertex::NTuple`: The vertex for which neighbors are to be retrieved.
 
 # Returns:
-- `neighbors::Vector{Tuple}`: A vector of tuples representing the neighbors of the specified vertex. Each tuple contains the following information:
-    - `dst_node::T`: The neighboring vertex.
-    - `pv::Matrix`: The projector associated with the edge connecting the vertex and its neighbor.
-    - `en::Real`: The energy associated with the edge connecting the vertex and its neighbor.
+- `neighbors::Vector{Tuple}`: A vector of tuples representing the neighbors of the specified vertex. 
+Each tuple contains the following information:
+- `dst_node::T`: The neighboring vertex.
+- `pv::Matrix`: The projector associated with the edge connecting the vertex and its neighbor.
+- `en::Real`: The energy associated with the edge connecting the vertex and its neighbor.
 
-This function retrieves the neighbors of a given vertex in a clustered Hamiltonian graph. It iterates through the edges of the graph and identifies edges connected to the specified vertex. For each neighboring edge, it extracts and returns the neighboring vertex, the associated projector, and the energy.
+This function retrieves the neighbors of a given vertex in a clustered Hamiltonian graph.
+It iterates through the edges of the graph and identifies edges connected to the specified vertex. 
+For each neighboring edge, it extracts and returns the neighboring vertex, the associated projector, and the energy.
 """
 function get_neighbors(cl_h::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
     neighbors = []
@@ -135,9 +140,12 @@ A custom Julia struct representing energy values in a merged format for use in s
 - `e21::AbstractMatrix{T}`
 - `e22::AbstractMatrix{T}`
     
-The `MergedEnergy` struct is used to represent energy values that are organized in a merged format. This format is often utilized in certain computational tasks, where energy values are categorized based on combinations of left and right factors.
+The `MergedEnergy` struct is used to represent energy values that are organized in a merged format. 
+This format is often utilized in certain computational tasks, where energy values are categorized based on combinations of left and right factors.
     
-Each field of the `MergedEnergy` struct stores energy values as an `AbstractMatrix{T}` of type `T`, where `T` is a subtype of the `Real` abstract type. The specific organization and interpretation of these energy values depend on the context in which this struct is used.    
+Each field of the `MergedEnergy` struct stores energy values as an `AbstractMatrix{T}` of type `T`, 
+where `T` is a subtype of the `Real` abstract type. 
+The specific organization and interpretation of these energy values depend on the context in which this struct is used.    
 """
 struct MergedEnergy{T <: Real}
     e11::AbstractMatrix{T}
@@ -161,7 +169,9 @@ Update a message using energy values and temperature.
 # Returns:
 - `updated_message::Vector`: The updated message vector after applying the energy-based update.
 
-This function takes energy values `E_bond` associated with a bond or interaction, an input message vector `message`, and a temperature parameter `beta`. It updates the message by first adjusting the energy values relative to their minimum value, exponentiating them with a negative sign and scaling by `beta`, and then multiplying them element-wise with the input message.
+This function takes energy values `E_bond` associated with a bond or interaction, an input message vector `message`, 
+and a temperature parameter `beta`. It updates the message by first adjusting the energy values relative to their minimum value, 
+exponentiating them with a negative sign and scaling by `beta`, and then multiplying them element-wise with the input message.
 
 The result is an updated message that reflects the influence of energy values and temperature.
 """
@@ -183,9 +193,11 @@ Update a message using energy values and temperature in a merged energy format.
 # Returns:
 - `updated_message::Vector`: The updated message vector after applying the energy-based update.
 
-This function takes energy values `E_bond` in a merged energy format, an input message vector `message`, and a temperature parameter `beta`. It updates the message based on the energy values and temperature using a specified algorithm.
+This function takes energy values `E_bond` in a merged energy format, an input message vector `message`, 
+and a temperature parameter `beta`. It updates the message based on the energy values and temperature using a specified algorithm.
 
-The `MergedEnergy` type represents energy values in a merged format, and the function processes these values accordingly to update the message vector.
+The `MergedEnergy` type represents energy values in a merged format, and the function processes these values 
+accordingly to update the message vector.
 """
 function update_message(E_bond::MergedEnergy, message::Vector, beta::Real)
     e11, e12, e21, e22 = E_bond.e11, E_bond.e12, E_bond.e21, E_bond.e22
@@ -244,9 +256,12 @@ Constructs a clustered Hamiltonian for a given clustered Hamiltonian with a 2-si
 # Returns:
 - `new_cl_h::LabelledGraph{MetaDiGraph}`: A new labeled graph representing the 2-site cluster Hamiltonian.
     
- This function constructs a clustered Hamiltonian `cl_h` by applying a 2-site cluster approximation. It combines and merges vertices and edges of the original graph to create a simplified representation of the Hamiltonian.
+ This function constructs a clustered Hamiltonian `cl_h` by applying a 2-site cluster approximation. 
+    It combines and merges vertices and edges of the original graph to create a simplified representation of the Hamiltonian.
     
-The resulting `new_cl_h` graph represents the 2-site cluster Hamiltonian with simplified interactions between clusters. The energy values, projectors, and spectra associated with the new vertices and edges are computed based on the provided temperature parameter `beta`.
+The resulting `new_cl_h` graph represents the 2-site cluster Hamiltonian with simplified interactions between clusters. 
+The energy values, projectors, and spectra associated with the new vertices and edges are computed based on 
+the provided temperature parameter `beta`.
 """
 function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) where {S, T}
 
@@ -303,9 +318,12 @@ Merge two vertices in a clustered Hamiltonian to create a single merged vertex.
 - `pl::AbstractVector`: The merged left projector.
 - `pr::AbstractVector`: The merged right projector.
 
-This function merges two vertices in a clustered Hamiltonian graph `cl_h` to create a single merged vertex. The merging process combines projectors and energy values associated with the original vertices based on the provided temperature parameter `β`.
+This function merges two vertices in a clustered Hamiltonian graph `cl_h` to create a single merged vertex. 
+The merging process combines projectors and energy values associated with the original vertices based on 
+the provided temperature parameter `β`.
 
-The merged energy values, left projector `pl`, and right projector `pr` are computed based on the interactions between the original vertices and their respective projectors.
+The merged energy values, left projector `pl`, and right projector `pr` are computed based on the interactions 
+between the original vertices and their respective projectors.
 """
 function merge_vertices_cl_h(cl_h::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int64}, node2::NTuple{3, Int64}
     ) where {S, T}
@@ -356,7 +374,8 @@ Get the local energy associated with a vertex in a clustered Hamiltonian.
 # Returns:
 - `local_energy::AbstractVector`: An abstract vector containing the local energy values associated with the specified vertex.
 
-This function retrieves the local energy values associated with a given vertex `v` in a clustered Hamiltonian graph `cl_h`. If the vertex exists in the graph and has associated energy values, it returns those values; otherwise, it returns a vector of zeros.
+This function retrieves the local energy values associated with a given vertex `v` in a clustered Hamiltonian graph `cl_h`. 
+If the vertex exists in the graph and has associated energy values, it returns those values; otherwise, it returns a vector of zeros.
 
 The local energy values are typically obtained from the spectrum associated with the vertex.
 """
@@ -377,7 +396,10 @@ Get the interaction energy between two vertices in a clustered Hamiltonian.
 # Returns:
 - `interaction_energy::AbstractMatrix`: An abstract matrix containing the interaction energy values between the specified vertices.
 
-This function retrieves the interaction energy values between two vertices, `v` and `w`, in a clustered Hamiltonian graph `cl_h`. If there is a directed edge from `w` to `v`, it returns the corresponding energy values; if there is a directed edge from `v` to `w`, it returns the transpose of the energy values; otherwise, it returns a matrix of zeros.
+This function retrieves the interaction energy values between two vertices, `v` and `w`, in a clustered Hamiltonian graph `cl_h`. 
+If there is a directed edge from `w` to `v`, it returns the corresponding energy values; 
+if there is a directed edge from `v` to `w`, it returns the transpose of the energy values; 
+otherwise, it returns a matrix of zeros.
 The interaction energy values represent the energy associated with the interaction or connection between the two vertices.
 """
 function interaction_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
@@ -403,7 +425,11 @@ Get the projector associated with an edge between two vertices in a clustered Ha
 # Returns:
 - `p::AbstractVector`: An abstract vector representing the projector associated with the specified edge.
 
-This function retrieves the projector associated with an edge between two vertices, `v` and `w`, in a clustered Hamiltonian graph `cl_h`. If there is a directed edge from `w` to `v`, it returns the index of right projector (`:ipr`); if there is a directed edge from `v` to `w`, it returns the index of left projector (`:ipl`). If no edge exists between the vertices, it returns a vector of ones.
+This function retrieves the projector associated with an edge between two vertices, `v` and `w`, 
+in a clustered Hamiltonian graph `cl_h`. 
+If there is a directed edge from `w` to `v`, it returns the index of right projector (`:ipr`); 
+if there is a directed edge from `v` to `w`, it returns the index of left projector (`:ipl`). 
+If no edge exists between the vertices, it returns a vector of ones.
 """
 function projector(cl_h::LabelledGraph{S, T}, v::NTuple{N, Int64}, w::NTuple{N, Int64}) where {S, T, N}
     if has_edge(cl_h, w, v)
@@ -439,7 +465,8 @@ Create a sparse column-compressed (CSC) matrix with specified column indices and
 # Returns:
 - `sparse_matrix::SparseMatrixCSC{R}`: A sparse column-compressed matrix with non-zero values at specified columns.
 
-This constructor function creates a sparse column-compressed (CSC) matrix of element type `R` based on the provided column indices `p` and values. The resulting matrix has non-zero values at the specified column indices, while all other elements are zero.
+This constructor function creates a sparse column-compressed (CSC) matrix of element type `R` based on the provided 
+column indices `p` and values. The resulting matrix has non-zero values at the specified column indices, while all other elements are zero.
 The `SparseCSC` constructor is useful for creating sparse matrices with specific column indices and values efficiently.
 """
 function SparseCSC(::Type{R}, p::Vector{Int64}) where R <: Real
