@@ -87,7 +87,7 @@ function pegasus_lattice(size::NTuple{3, Int})
 end
 
 # TODO masoud / tomek should be removed from function names
-function pegasus_lattice_masoud(size::NTuple{3, Int})
+function pegasus_lattice_alternative(size::NTuple{3, Int})
     m, n, t = size
     old = LinearIndices((1:8*t, 1:n, 1:m))
     map = Dict(
@@ -99,7 +99,7 @@ function pegasus_lattice_masoud(size::NTuple{3, Int})
     map
 end
 
-function pegasus_lattice_tomek(size::NTuple{3, Int})
+function pegasus_lattice_old_numering(size::NTuple{3, Int})
     m, n, t = size
     old = LinearIndices((1:8*t, 1:n, 1:m))
     map = Dict(
