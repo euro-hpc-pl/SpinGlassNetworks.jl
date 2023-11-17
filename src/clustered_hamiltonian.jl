@@ -463,3 +463,40 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
 
     new_cl_h
 end
+
+function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
+    loaded_rmf = load_openGM(fname, Nx, Ny)
+    functions = loaded_rmf["fun"]
+    factors = loaded_rmf["fac"]
+    N = loaded_rmf["N"]
+
+    clusters = super_square_lattice((Nx, Ny, 1))
+    cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
+    lp = PoolOfProjectors{Int}()
+    for v ∈ cl_h.labels
+        x, y = v
+        sp = Spectrum(Vector{Real}(undef, 1), Array{Vector{Int}}(undef, 1, 1), Vector{Int}(undef, 1))
+        set_props!(cl_h, v, Dict(:cluster => v, :spectrum => sp))
+    end
+    for (index, value) in factors
+        if length(index) == 2
+            y, x = index
+            Eng = sum(functions[value])
+            set_props!(cl_h, (x+1, y+1), Dict(:en => Eng))
+        elseif length(index) == 4
+            y1, x1, y2, x2 = index
+            add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
+            Eng = sum(functions[value], dims=2)
+            n = length(Eng)
+            ipl = add_projector!(lp, ones(n))
+            ipr = add_projector!(lp, ones(n))
+            set_props!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1), Dict(:outer_edges=> ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)), 
+            :en => Eng, :ipl => ipl, :ipr => ipr))
+        else
+            throw(ErrorException("Something is wrong with factor index, it has length $(length(index))"))
+        end
+    end
+    
+    set_props!(cl_h, Dict(:pool_of_projectors => lp))
+    cl_h
+end

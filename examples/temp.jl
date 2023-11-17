@@ -1,5 +1,6 @@
 using HDF5
 using LightGraphs
+using LinearAlgebra
 using LabelledGraphs
 using MetaGraphs
 using SpinGlassNetworks
@@ -74,35 +75,33 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
     result
 end
 
-function energy_rmf()
-    
-end
-
 function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
     loaded_rmf = load_openGM(fname, Nx, Ny)
     functions = loaded_rmf["fun"]
     factors = loaded_rmf["fac"]
     N = loaded_rmf["N"]
-    println(size(N))
-    node_factors = Dict()
-    edge_factors = Dict()
 
-    for index in keys(factors)
-        if length(index) == 4
-            push!(edge_factors, index=>factors[index])
-        else
-            push!(node_factors, index=>factors[index])
-        end
-    end
-    println(length(node_factors))
-    println((0,0) in collect(keys(node_factors)))
-    g = grid((Nx,Ny))
     clusters = super_square_lattice((Nx, Ny, 1))
     cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
     for v ∈ cl_h.labels
         x, y = v
-        sp = Spectrum([node_factors[(y-1, x-1)]], Array([collect(1:N[y, x])]), Vector{Int}([]))
+        sp = Spectrum(Vector{Real}(undef, 1), Array{Vector{Int}}(undef, 1, 1), Vector{Int}(undef, 1))
         set_props!(cl_h, v, Dict(:cluster => v, :spectrum => sp))
+    end
+    for (index, value) in factors
+        if length(index) == 2
+            y, x = index
+            Eng = sum(functions[value])
+            set_props!(cl_h, (x+1, y+1), Dict(:eng => Eng))
+        elseif length(index) == 4
+            y1, x1, y2, x2 = index
+            add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
+            Eng = sum(functions[value], dims=2)
+            set_props!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1), Dict(:outer_edges=> ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)),
+            :eng => Eng, :pl => I, :pr => I))
+        else
+            throw(ErrorException("Something is wrong with factor index, it has length $(length(index))"))
+        end
     end
 
     cl_h
@@ -114,3 +113,4 @@ filename = "/home/tsmierzchalski/.julia/dev/SpinGlassNetworks/examples/penguin-s
 
 
 cf = clustered_hamiltonian(filename, x, y)
+
