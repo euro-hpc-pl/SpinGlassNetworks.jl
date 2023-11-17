@@ -1,9 +1,12 @@
 using Documenter, SpinGlassNetworks
 
 _pages = [
-    "Introduction" => "index.md",
     "User guide" => "userguide.md",
-    "API Reference" => "api.md"
+    "Lattice geometries" => "lattice.md",
+    "Ising graph" => "ising.md",
+    "Clustered hamiltonian" => "clh.md",
+    "Local dimensional reduction" => "bp.md",
+    "API Reference for auxiliary functions" => "api.md"
 ]
 
 # ============================
