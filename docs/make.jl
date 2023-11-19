@@ -2,8 +2,8 @@ using Documenter, SpinGlassNetworks
 
 _pages = [
     "User guide" => "userguide.md",
-    "Lattice geometries" => "lattice.md",
     "Ising graph" => "ising.md",
+    "Lattice geometries" => "lattice.md",
     "Clustered hamiltonian" => "clh.md",
     "Local dimensional reduction" => "bp.md",
     "API Reference for auxiliary functions" => "api.md"

@@ -16,7 +16,8 @@ Create a mapping from clustered Hamiltonian coordinates to a super square lattic
 Variable number of Ising graph -> Factor graph coordinate system
 
 This function generates a mapping that relates clustered Hamiltonian coordinates to a super square lattice arrangement. 
-The super square lattice is defined by the size of five dimensions: `(m, um, n, un, t)`.
+The super square lattice is defined by the size of five dimensions: `(m, um, n, un, t)`,
+where m is the number of columns, m is the number of rows and t denotes the number of spins stored in the cluster.
 
 # Arguments:
 - `size::NTuple{5, Int}`: A tuple specifying the size of the super square lattice in five dimensions: `(m, um, n, un, t)`.
@@ -39,10 +40,10 @@ $(TYPEDSIGNATURES)
 Create a mapping from clustered Hamiltonian coordinates to a simplified super square lattice arrangement.
 
 This function generates a mapping that relates clustered Hamiltonian coordinates to a simplified super square lattice arrangement. 
-The simplified super square lattice is defined by the size of three dimensions: `(m, n, t)`.
+The simplified super square lattice is defined by the size of three dimensions: `(m, n, t)`, where m is the number of columns, n is the number of rows and t denotes the number of spins stored in the cluster.
 
 # Arguments:
-- `size::NTuple{3, Int}`: A tuple specifying the size of the simplified super square lattice in three dimensions: `(m, n, t)`.
+- `size::NTuple{3, Int}`: A tuple specifying the size of the simplified super square lattice in three dimensions: `(m, n, t)`, where `m` is number of columns, `n` number of rows and `t` denotes numberr of spins in cluster.
 
 # Returns:
 - `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding lattice coordinates.
@@ -66,7 +67,7 @@ This function generates a mapping that relates clustered Hamiltonian coordinates
 based on the specified size of the Pegasus lattice in three dimensions: `(m, n, t)`.
 
 # Arguments:
-- `size::NTuple{3, Int}`: A tuple specifying the size of the Pegasus lattice in three dimensions: `(m, n, t)`.
+- `size::NTuple{3, Int}`: A tuple specifying the size of the Pegasus lattice in three dimensions: `(m, n, t)`, where `m` is number of columns, `n` number of rows and `t` denotes numberr of spins in cluster. Convention: `t` is already divided by 8, so `t`=3 for Pegasus lattice.
 
 # Returns:
 - `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding Pegasus lattice coordinates.
@@ -142,7 +143,7 @@ This function generates a mapping that relates clustered Hamiltonian coordinates
 coordinates based on the specified size of the Zephyr lattice in three dimensions: `(m, n, t)`.
 
 # Arguments:
-- `size::NTuple{3, Int}`: A tuple specifying the size of the Zephyr lattice in three dimensions: `(m, n, t)`.
+- `size::NTuple{3, Int}`: A tuple specifying the size of the Zephyr lattice in three dimensions: `(m, n, t)`, where `m` is double number of columns, `n` double number of rows and `t` denotes number of spins in cluster. Convention: `t` is already divided by 4, so `t`=4 for Zephyr lattice.
 
 # Returns:
 - `coord_map::Dict`: A dictionary that maps clustered Hamiltonian coordinates to the corresponding Zephyr lattice coordinates.

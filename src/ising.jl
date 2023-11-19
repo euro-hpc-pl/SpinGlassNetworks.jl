@@ -25,18 +25,17 @@ $(TYPEDSIGNATURES)
 
 Create an Ising graph from interaction data.
 
-This function creates an Ising graph from interaction data provided in the form of an `inst` argument.
+This function creates an Ising graph (LabelledGraph) from interaction data provided in the form of an `inst` argument.
 The Ising graph represents a system of spins, where each spin is associated with a vertex, and interactions between spins are represented as edges with corresponding weights.
 
 # Arguments:
 - `::Type{T}`: The type of the edge weights, typically `Float64` or `Float32`.
-- `inst::Instance`: Interaction data, which can be either a file path to a CSV file or a collection of triples `(i, j, J)`
-representing interactions between spins, where `i` and `j` are spin indices, and `J` is the interaction strength.
-- `scale::Real`: A scaling factor applied to interaction strengths (default is 1).
+- `inst::Instance`: Interaction data, which can be either a file path to a CSV file or a collection of triples `(i, j, J)` representing interactions between spins, where `i` and `j` are spin indices, and `J` is the interaction strength.
+- `scale::Real`: The scale factor establishes the convention in the Hamiltonian (default is 1).
 - `rank_override::Dict`: A dictionary specifying the rank (number of states) for each vertex. If not provided, a default rank of 2 is used for all vertices.
 
 # Returns:
-- `ig::IsingGraph{T}`: The Ising graph representing the spin system.
+- `ig::IsingGraph{T}`: The Ising graph (LabelledGraph) representing the spin system.
 
 The function reads interaction data and constructs an Ising graph `ig`.
 It assigns interaction strengths to edges between spins and optionally scales them by the `scale` factor.
