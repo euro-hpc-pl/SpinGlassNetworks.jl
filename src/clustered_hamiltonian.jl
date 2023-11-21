@@ -479,13 +479,13 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
     for (index, value) in factors
         if length(index) == 2
             y, x = index
-            Eng = sum(functions[value])
-            sp = Spectrum([Eng], [collect(1:8), collect(1:8)], zeros(1))
+            Eng = functions[value]'
+            sp = Spectrum(collect(Eng), [collect(1:8), collect(1:8)], zeros(1))
             set_props!(cl_h, (x+1, y+1), Dict(:spectrum => sp))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
             add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
-            Eng = sum(functions[value], dims=1)
+            Eng = functions[value]
             ipl = add_projector!(lp, collect(1:N[y1+1, x1+1]))
             ipr = add_projector!(lp, collect(1:N[y2+1, x2+1]))
             set_props!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1), Dict(:outer_edges=> ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)), 
@@ -496,6 +496,5 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
     end
     
     set_props!(cl_h, Dict(:pool_of_projectors => lp))
-    println(lp)
     cl_h
 end
