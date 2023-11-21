@@ -474,22 +474,20 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
     cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
     lp = PoolOfProjectors{Int}()
     for v ∈ cl_h.labels
-        x, y = v
-        sp = Spectrum(Vector{Real}(undef, 1), Array{Vector{Int}}(undef, 1, 1), Vector{Int}(undef, 1))
-        set_props!(cl_h, v, Dict(:cluster => v, :spectrum => sp))
+        set_props!(cl_h, v, Dict(:cluster => v))
     end
     for (index, value) in factors
         if length(index) == 2
             y, x = index
             Eng = sum(functions[value])
-            set_props!(cl_h, (x+1, y+1), Dict(:en => Eng))
+            sp = Spectrum([Eng], [collect(1:8), collect(1:8)], zeros(1))
+            set_props!(cl_h, (x+1, y+1), Dict(:spectrum => sp))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
             add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
-            Eng = sum(functions[value], dims=2)
-            n = length(Eng)
-            ipl = add_projector!(lp, ones(n))
-            ipr = add_projector!(lp, ones(n))
+            Eng = sum(functions[value], dims=1)
+            ipl = add_projector!(lp, collect(1:N[y1+1, x1+1]))
+            ipr = add_projector!(lp, collect(1:N[y2+1, x2+1]))
             set_props!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1), Dict(:outer_edges=> ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)), 
             :en => Eng, :ipl => ipl, :ipr => ipr))
         else
@@ -498,5 +496,6 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
     end
     
     set_props!(cl_h, Dict(:pool_of_projectors => lp))
+    println(lp)
     cl_h
 end
