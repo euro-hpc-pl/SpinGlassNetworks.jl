@@ -480,7 +480,7 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
         if length(index) == 2
             y, x = index
             Eng = functions[value]'
-            sp = Spectrum(collect(Eng), Vector{Vector{Int}}[], zeros(1))
+            sp = Spectrum(collect(Eng), Vector{Vector{Int}}[], zeros(Int, N[y+1, x+1]))
             set_props!(cl_h, (x+1, y+1), Dict(:spectrum => sp))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
