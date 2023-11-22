@@ -134,9 +134,8 @@ function load_openGM(fname::String, Nx::Union{Integer, Nothing}=nothing, Ny::Uni
             ny, nx = divrem(tt, Nx)
             push!(n, ny, nx)
         end
-
         if length(n) == 4
-            if abs(n[1] - n[3]) + abs(n[2] - n[4]) ∉ [1,2] || (abs(n[1] - n[3]) + abs(n[2] - n[4]) == 2 && (abs(n[1] - n[3]) == 2 ||  abs(n[2] - n[4])))
+            if abs(n[1] - n[3]) + abs(n[2] - n[4]) ∉ [1,2] || (abs(n[1] - n[3]) + abs(n[2] - n[4]) == 2 && (abs(n[1] - n[3]) == 2 ||  abs(n[2] - n[4] == 2)))
                 throw(ErrorException("Not nearest neighbour or diagonal neighbors"))
             end
         end
