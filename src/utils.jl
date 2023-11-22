@@ -104,7 +104,7 @@ Args:
 Returns:
    dictionary with factors and funcitons defining the energy functional.
 """
-function load_openGM(fname::String, Nx::Integer, Ny::Integer)
+function load_openGM(fname::String, Nx::Union{Integer, Nothing}=nothing, Ny::Union{Integer, Nothing}=nothing)
     file = h5open(fname, "r")
 
     file_keys = collect(keys(read(file)))
@@ -114,6 +114,11 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
     J = Array{Int64}(data["function-id-16000"]["indices"])
     V = Array{Real}(data["function-id-16000"]["values"])
     N = Array{Int64}(data["numbers-of-states"])
+
+    if isnothing(Nx) || isnothing(Ny)
+        filename, _ = splitext(basename(fname))
+        Nx, Ny = benchmark_names[filename]
+    end
 
     F = reverse(F)
     factors = Dict()
@@ -131,8 +136,8 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
         end
 
         if length(n) == 4
-            if abs(n[1] - n[3]) + abs(n[2] - n[4]) != 1
-                throw(ErrorException("Not nearest neighbour"))
+            if abs(n[1] - n[3]) + abs(n[2] - n[4]) ∉ [1,2] || (abs(n[1] - n[3]) + abs(n[2] - n[4]) == 2 && (abs(n[1] - n[3]) == 2 ||  abs(n[2] - n[4])))
+                throw(ErrorException("Not nearest neighbour or diagonal neighbors"))
             end
         end
 
@@ -172,3 +177,15 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
     result = Dict("fun" => functions, "fac" => factors, "N" => reshape(N, (Ny, Nx)), "Nx" => Nx, "Ny" => Ny)
     result
 end
+
+benchmark_names = Dict(
+    "penguin-small" => (240,320), 
+    "palm-small" => (240,360),
+    "clownfish-small" => (240,360),
+    "crops-small" => (240,360),
+    "pfau-small" => (240,320),
+    "lake-small" => (240,360),
+    "snail" => (240,320),
+    "fourcolors" => (240,320),
+    "strawberry-glass-2-small" => (320,240)
+)

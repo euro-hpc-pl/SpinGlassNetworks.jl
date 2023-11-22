@@ -464,13 +464,18 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
     new_cl_h
 end
 
-function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
+function clustered_hamiltonian(fname::String, 
+                               Nx::Union{Integer, Nothing}=nothing, 
+                               Ny::Union{Integer, Nothing}=nothing)
+
     loaded_rmf = load_openGM(fname, Nx, Ny)
     functions = loaded_rmf["fun"]
     factors = loaded_rmf["fac"]
     N = loaded_rmf["N"]
 
-    clusters = super_square_lattice((Nx, Ny, 1))
+    X, Y = loaded_rmf["Nx"], loaded_rmf["Ny"]
+
+    clusters = super_square_lattice((X, Y, 1))
     cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
     lp = PoolOfProjectors{Int}()
     for v ∈ cl_h.labels
@@ -495,6 +500,6 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
         end
     end
     
-    set_props!(cl_h, Dict(:pool_of_projectors => lp))
+    set_props!(cl_h, Dict(:pool_of_projectors => lp, :Nx => X, :Ny => Y))
     cl_h
 end
