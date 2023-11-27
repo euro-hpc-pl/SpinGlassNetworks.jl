@@ -26,7 +26,8 @@ $(TYPEDSIGNATURES)
 Create an Ising graph from interaction data.
 
 This function creates an Ising graph (LabelledGraph) from interaction data provided in the form of an `inst` argument.
-The Ising graph represents a system of spins, where each spin is associated with a vertex, and interactions between spins are represented as edges with corresponding weights.
+The Ising graph represents a system of spins, where each spin is associated with a vertex, 
+and interactions between spins are represented as edges with corresponding weights.
 
 # Arguments:
 - `::Type{T}`: The type of the edge weights, typically `Float64` or `Float32`.
@@ -38,7 +39,7 @@ The Ising graph represents a system of spins, where each spin is associated with
 - `ig::IsingGraph{T}`: The Ising graph (LabelledGraph) representing the spin system.
 
 The function reads interaction data and constructs an Ising graph `ig`.
-It assigns interaction strengths to edges between spins and optionally scales them by the `scale` factor.
+It assigns interaction strengths to edges between spins and optionally scales them by the `scale` factor. 'Scale' option allows for the change of convention in the Hamiltonian.
 The `rank_override` dictionary can be used to specify the rank (number of states) for individual vertices, allowing customization of the Ising model.
 Convention: H = scale * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
 """

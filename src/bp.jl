@@ -13,23 +13,22 @@ export
 
 """
 $(TYPEDSIGNATURES)
-Perform belief propagation on a given clustered hamiltonian.
+Perform loopy belief propagation on a given clustered Hamiltonian.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered hamiltonian represented as a labeled graph.
-- `beta::Real`: The temperature parameter for the belief propagation algorithm.
-- `tol::Real (optional, default=1e-6)`: The convergence tolerance. 
-The algorithm stops when the message updates between iterations are smaller than this value.
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
+- `beta::Real`: The inverse temperature parameter for the belief propagation algorithm.
+- `tol::Real (optional, default=1e-6)`: The convergence tolerance. The algorithm stops when the message updates between iterations are smaller than this value.
 - `iter::Int (optional, default=1)`: The maximum number of iterations to perform.
 
 # Returns:
 - `beliefs::Dict`: A dictionary where keys are vertices of clustered hamiltonian, and values are the 
 resulting beliefs after belief propagation.
 
-The function implements belief propagation on the given clustered hamiltonian `cl_h` to calculate beliefs for each vertex.
+The function implements loopy belief propagation on the given clustered hamiltonian `cl_h` to calculate beliefs for each vertex.
 Belief propagation is an iterative algorithm that computes beliefs by passing messages between vertices and edges of the clustered hamiltonian. 
 The algorithm continues until convergence or until the specified maximum number of iterations is reached.
-The beliefs are computed based on the temperature parameter `beta`, which controls the influence of energy values on the beliefs.
+The beliefs are computed based on the inverse temperature parameter `beta`, which controls the influence of energy values on the beliefs.
 """
 function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, iter=1)  where {S, T}
     messages_ve = Dict()
@@ -247,17 +246,17 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Constructs a clustered Hamiltonian for a given clustered Hamiltonian with a 2-site cluster approximation.
+Constructs a clustered Hamiltonian for a given clustered Hamiltonian with a 2-site cluster approximation used in Pegasus graph.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
-- `beta::Real`: The temperature parameter for the 2-site cluster Hamiltonian construction.
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
+- `beta::Real`: The inverse temperature parameter for the 2-site cluster Hamiltonian construction.
     
 # Returns:
-- `new_cl_h::LabelledGraph{MetaDiGraph}`: A new labeled graph representing the 2-site cluster Hamiltonian.
+- `new_cl_h::LabelledGraph{MetaDiGraph}`: A new labelled graph representing the 2-site cluster Hamiltonian.
     
- This function constructs a clustered Hamiltonian `cl_h` by applying a 2-site cluster approximation. 
-    It combines and merges vertices and edges of the original graph to create a simplified representation of the Hamiltonian.
+This function constructs a clustered Hamiltonian `cl_h` by applying a 2-site cluster approximation. 
+It combines and merges vertices and edges of the original graph to create a simplified representation of the Hamiltonian.
     
 The resulting `new_cl_h` graph represents the 2-site cluster Hamiltonian with simplified interactions between clusters. 
 The energy values, projectors, and spectra associated with the new vertices and edges are computed based on 

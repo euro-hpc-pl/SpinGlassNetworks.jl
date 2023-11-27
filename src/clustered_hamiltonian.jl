@@ -46,19 +46,17 @@ This function constructs a clustered Hamiltonian from an Ising graph by introduc
 
 # Arguments:
 - `ig::IsingGraph`: The Ising graph representing the spin system.
-- `num_states_cl::Int`: The number of states per cluster.
-- `spectrum::Function`: A function for calculating the spectrum of the clustered Hamiltonian.
-- `cluster_assignment_rule::Dict{Int, L}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters.
+- `num_states_cl::Int`: The number of states per cluster taken into account when calculating the spectrum. In every cluster the number of states is constant.
+- `spectrum::Function`: A function for calculating the spectrum of the clustered Hamiltonian. It can be `full_spectrum` or `brute_force`.
+- `cluster_assignment_rule::Dict{Int, L}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
 
 # Returns:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
 
 The `clustered_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a clustered Hamiltonian by 
 introducing a natural order in clustered Hamiltonian coordinates. 
 It allows you to specify the number of states per cluster, a spectrum calculation function, 
 and a cluster assignment rule, which maps Ising graph vertices to clusters.
-
-This function is useful for organizing and studying spin systems in a clustered Hamiltonian framework.
 """
 function clustered_hamiltonian(
     ig::IsingGraph,
@@ -79,18 +77,17 @@ This function constructs a clustered Hamiltonian from an Ising graph by introduc
 
 # Arguments:
 - `ig::IsingGraph`: The Ising graph representing the spin system.
-- `num_states_cl::Dict{T, Int}`: A dictionary specifying the number of states per cluster for different clusters.
-- `spectrum::Function`: A function for calculating the spectrum of the clustered Hamiltonian.
-- `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters.
+- `num_states_cl::Dict{T, Int}`: A dictionary specifying the number of states per cluster for different clusters. Number of states are considered when calculating the spectrum.
+- `spectrum::Function`: A function for calculating the spectrum of the clustered Hamiltonian. It can be `full_spectrum` or `brute_force`.
+- `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
 
 # Returns:
-- `cl_h::LabelledGraph{MetaDiGraph}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{MetaDiGraph}`: The clustered Hamiltonian represented as a labelled graph.
 
 The `clustered_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a clustered Hamiltonian 
 by introducing a natural order in clustered Hamiltonian coordinates. It allows you to specify the number of 
-states per cluster, a spectrum calculation function, and a cluster assignment rule, which maps Ising graph vertices to clusters.
-
-This function is useful for organizing and studying spin systems in a clustered Hamiltonian framework.
+states per cluster which can vary for different clusters, a spectrum calculation function, 
+and a cluster assignment rule, which maps Ising graph vertices to clusters.
 
 """
 function clustered_hamiltonian(
@@ -149,20 +146,18 @@ This function constructs a clustered Hamiltonian from an Ising graph by introduc
 
 # Arguments:
 - `ig::IsingGraph`: The Ising graph representing the spin system.
-- `spectrum::Function`: A function for calculating the spectrum of the clustered Hamiltonian.
-- `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters.
+- `spectrum::Function`: A function for calculating the spectrum of the clustered Hamiltonian. It can be `full_spectrum` or `brute_force`. Default is `full_spectrum`.
+- `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
 
 # Returns:
-- `cl_h::LabelledGraph{MetaDiGraph}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{MetaDiGraph}`: The clustered Hamiltonian represented as a labelled graph.
 
 The `clustered_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a clustered Hamiltonian 
 by introducing a natural order in clustered Hamiltonian coordinates. 
 You can optionally specify a spectrum calculation function and a cluster assignment rule, which maps Ising graph vertices to clusters.
-
+This version of `clustered_hamiltonian` function does not truncate states in the cluster while calculating the spectrum.
 If you want to specify custom cluster sizes, use the alternative version of this function by 
 passing a `Dict{T, Int}` containing the number of states per cluster as `num_states_cl`.
-
-This function is useful for organizing and studying spin systems in a clustered Hamiltonian framework.
 """
 function clustered_hamiltonian(
     ig::IsingGraph; 

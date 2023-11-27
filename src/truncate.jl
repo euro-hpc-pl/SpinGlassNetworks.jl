@@ -80,7 +80,7 @@ This function truncates a clustered Hamiltonian by considering 2-site belief pro
 to keep. It computes the beliefs for all 2-site combinations and selects the states that maximize the probability.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
 - `beliefs::Dict`: A dictionary containing belief values for 2-site interactions.
 - `num_states::Int`: The maximum number of most probable states to keep.
 - `beta::Real (optional)`: The inverse temperature parameter (default is 1.0).
