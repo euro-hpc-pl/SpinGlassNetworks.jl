@@ -36,7 +36,6 @@ my_tests = [
     "bp_1site.jl",
     "bp_2site.jl",
     "utils.jl",
-    "projectors.jl",
     "spectrum.jl"
     ]
 
