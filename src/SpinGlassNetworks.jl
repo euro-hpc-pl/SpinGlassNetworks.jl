@@ -15,7 +15,7 @@ module SpinGlassNetworks
     include("ising.jl")
     include("spectrum.jl")
     include("lattice.jl")
-    include("projectors.jl")
+    #include("projectors.jl")
     include("clustered_hamiltonian.jl")
     include("bp.jl")
     include("truncate.jl")
