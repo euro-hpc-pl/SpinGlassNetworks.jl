@@ -1,4 +1,5 @@
 using SpinGlassNetworks
+using SpinGlassTensors
 using LabelledGraphs
 using LightGraphs
 using MetaGraphs

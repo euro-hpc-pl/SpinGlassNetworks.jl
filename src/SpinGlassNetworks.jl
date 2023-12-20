@@ -9,6 +9,7 @@ module SpinGlassNetworks
     using SparseArrays
     using HDF5
     using CUDA, CUDA.CUSPARSE
+    using SpinGlassTensors
     import Base.Prehashed
 
 

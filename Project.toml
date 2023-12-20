@@ -15,6 +15,7 @@ MKL = "33e6dc65-8f57-5167-99aa-e5a354878fb2"
 MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 NNlib = "872c559c-99b0-510c-b3b7-b6c96a88d5cd"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+SpinGlassTensors = "7584fc6a-5a23-4eeb-8277-827aab0146ea"
 TensorCast = "02d47bb6-7ce6-556a-be16-bb1710789e2b"
 
 [compat]
