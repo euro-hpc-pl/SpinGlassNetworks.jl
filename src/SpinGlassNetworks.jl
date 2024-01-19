@@ -3,6 +3,7 @@ module SpinGlassNetworks
     using LightGraphs
     using MetaGraphs # TODO: to be replaced by MetaGraphsNext
     using CSV
+    using JLD2
     using DocStringExtensions
     using LinearAlgebra, MKL
     using Base.Cartesian

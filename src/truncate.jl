@@ -88,22 +88,62 @@ to keep. It computes the beliefs for all 2-site combinations and selects the sta
 # Returns:
 - `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
 """
+# function truncate_clustered_hamiltonian_2site_BP(
+#     cl_h::LabelledGraph{S, T}, 
+#     beliefs::Dict, 
+#     num_states::Int; 
+#     beta=1.0
+#     ) where {S, T}
+#     # TODO: name to be clean to make it consistent with square2 and squarestar2
+#     states = Dict()
+#     for node in vertices(cl_h)
+#         if node in keys(states) continue end
+#         i, j, _ = node
+#         sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
+#         E = beliefs[(i, j)]
+#         ind1, ind2 = select_numstate_best(E, sx, num_states)
+#         push!(states, (i, j, 1) => ind1)
+#         push!(states, (i, j, 2) => ind2)
+#     end
+#     truncate_clustered_hamiltonian(cl_h, states)
+# end
+
+function load_file(filename)
+    if isfile(filename)
+        try 
+            load_object(string(filename))
+        catch e
+            return nothing
+        end
+    else
+        return nothing
+    end
+end
+
 function truncate_clustered_hamiltonian_2site_BP(
     cl_h::LabelledGraph{S, T}, 
     beliefs::Dict, 
-    num_states::Int; 
+    num_states::Int,
+    result_folder::String = "results_folder",
+    inst::String = "inst"; 
     beta=1.0
     ) where {S, T}
-    # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
-    for node in vertices(cl_h)
-        if node in keys(states) continue end
-        i, j, _ = node
-        sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
-        E = beliefs[(i, j)]
-        ind1, ind2 = select_numstate_best(E, sx, num_states)
-        push!(states, (i, j, 1) => ind1)
-        push!(states, (i, j, 2) => ind2)
+
+    saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
+    if saved_states == nothing
+        for node in vertices(cl_h)
+            i, j, _ = node
+            sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
+            E = beliefs[(i, j)]
+            ind1, ind2 = select_numstate_best(E, sx, num_states)
+            push!(states, (i, j, 1) => ind1)
+            push!(states, (i, j, 2) => ind2)
+        end
+        path = joinpath(result_folder, "$(inst).jld2")
+        save_object(string(path), states)
+    else
+        states = saved_states
     end
     truncate_clustered_hamiltonian(cl_h, states)
 end
