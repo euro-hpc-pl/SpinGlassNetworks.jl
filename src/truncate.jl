@@ -71,43 +71,6 @@ function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, 
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
-"""
-$(TYPEDSIGNATURES)
-
-Truncate a clustered Hamiltonian based on 2-site belief propagation states.
-
-This function truncates a clustered Hamiltonian by considering 2-site belief propagation states and selecting the most probable states 
-to keep. It computes the beliefs for all 2-site combinations and selects the states that maximize the probability.
-
-# Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
-- `beliefs::Dict`: A dictionary containing belief values for 2-site interactions.
-- `num_states::Int`: The maximum number of most probable states to keep.
-- `beta::Real (optional)`: The inverse temperature parameter (default is 1.0).
-
-# Returns:
-- `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
-"""
-# function truncate_clustered_hamiltonian_2site_BP(
-#     cl_h::LabelledGraph{S, T}, 
-#     beliefs::Dict, 
-#     num_states::Int; 
-#     beta=1.0
-#     ) where {S, T}
-#     # TODO: name to be clean to make it consistent with square2 and squarestar2
-#     states = Dict()
-#     for node in vertices(cl_h)
-#         if node in keys(states) continue end
-#         i, j, _ = node
-#         sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
-#         E = beliefs[(i, j)]
-#         ind1, ind2 = select_numstate_best(E, sx, num_states)
-#         push!(states, (i, j, 1) => ind1)
-#         push!(states, (i, j, 2) => ind2)
-#     end
-#     truncate_clustered_hamiltonian(cl_h, states)
-# end
-
 function load_file(filename)
     if isfile(filename)
         try 
@@ -131,20 +94,17 @@ function truncate_clustered_hamiltonian_2site_BP(
     states = Dict()
 
     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
-    if saved_states == nothing
-        for node in vertices(cl_h)
-            i, j, _ = node
-            sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
-            E = beliefs[(i, j)]
-            ind1, ind2 = select_numstate_best(E, sx, num_states)
-            push!(states, (i, j, 1) => ind1)
-            push!(states, (i, j, 2) => ind2)
-        end
-        path = joinpath(result_folder, "$(inst).jld2")
-        save_object(string(path), states)
-    else
-        states = saved_states
+    for node in vertices(cl_h)
+        if node in keys(states) continue end
+        i, j, _ = node
+        sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
+        E = beliefs[(i, j)]
+        ind1, ind2 = select_numstate_best(E, sx, num_states)
+        push!(states, (i, j, 1) => ind1)
+        push!(states, (i, j, 2) => ind2)
     end
+    path = joinpath(result_folder, "$(inst).jld2")
+    save_object(string(path), states)
     truncate_clustered_hamiltonian(cl_h, states)
 end
 
@@ -185,3 +145,63 @@ function select_numstate_best(E, sx, num_states)
         end
     end
 end
+
+function truncate_clustered_hamiltonian(cl_h, β, cs, result_folder, inst; tol=1e-6, iter=iter)
+    states = Dict()
+    saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
+    if saved_states == nothing
+        new_cl_h = clustered_hamiltonian_2site(cl_h, β)
+        beliefs = belief_propagation(new_cl_h, β; tol=1e-6, iter=iter)
+        cl_h = truncate_clustered_hamiltonian_2site_BP(cl_h, beliefs, cs, result_folder, inst; beta=β)
+    else
+        states = saved_states
+        cl_h = truncate_clustered_hamiltonian(cl_h, states)
+    end
+    cl_h
+end
+
+"""
+$(TYPEDSIGNATURES)
+
+Truncate a clustered Hamiltonian based on 2-site belief propagation states.
+
+This function truncates a clustered Hamiltonian by considering 2-site belief propagation states and selecting the most probable states 
+to keep. It computes the beliefs for all 2-site combinations and selects the states that maximize the probability.
+
+# Arguments:
+- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
+- `beliefs::Dict`: A dictionary containing belief values for 2-site interactions.
+- `num_states::Int`: The maximum number of most probable states to keep.
+- `beta::Real (optional)`: The inverse temperature parameter (default is 1.0).
+
+# Returns:
+- `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
+"""
+# function truncate_clustered_hamiltonian_2site_BP(
+#     cl_h::LabelledGraph{S, T}, 
+#     beliefs::Dict, 
+#     num_states::Int,
+#     result_folder::String = "results_folder",
+#     inst::String = "inst"; 
+#     beta=1.0
+#     ) where {S, T}
+#     states = Dict()
+
+#     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
+#     if saved_states == nothing
+#         for node in vertices(cl_h)
+#             i, j, _ = node
+#             sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
+#             E = beliefs[(i, j)]
+#             ind1, ind2 = select_numstate_best(E, sx, num_states)
+#             push!(states, (i, j, 1) => ind1)
+#             push!(states, (i, j, 2) => ind2)
+#         end
+#         path = joinpath(result_folder, "$(inst).jld2")
+#         save_object(string(path), states)
+#     else
+#         states = saved_states
+#     end
+#     truncate_clustered_hamiltonian(cl_h, states)
+# end
+
