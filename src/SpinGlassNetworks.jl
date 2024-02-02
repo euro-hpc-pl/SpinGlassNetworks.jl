@@ -1,6 +1,6 @@
 module SpinGlassNetworks
 using LabelledGraphs
-using LightGraphs
+using Graphs
 using MetaGraphs # TODO: remove that
 using CSV
 using DocStringExtensions
