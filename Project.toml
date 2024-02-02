@@ -1,7 +1,7 @@
 name = "SpinGlassNetworks"
 uuid = "b7f6bd3e-55dc-4da6-96a9-ef9dbec6ac19"
 authors = ["Krzysztof Domino <kdomino@iitis.pl>", "Anna Maria Dziubyna <annamariadziubyna@gmail.com>", "Bartłomiej Gardas <bartek.gardas@gmail.com>", "Konrad Jałowiecki <dexter2206@gmail.com>", "Łukasz Pawela <lukasz.pawela@gmail.com>", "Marek M. Rams <marekrams@gmail.com>"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
