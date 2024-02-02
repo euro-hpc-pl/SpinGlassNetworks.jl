@@ -14,7 +14,9 @@ MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 [compat]
 CSV = "0.8"
 DocStringExtensions = "0.8"
+Graphs = "1.9"
 LabelledGraphs = "^0.4.4"
+MetaGraphs = "0.7.2"
 julia = "1.9, 1.10"
 
 [extras]
