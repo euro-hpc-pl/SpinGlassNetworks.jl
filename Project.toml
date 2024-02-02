@@ -6,18 +6,16 @@ version = "0.3.0"
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 LabelledGraphs = "605abd48-4d17-4660-b914-d4df33194460"
-LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MetaGraphs = "626554b9-1ddb-594c-aa3c-2596fe9399a5"
 
 [compat]
 CSV = "0.8"
 DocStringExtensions = "0.8"
-LabelledGraphs = "0.3.2"
-LightGraphs = "1.3"
-MetaGraphs = "0.6"
-julia = "1.7, 1.8"
+LabelledGraphs = "0.4.4"
+julia = "1.7, 1.8, 1.9, 1.10"
 
 [extras]
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
