@@ -194,8 +194,6 @@ end
          for v in keys(beliefs)
             @test beliefs[v] ≈ exact_marginal[v]
          end
-
-         truncate_clustered_hamiltonian_2site_BP(cl_h2, beliefs, num_states; beta=beta)
       end
    end
  end
