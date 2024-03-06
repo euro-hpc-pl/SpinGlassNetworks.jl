@@ -1,15 +1,13 @@
 using SpinGlassNetworks
 using SpinGlassTensors
 using LabelledGraphs
-using LightGraphs
+using Graphs
 using MetaGraphs
 using Logging
 using Test
 using TensorCast
 using CUDA
 
-
-Base.:(==)(e1::LabelledEdge, e2::LabelledEdge) = src(e1) == src(e2) && dst(e1) == dst(e2)
 
 function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng = zeros(1, n)

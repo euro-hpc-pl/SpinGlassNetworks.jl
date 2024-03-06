@@ -1,5 +1,5 @@
 using MetaGraphs
-using LightGraphs
+using Graphs
 using CSV
 
 enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))

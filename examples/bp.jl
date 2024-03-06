@@ -1,6 +1,6 @@
 using SpinGlassNetworks
 using LabelledGraphs
-using LightGraphs
+using Graphs
 using MetaGraphs
 using Logging
 

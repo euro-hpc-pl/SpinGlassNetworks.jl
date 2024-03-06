@@ -1,6 +1,6 @@
 module SpinGlassNetworks
     using LabelledGraphs
-    using LightGraphs
+    using Graphs
     using MetaGraphs # TODO: to be replaced by MetaGraphsNext
     using CSV
     using JLD2

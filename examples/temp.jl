@@ -1,5 +1,5 @@
 using HDF5
-using LightGraphs
+using Graphs
 using LinearAlgebra
 using LabelledGraphs
 using MetaGraphs
