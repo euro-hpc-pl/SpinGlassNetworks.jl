@@ -1,7 +1,4 @@
-export
-    zephyr_to_linear,
-    unique_neighbors,
-    load_openGM
+export zephyr_to_linear, unique_neighbors, load_openGM
 
 import Base.Prehashed
 using HDF5
@@ -14,7 +11,7 @@ Rewriten from Dwave-networkx
 m - Grid parameter for the Zephyr lattice.
 t - Tile parameter for the Zephyr lattice; must be even.
 """
-function zephyr_to_linear(m::Int, t::Int, q::NTuple{5, Int})
+function zephyr_to_linear(m::Int, t::Int, q::NTuple{5,Int})
     M = 2 * m + 1
     u, w, k, j, z = q
     (((u * M + w) * t + k) * 2 + j) * m + z + 1
@@ -104,7 +101,11 @@ Args:
 Returns:
    dictionary with factors and funcitons defining the energy functional.
 """
-function load_openGM(fname::String, Nx::Union{Integer, Nothing}=nothing, Ny::Union{Integer, Nothing}=nothing)
+function load_openGM(
+    fname::String,
+    Nx::Union{Integer,Nothing} = nothing,
+    Ny::Union{Integer,Nothing} = nothing,
+)
     file = h5open(fname, "r")
 
     file_keys = collect(keys(read(file)))
@@ -129,13 +130,16 @@ function load_openGM(fname::String, Nx::Union{Integer, Nothing}=nothing, Ny::Uni
         nn = pop!(F)
         n = []
 
-        for _ in 1:nn
+        for _ = 1:nn
             tt = pop!(F)
             ny, nx = divrem(tt, Nx)
             push!(n, ny, nx)
         end
         if length(n) == 4
-            if abs(n[1] - n[3]) + abs(n[2] - n[4]) ∉ [1,2] || (abs(n[1] - n[3]) + abs(n[2] - n[4]) == 2 && (abs(n[1] - n[3]) == 2 ||  abs(n[2] - n[4] == 2)))
+            if abs(n[1] - n[3]) + abs(n[2] - n[4]) ∉ [1, 2] || (
+                abs(n[1] - n[3]) + abs(n[2] - n[4]) == 2 &&
+                (abs(n[1] - n[3]) == 2 || abs(n[2] - n[4] == 2))
+            )
                 throw(ErrorException("Not nearest neighbour or diagonal neighbors"))
             end
         end
@@ -163,28 +167,34 @@ function load_openGM(fname::String, Nx::Union{Integer, Nothing}=nothing, Ny::Uni
         nn = pop!(J)
         n = []
 
-        for _ in 1:nn
+        for _ = 1:nn
             push!(n, pop!(J))
         end
 
         upper = lower + prod(n)
-        functions[ii] = reshape(V[lower + 1:upper], reverse(n)...)'
+        functions[ii] = reshape(V[lower+1:upper], reverse(n)...)'
 
         lower = upper
     end
 
-    result = Dict("fun" => functions, "fac" => factors, "N" => reshape(N, (Ny, Nx)), "Nx" => Nx, "Ny" => Ny)
+    result = Dict(
+        "fun" => functions,
+        "fac" => factors,
+        "N" => reshape(N, (Ny, Nx)),
+        "Nx" => Nx,
+        "Ny" => Ny,
+    )
     result
 end
 
 benchmark_names = Dict(
-    "penguin-small" => (240,320), 
-    "palm-small" => (240,360),
-    "clownfish-small" => (240,360),
-    "crops-small" => (240,360),
-    "pfau-small" => (240,320),
-    "lake-small" => (240,360),
-    "snail" => (240,320),
-    "fourcolors" => (240,320),
-    "strawberry-glass-2-small" => (320,240)
+    "penguin-small" => (240, 320),
+    "palm-small" => (240, 360),
+    "clownfish-small" => (240, 360),
+    "crops-small" => (240, 360),
+    "pfau-small" => (240, 320),
+    "lake-small" => (240, 360),
+    "snail" => (240, 320),
+    "fourcolors" => (240, 320),
+    "strawberry-glass-2-small" => (320, 240),
 )

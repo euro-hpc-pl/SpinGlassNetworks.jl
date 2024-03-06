@@ -6,7 +6,8 @@ using LabelledGraphs
     @testset "if input instance contains duplicate edges" begin
         for T ∈ [Float16, Float32, Float64]
             @test_throws ArgumentError ising_graph(
-                T, Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0)
+                T,
+                Dict((1, 1) => 2.0, (1, 2) => 0.5, (2, 1) => -1.0),
             )
         end
     end
@@ -15,15 +16,27 @@ end
 for T ∈ [Float16, Float32, Float64]
     for (instance, source) ∈ (
         ("$(@__DIR__)/instances/example.txt", "file"),
-        (Dict{Tuple{Int, Int}, T}((1, 1) => 0.1, (2, 2) => 0.5, (1, 4) => -2.0, (4, 2) => 1.0, (1, 2) => -0.3), "array")
+        (
+            Dict{Tuple{Int,Int},T}(
+                (1, 1) => 0.1,
+                (2, 2) => 0.5,
+                (1, 4) => -2.0,
+                (4, 2) => 1.0,
+                (1, 2) => -0.3,
+            ),
+            "array",
+        ),
     )
         @testset "Ising graph created from $(source)" begin
             expected_num_vertices = 3
-            expected_biases = [T(1/10), T(1/2), T(0)]
+            expected_biases = [T(1 / 10), T(1 / 2), T(0)]
             expected_couplings = Dict(
-                LabelledEdge(1, 2) => -T(3/10), LabelledEdge(1, 4) => -T(2), LabelledEdge(2, 4) => T(1)
+                LabelledEdge(1, 2) => -T(3 / 10),
+                LabelledEdge(1, 4) => -T(2),
+                LabelledEdge(2, 4) => T(1),
             )
-            expected_J_matrix = [[T(0) -T(3/10) -T(2)]; [T(0) T(0) T(1)]; [T(0) T(0) T(0)]]
+            expected_J_matrix =
+                [[T(0) -T(3 / 10) -T(2)]; [T(0) T(0) T(1)]; [T(0) T(0) T(0)]]
 
             ig = ising_graph(T, instance)
             @test eltype(ig) == T
@@ -32,7 +45,8 @@ for T ∈ [Float16, Float32, Float64]
             end
             @testset "has collection of edges comprising all interactions from instance" begin
                 # This test uses the fact that edges iterates in the lex ordering.
-                @test collect(edges(ig)) == [LabelledEdge(e...) for e ∈ [(1, 2), (1, 4), (2, 4)]]
+                @test collect(edges(ig)) ==
+                      [LabelledEdge(e...) for e ∈ [(1, 2), (1, 4), (2, 4)]]
             end
             @testset "stores biases as property of vertices" begin
                 @test biases(ig) == expected_biases
@@ -49,21 +63,17 @@ end
 
 @testset "Ising graph created with additional parameters" begin
     expected_biases = [-0.1, -0.5, 0.0]
-    expected_couplings = Dict(
-        Edge(1, 2) => 0.3,
-        Edge(1, 3) => 2.0,
-        Edge(2, 3) => -1.0
-    )
+    expected_couplings = Dict(Edge(1, 2) => 0.3, Edge(1, 3) => 2.0, Edge(2, 3) => -1.0)
     expected_J_matrix = [
-        [0 0.3 2.0 ];
-        [0 0 -1.0];
-        [0 0 0];
+        [0 0.3 2.0]
+        [0 0 -1.0]
+        [0 0 0]
     ]
 
     ig = ising_graph(
         "$(@__DIR__)/instances/example.txt",
-        scale=-1,
-        rank_override=Dict(1 => 3, 4 => 4)
+        scale = -1,
+        rank_override = Dict(1 => 3, 4 => 4),
     )
 
     @testset "has rank overriden by rank_override dict" begin
@@ -85,21 +95,27 @@ end
     ig = ising_graph(instance)
 
     @test nv(ig) == N
-    for i ∈ 1:N @test has_vertex(ig, i) end
+    for i ∈ 1:N
+        @test has_vertex(ig, i)
+    end
 
     A = adjacency_matrix(ig)
     B = zeros(Int, N, N)
     for i ∈ 1:N
         nbrs = SpinGlassNetworks.unique_neighbors(ig, i)
-        for j ∈ nbrs B[i, j] = 1 end
+        for j ∈ nbrs
+            B[i, j] = 1
+        end
     end
     @test B + B' == A
 
     @testset "Reading from Dict" begin
         instance_dict = Dict()
-        ising = CSV.File(instance, types=[Int, Int, Float64], header=0, comment = "#")
+        ising = CSV.File(instance, types = [Int, Int, Float64], header = 0, comment = "#")
 
-        for (i, j, v) ∈ ising push!(instance_dict, (i, j) => v) end
+        for (i, j, v) ∈ ising
+            push!(instance_dict, (i, j) => v)
+        end
 
         ig = ising_graph(instance)
         ig_dict = ising_graph(instance_dict)
@@ -116,18 +132,20 @@ end
         β = 1
 
         instance = "$(@__DIR__)/instances/pathological/test_$(m)_$(n)_$(t).txt"
-        ising = CSV.File(instance, types=[Int, Int, Float64], header=0, comment = "#")
+        ising = CSV.File(instance, types = [Int, Int, Float64], header = 0, comment = "#")
         ig = ising_graph(instance)
 
         conf = [
             [-1, 1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1],
             [-1, 1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1],
             [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1],
-            [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1]
+            [-1, 1, 1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, -1],
         ]
         eng = energy(conf, ig)
         couplings = Dict()
-        for (i, j, v) ∈ ising push!(couplings, (i, j) => v) end
+        for (i, j, v) ∈ ising
+            push!(couplings, (i, j) => v)
+        end
 
         cedges = Dict()
         push!(cedges, (1, 2) => [(1, 4), (1, 5), (1, 6)])
@@ -138,9 +156,17 @@ end
         push!(cedges, (6, 10) => [(18, 28)])
         push!(
             cedges,
-            (10, 11) => [(28, 31), (28, 32), (28, 33), (29, 31), (29, 32),
-                         (29, 33),(30, 31), (30, 32), (30, 33)
-                        ]
+            (10, 11) => [
+                (28, 31),
+                (28, 32),
+                (28, 33),
+                (29, 31),
+                (29, 32),
+                (29, 33),
+                (30, 31),
+                (30, 32),
+                (30, 33),
+            ],
         )
 
         push!(cedges, (2, 2) => [(4, 5), (4, 6), (5, 6), (6, 6)])
@@ -181,7 +207,7 @@ end
         push!(config, 30 => [-1, -1, -1, -1])
         push!(config, 31 => [1, 1, 1, 1])
         push!(config, 32 => [-1, -1, -1, -1])
-        push!(config, 33 => [1,-1, 1, -1])
+        push!(config, 33 => [1, -1, 1, -1])
         push!(config, 34 => [0, 0, 0, 0])
         push!(config, 35 => [0, 0, 0, 0])
         push!(config, 36 => [0, 0, 0, 0])
@@ -189,13 +215,33 @@ end
         num_config = length(config[1])
         exact_energy = _energy(config, couplings, cedges, num_config)
 
-        low_energies = [-16.4, -16.4, -16.4, -16.4, -16.1,
-                        -16.1, -16.1, -16.1, -15.9, -15.9,
-                        -15.9, -15.9, -15.9, -15.9, -15.6,
-                        -15.6, -15.6, -15.6, -15.6, -15.6,
-                        -15.4, -15.4
+        low_energies = [
+            -16.4,
+            -16.4,
+            -16.4,
+            -16.4,
+            -16.1,
+            -16.1,
+            -16.1,
+            -16.1,
+            -15.9,
+            -15.9,
+            -15.9,
+            -15.9,
+            -15.9,
+            -15.9,
+            -15.6,
+            -15.6,
+            -15.6,
+            -15.6,
+            -15.6,
+            -15.6,
+            -15.4,
+            -15.4,
         ]
-        for i ∈ 1:num_config @test exact_energy[i] == low_energies[i] == eng[i] end
+        for i ∈ 1:num_config
+            @test exact_energy[i] == low_energies[i] == eng[i]
+        end
     end
 end
 
@@ -229,12 +275,12 @@ end
 
     @testset "Some vertices of degree zero, but nonzero field" begin
         instance = Dict(
-                (1, 1) => 0.1,
-                (2, 2) => 0.5,
-                (1, 4) => -2.0,
-                (4, 2) => 1.0,
-                (1, 2) => -0.3,
-                (5, 5) => 0.1
+            (1, 1) => 0.1,
+            (2, 2) => 0.5,
+            (1, 4) => -2.0,
+            (4, 2) => 1.0,
+            (1, 2) => -0.3,
+            (5, 5) => 0.1,
         )
         ig = ising_graph(instance)
         ng = prune(ig)
@@ -244,12 +290,12 @@ end
 
     @testset "Some vertices of degree zero and zero field" begin
         instance = Dict(
-                (1, 1) => 0.1,
-                (2, 2) => 0.5,
-                (1, 4) => -2.0,
-                (4, 2) => 1.0,
-                (1, 2) => -0.3,
-                (5, 5) => 0.0
+            (1, 1) => 0.1,
+            (2, 2) => 0.5,
+            (1, 4) => -2.0,
+            (4, 2) => 1.0,
+            (1, 2) => -0.3,
+            (5, 5) => 0.0,
         )
         ig = ising_graph(instance)
         ng = prune(ig)

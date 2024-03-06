@@ -1,5 +1,4 @@
-export
-    clustered_hamiltonian,
+export clustered_hamiltonian,
     rank_reveal,
     split_into_clusters,
     decode_clustered_hamiltonian_state,
@@ -31,9 +30,11 @@ Each cluster is represented by a vertex from the Ising graph.
 The `split_into_clusters` function is useful for organizing and analyzing spins in complex spin systems, particularly in the context of clustered Hamiltonian.
 
 """
-function split_into_clusters(ig::LabelledGraph{G, L}, assignment_rule) where {G, L}
+function split_into_clusters(ig::LabelledGraph{G,L}, assignment_rule) where {G,L}
     cluster_id_to_verts = Dict(i => L[] for i in values(assignment_rule))
-    for v in vertices(ig) push!(cluster_id_to_verts[assignment_rule[v]], v) end
+    for v in vertices(ig)
+        push!(cluster_id_to_verts[assignment_rule[v]], v)
+    end
     Dict(i => first(cluster(ig, verts)) for (i, verts) ∈ cluster_id_to_verts)
 end
 
@@ -61,11 +62,16 @@ and a cluster assignment rule, which maps Ising graph vertices to clusters.
 function clustered_hamiltonian(
     ig::IsingGraph,
     num_states_cl::Int;
-    spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, L} # e.g. square lattice
-) where L
+    spectrum::Function = full_spectrum,
+    cluster_assignment_rule::Dict{Int,L}, # e.g. square lattice
+) where {L}
     ns = Dict(i => num_states_cl for i ∈ Set(values(cluster_assignment_rule)))
-    clustered_hamiltonian(ig, ns, spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
+    clustered_hamiltonian(
+        ig,
+        ns,
+        spectrum = spectrum,
+        cluster_assignment_rule = cluster_assignment_rule,
+    )
 end
 
 """
@@ -92,18 +98,16 @@ and a cluster assignment rule, which maps Ising graph vertices to clusters.
 """
 function clustered_hamiltonian(
     ig::IsingGraph,
-    num_states_cl::Dict{T, Int};
-    spectrum::Function=full_spectrum,
-    cluster_assignment_rule::Dict{Int, T}
-) where T
-    cl_h = LabelledGraph{MetaDiGraph}(
-        sort(unique(values(cluster_assignment_rule)))
-    )
+    num_states_cl::Dict{T,Int};
+    spectrum::Function = full_spectrum,
+    cluster_assignment_rule::Dict{Int,T},
+) where {T}
+    cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
 
     lp = PoolOfProjectors{Int}()
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
-        sp = spectrum(cl, num_states=get(num_states_cl, v, basis_size(cl)))
+        sp = spectrum(cl, num_states = get(num_states_cl, v, basis_size(cl)))
         set_props!(cl_h, v, Dict(:cluster => cl, :spectrum => sp))
     end
 
@@ -112,8 +116,8 @@ function clustered_hamiltonian(
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
-            ind1 = any(i -> i != 0, J, dims=2)
-            ind2 = any(i -> i != 0, J, dims=1)
+            ind1 = any(i -> i != 0, J, dims = 2)
+            ind2 = any(i -> i != 0, J, dims = 1)
             ind1 = reshape(ind1, length(ind1))
             ind2 = reshape(ind2, length(ind2))
             JJ = J[ind1, ind2]
@@ -129,7 +133,10 @@ function clustered_hamiltonian(
 
             add_edge!(cl_h, v, w)
             set_props!(
-                cl_h, v, w, Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr)
+                cl_h,
+                v,
+                w,
+                Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr),
             )
         end
     end
@@ -160,11 +167,16 @@ If you want to specify custom cluster sizes, use the alternative version of this
 passing a `Dict{T, Int}` containing the number of states per cluster as `num_states_cl`.
 """
 function clustered_hamiltonian(
-    ig::IsingGraph; 
-    spectrum::Function=full_spectrum, 
-    cluster_assignment_rule::Dict{Int, T}
-    ) where T
-    clustered_hamiltonian(ig, Dict{T, Int}(), spectrum=spectrum, cluster_assignment_rule=cluster_assignment_rule)
+    ig::IsingGraph;
+    spectrum::Function = full_spectrum,
+    cluster_assignment_rule::Dict{Int,T},
+) where {T}
+    clustered_hamiltonian(
+        ig,
+        Dict{T,Int}(),
+        spectrum = spectrum,
+        cluster_assignment_rule = cluster_assignment_rule,
+    )
 end
 
 # """
@@ -216,8 +228,11 @@ returns a dictionary mapping each Ising graph vertex to its corresponding spin v
 This function assumes that the state has the same order as the vertices in the clustered Hamiltonian. 
 It decodes the state consistently based on the cluster assignments and spectra of the clustered Hamiltonian.
 """
-function decode_clustered_hamiltonian_state(cl_h::LabelledGraph{S, T}, state::Vector{Int}) where {S, T}
-    ret = Dict{Int, Int}()
+function decode_clustered_hamiltonian_state(
+    cl_h::LabelledGraph{S,T},
+    state::Vector{Int},
+) where {S,T}
+    ret = Dict{Int,Int}()
     for (i, vert) ∈ zip(state, vertices(cl_h))
         spins = get_prop(cl_h, vert, :cluster).labels
         states = get_prop(cl_h, vert, :spectrum).states
@@ -248,9 +263,11 @@ This function computes the energy by summing the energies associated with indivi
 clusters and the interaction energies between clusters. 
 It takes into account the cluster spectra and projectors stored in the clustered Hamiltonian.
 """
-function energy(cl_h::LabelledGraph{S, T}, σ::Dict{T, Int}) where {S, T}
+function energy(cl_h::LabelledGraph{S,T}, σ::Dict{T,Int}) where {S,T}
     en_cl_h = 0.0
-    for v ∈ vertices(cl_h) en_cl_h += get_prop(cl_h, v, :spectrum).energies[σ[v]] end
+    for v ∈ vertices(cl_h)
+        en_cl_h += get_prop(cl_h, v, :spectrum).energies[σ[v]]
+    end
     for edge ∈ edges(cl_h)
         idx_pl = get_prop(cl_h, edge, :ipl)
         pl = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU)
@@ -281,7 +298,7 @@ The function checks if there is an interaction edge between the two sites (i, j)
 If such edges exist, it retrieves the interaction energy matrix, projectors, and calculates the interaction energy. 
 If no interaction edge is found, it returns a zero matrix.
 """
-function energy_2site(cl_h::LabelledGraph{S, T}, i::Int, j::Int) where {S, T}
+function energy_2site(cl_h::LabelledGraph{S,T}, i::Int, j::Int) where {S,T}
     # matrix of interaction energies between two nodes
     if has_edge(cl_h, (i, j, 1), (i, j, 2))
         en12 = copy(get_prop(cl_h, (i, j, 1), (i, j, 2), :en))
@@ -324,22 +341,18 @@ If such edges exist, it retrieves the bond energy matrix and projectors and calc
 If no bond edge is found, it returns a zero vector.
 """
 function bond_energy(
-    cl_h::LabelledGraph{S, T}, 
-    cl_h_u::NTuple{N, Int64}, 
-    cl_h_v::NTuple{N, Int64}, 
-    σ::Int
-    ) where {S, T, N}
+    cl_h::LabelledGraph{S,T},
+    cl_h_u::NTuple{N,Int64},
+    cl_h_v::NTuple{N,Int64},
+    σ::Int,
+) where {S,T,N}
     if has_edge(cl_h, cl_h_u, cl_h_v)
-        ipu, en, ipv = get_prop.(
-                        Ref(cl_h), Ref(cl_h_u), Ref(cl_h_v), (:ipl, :en, :ipr)
-                    )
+        ipu, en, ipv = get_prop.(Ref(cl_h), Ref(cl_h_u), Ref(cl_h_v), (:ipl, :en, :ipr))
         pu = get_projector!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
         pv = get_projector!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
         @inbounds energies = en[pu, pv[σ]]
     elseif has_edge(cl_h, cl_h_v, cl_h_u)
-        ipv, en, ipu = get_prop.(
-                        Ref(cl_h), Ref(cl_h_v), Ref(cl_h_u), (:ipl, :en, :ipr)
-                    )
+        ipv, en, ipu = get_prop.(Ref(cl_h), Ref(cl_h_v), Ref(cl_h_u), (:ipl, :en, :ipr))
         pu = get_projector!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
         pv = get_projector!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
         @inbounds energies = en[pv[σ], pu]
@@ -364,7 +377,7 @@ This function returns the size (number of states) of a cluster in a clustered Ha
 
 The function retrieves the spectrum associated with the specified cluster and returns the length of the energy vector in that spectrum.
 """
-function cluster_size(clustered_hamiltonian::LabelledGraph{S, T}, vertex::T) where {S, T}
+function cluster_size(clustered_hamiltonian::LabelledGraph{S,T}, vertex::T) where {S,T}
     length(get_prop(clustered_hamiltonian, vertex, :spectrum).energies)
 end
 
@@ -387,7 +400,11 @@ The function generates all possible states for the clusters in the clustered Ham
 calculates their energies, and computes the probability distribution based on the given inverse temperature parameter. 
 It then calculates the conditional probability of the specified target state by summing the probabilities of states that match the target state.
 """
-function exact_cond_prob(clustered_hamiltonian::LabelledGraph{S, T}, beta, target_state::Dict) where {S, T}  
+function exact_cond_prob(
+    clustered_hamiltonian::LabelledGraph{S,T},
+    beta,
+    target_state::Dict,
+) where {S,T}
     # TODO: Not going to work without PoolOfProjectors
     ver = vertices(clustered_hamiltonian)
     rank = cluster_size.(Ref(clustered_hamiltonian), ver)
@@ -418,7 +435,7 @@ It then updates the spectrum of each cluster in `new_cl_h` by selecting the spec
 Additionally, it updates the interactions and projectors between clusters based on the retained states. 
 The resulting `new_cl_h` represents a truncated version of the original Hamiltonian.
 """
-function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict) where {S, T}
+function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S,T}, states::Dict) where {S,T}
 
     new_cl_h = LabelledGraph{MetaDiGraph}(vertices(cl_h))
     new_lp = PoolOfProjectors{Int}()
@@ -427,7 +444,7 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
         cl = get_prop(cl_h, v, :cluster)
         sp = get_prop(cl_h, v, :spectrum)
         if sp.states == Vector{Int64}[]
-            sp = Spectrum(sp.energies[states[v]], sp.states, [1,])
+            sp = Spectrum(sp.energies[states[v]], sp.states, [1])
         else
             sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
         end
@@ -451,17 +468,22 @@ function truncate_clustered_hamiltonian(cl_h::LabelledGraph{S, T}, states::Dict)
         ipl = add_projector!(new_lp, pl_transition)
         ipr = add_projector!(new_lp, pr_transition)
         set_props!(
-                  new_cl_h, v, w, Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr)
-              )
+            new_cl_h,
+            v,
+            w,
+            Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr),
+        )
     end
     set_props!(new_cl_h, Dict(:pool_of_projectors => new_lp))
 
     new_cl_h
 end
 
-function clustered_hamiltonian(fname::String, 
-                               Nx::Union{Integer, Nothing}=nothing, 
-                               Ny::Union{Integer, Nothing}=nothing)
+function clustered_hamiltonian(
+    fname::String,
+    Nx::Union{Integer,Nothing} = nothing,
+    Ny::Union{Integer,Nothing} = nothing,
+)
 
     loaded_rmf = load_openGM(fname, Nx, Ny)
     functions = loaded_rmf["fun"]
@@ -481,20 +503,33 @@ function clustered_hamiltonian(fname::String,
             y, x = index
             Eng = functions[value]'
             sp = Spectrum(collect(Eng), Vector{Vector{Int}}[], zeros(Int, N[y+1, x+1]))
-            set_props!(cl_h, (x+1, y+1), Dict(:spectrum => sp))
+            set_props!(cl_h, (x + 1, y + 1), Dict(:spectrum => sp))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
             add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
             Eng = functions[value]
             ipl = add_projector!(lp, collect(1:N[y1+1, x1+1]))
             ipr = add_projector!(lp, collect(1:N[y2+1, x2+1]))
-            set_props!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1), Dict(:outer_edges=> ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)), 
-            :en => Eng, :ipl => ipl, :ipr => ipr))
+            set_props!(
+                cl_h,
+                (x1 + 1, y1 + 1),
+                (x2 + 1, y2 + 1),
+                Dict(
+                    :outer_edges => ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)),
+                    :en => Eng,
+                    :ipl => ipl,
+                    :ipr => ipr,
+                ),
+            )
         else
-            throw(ErrorException("Something is wrong with factor index, it has length $(length(index))"))
+            throw(
+                ErrorException(
+                    "Something is wrong with factor index, it has length $(length(index))",
+                ),
+            )
         end
     end
-    
+
     set_props!(cl_h, Dict(:pool_of_projectors => lp, :Nx => X, :Ny => Y))
     cl_h
 end

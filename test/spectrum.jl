@@ -10,7 +10,7 @@ using LabelledGraphs
 
     @testset "Naive brute force for +/-1" begin
         k = 2^N
-        sp = brute_force(ig, num_states=k)
+        sp = brute_force(ig, num_states = k)
 
         β = rand(Float64)
         ρ = gibbs_tensor(ig, β)
@@ -37,7 +37,7 @@ using LabelledGraphs
         rank = get_prop(ig, :rank)
 
         all = prod(rank)
-        sp = full_spectrum(ig, num_states=all)
+        sp = full_spectrum(ig, num_states = all)
 
         β = rand(Float64)
         ρ = exp.(-β .* sp.energies)

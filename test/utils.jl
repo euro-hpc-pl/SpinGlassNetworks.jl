@@ -15,12 +15,12 @@ instances = ["P2"] #, "P4", "P8", "P16"]
             ig,
             max_cl_states,
             spectrum = brute_force,
-            cluster_assignment_rule = super_square_lattice((m, n, t))
+            cluster_assignment_rule = super_square_lattice((m, n, t)),
         )
-        @test nv(cl_h) == s ^ 2
+        @test nv(cl_h) == s^2
 
         if s > 1
-            @test all(has_edge(cl_h, (l, k), (l+1, k-1)) for l ∈ 1:s-1, k ∈ 2:s)
+            @test all(has_edge(cl_h, (l, k), (l + 1, k - 1)) for l ∈ 1:s-1, k ∈ 2:s)
         end
     end
 end

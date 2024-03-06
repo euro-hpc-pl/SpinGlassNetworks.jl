@@ -26,7 +26,7 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
         nn = pop!(F)
         n = []
 
-        for _ in 1:nn
+        for _ = 1:nn
             tt = pop!(F)
             ny, nx = divrem(tt, Nx)
             push!(n, ny, nx)
@@ -61,17 +61,23 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
         nn = pop!(J)
         n = []
 
-        for _ in 1:nn
+        for _ = 1:nn
             push!(n, pop!(J))
         end
 
         upper = lower + prod(n)
-        functions[ii] = reshape(V[lower + 1:upper], reverse(n)...)'
+        functions[ii] = reshape(V[lower+1:upper], reverse(n)...)'
 
         lower = upper
     end
 
-    result = Dict("fun" => functions, "fac" => factors, "N" => reshape(N, (Ny, Nx)), "Nx" => Nx, "Ny" => Ny)
+    result = Dict(
+        "fun" => functions,
+        "fac" => factors,
+        "N" => reshape(N, (Ny, Nx)),
+        "Nx" => Nx,
+        "Ny" => Ny,
+    )
     result
 end
 
@@ -85,22 +91,39 @@ function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 3
     cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
     for v ∈ cl_h.labels
         x, y = v
-        sp = Spectrum(Vector{Real}(undef, 1), Array{Vector{Int}}(undef, 1, 1), Vector{Int}(undef, 1))
+        sp = Spectrum(
+            Vector{Real}(undef, 1),
+            Array{Vector{Int}}(undef, 1, 1),
+            Vector{Int}(undef, 1),
+        )
         set_props!(cl_h, v, Dict(:cluster => v, :spectrum => sp))
     end
     for (index, value) in factors
         if length(index) == 2
             y, x = index
             Eng = sum(functions[value])
-            set_props!(cl_h, (x+1, y+1), Dict(:eng => Eng))
+            set_props!(cl_h, (x + 1, y + 1), Dict(:eng => Eng))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
             add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
-            Eng = sum(functions[value], dims=2)
-            set_props!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1), Dict(:outer_edges=> ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)),
-            :eng => Eng, :pl => I, :pr => I))
+            Eng = sum(functions[value], dims = 2)
+            set_props!(
+                cl_h,
+                (x1 + 1, y1 + 1),
+                (x2 + 1, y2 + 1),
+                Dict(
+                    :outer_edges => ((x1 + 1, y1 + 1), (x2 + 1, y2 + 1)),
+                    :eng => Eng,
+                    :pl => I,
+                    :pr => I,
+                ),
+            )
         else
-            throw(ErrorException("Something is wrong with factor index, it has length $(length(index))"))
+            throw(
+                ErrorException(
+                    "Something is wrong with factor index, it has length $(length(index))",
+                ),
+            )
         end
     end
 
@@ -113,4 +136,3 @@ filename = "/home/tsmierzchalski/.julia/dev/SpinGlassNetworks/examples/penguin-s
 
 
 cf = clustered_hamiltonian(filename, x, y)
-

@@ -1,7 +1,6 @@
 using LabelledGraphs
 
-export
-    ising_graph,
+export ising_graph,
     rank_vec,
     cluster,
     rank,
@@ -13,8 +12,8 @@ export
     prune,
     inter_cluster_edges
 
-const Instance = Union{String, Dict}
-const IsingGraph{T} = LabelledGraph{MetaGraph{Int, T}}
+const Instance = Union{String,Dict}
+const IsingGraph{T} = LabelledGraph{MetaGraph{Int,T}}
 
 function unique_nodes(ising_tuples)
     sort(collect(Set(Iterators.flatten((i, j) for (i, j, _) ∈ ising_tuples))))
@@ -43,9 +42,14 @@ It assigns interaction strengths to edges between spins and optionally scales th
 The `rank_override` dictionary can be used to specify the rank (number of states) for individual vertices, allowing customization of the Ising model.
 Convention: H = scale * sum_{i, j} (J_{ij} * s_i * s_j + J_{ii} * s_i)
 """
-function ising_graph(::Type{T}, inst::Instance; scale::Real=1, rank_override::Dict=Dict{Int, Int}()) where T
+function ising_graph(
+    ::Type{T},
+    inst::Instance;
+    scale::Real = 1,
+    rank_override::Dict = Dict{Int,Int}(),
+) where {T}
     if inst isa String
-        ising = CSV.File(inst, types = [Int, Int, T], header=0, comment = "#")
+        ising = CSV.File(inst, types = [Int, Int, T], header = 0, comment = "#")
     else
         ising = [(i, j, T(J)) for ((i, j), J) ∈ inst]
     end
@@ -67,10 +71,10 @@ function ising_graph(::Type{T}, inst::Instance; scale::Real=1, rank_override::Di
     ig
 end
 
-function ising_graph(inst::Instance; scale::Real=1, rank_override::Dict=Dict{Int, Int}())
+function ising_graph(inst::Instance; scale::Real = 1, rank_override::Dict = Dict{Int,Int}())
     ising_graph(Float64, inst; scale = scale, rank_override = rank_override)
 end
-Base.eltype(ig::IsingGraph{T}) where T = T
+Base.eltype(ig::IsingGraph{T}) where {T} = T
 
 rank_vec(ig::IsingGraph) = Int[get_prop((ig), v, :rank) for v ∈ vertices(ig)]
 basis_size(ig::IsingGraph) = prod(rank_vec(ig))
@@ -92,7 +96,7 @@ The coupling strengths are represented as a matrix, where each element `(i, j)` 
 
 The function iterates over the edges of the Ising graph and extracts the interaction strengths associated with each edge, populating the `J` matrix accordingly.
 """
-function couplings(ig::IsingGraph{T}) where T
+function couplings(ig::IsingGraph{T}) where {T}
     J = zeros(T, nv(ig), nv(ig))
     for edge ∈ edges(ig)
         i = ig.reverse_label_map[src(edge)]
@@ -125,8 +129,13 @@ where each element `(i, j)` corresponds to the interaction strength between clus
 The function first identifies the outer edges that connect vertices between the two clusters in the context of the larger Ising graph `ig`.
 It then computes the interaction strengths associated with these outer edges and populates the dense adjacency matrix `J` accordingly.
 """
-function inter_cluster_edges(ig::IsingGraph{T}, cl1::IsingGraph{T}, cl2::IsingGraph{T}) where T
-    outer_edges = [LabelledEdge(i, j) for i ∈ vertices(cl1), j ∈ vertices(cl2) if has_edge(ig, i, j)]
+function inter_cluster_edges(
+    ig::IsingGraph{T},
+    cl1::IsingGraph{T},
+    cl2::IsingGraph{T},
+) where {T}
+    outer_edges =
+        [LabelledEdge(i, j) for i ∈ vertices(cl1), j ∈ vertices(cl2) if has_edge(ig, i, j)]
     J = zeros(T, nv(cl1), nv(cl2))
     for e ∈ outer_edges
         i, j = cl1.reverse_label_map[src(e)], cl2.reverse_label_map[dst(e)]
@@ -154,13 +163,17 @@ magnetic field (`h`) that is not approximately equal to zero within the specifie
 
 The function returns a pruned version of the input Ising graph, where non-existing spins and their associated properties are removed.
 """
-function prune(ig::IsingGraph; atol::Real=1e-14)
+function prune(ig::IsingGraph; atol::Real = 1e-14)
     to_keep = vcat(
         findall(!iszero, degree(ig)),
-        findall(x -> iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol=atol), vertices(ig))
+        findall(
+            x ->
+                iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol = atol),
+            vertices(ig),
+        ),
     )
     gg = ig[ig.labels[to_keep]]
     labels = collect(vertices(gg.inner_graph))
-    reverse_label_map = Dict(i => i for i=1:nv(gg.inner_graph))
+    reverse_label_map = Dict(i => i for i = 1:nv(gg.inner_graph))
     LabelledGraph(labels, gg.inner_graph, reverse_label_map)
 end

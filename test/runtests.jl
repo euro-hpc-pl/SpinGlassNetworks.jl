@@ -23,7 +23,7 @@ function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
                     eng[m] += dot(s, J, r)
                 end
             end
-       end
+        end
     end
     eng
 end
@@ -34,8 +34,8 @@ my_tests = [
     "bp_1site.jl",
     "bp_2site.jl",
     "utils.jl",
-    "spectrum.jl"
-    ]
+    "spectrum.jl",
+]
 
 for my_test ∈ my_tests
     include(my_test)

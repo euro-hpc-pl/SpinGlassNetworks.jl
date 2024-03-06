@@ -1,6 +1,5 @@
 
-export
-    belief_propagation,
+export belief_propagation,
     clustered_hamiltonian_2site,
     projector,
     get_neighbors,
@@ -9,7 +8,7 @@ export
     merge_vertices_cl_h,
     local_energy,
     interaction_energy,
-    SparseCSC 
+    SparseCSC
 
 """
 $(TYPEDSIGNATURES)
@@ -30,7 +29,12 @@ Belief propagation is an iterative algorithm that computes beliefs by passing me
 The algorithm continues until convergence or until the specified maximum number of iterations is reached.
 The beliefs are computed based on the inverse temperature parameter `beta`, which controls the influence of energy values on the beliefs.
 """
-function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, iter=1)  where {S, T}
+function belief_propagation(
+    cl_h::LabelledGraph{S,T},
+    beta::Real;
+    tol = 1e-6,
+    iter = 1,
+) where {S,T}
     messages_ve = Dict()
     messages_ev = Dict()
 
@@ -57,7 +61,9 @@ function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, ite
                 E_local = get_prop(cl_h, v, :spectrum).energies
                 temp = exp.(-(E_local .- minimum(E_local)) * beta)
                 for (n2, pv2, _) in get_neighbors(cl_h, v)
-                    if n1 == n2 continue end
+                    if n1 == n2
+                        continue
+                    end
                     temp .*= node_messages[n2, v] # messages_ev[n2, v][pv2]
                 end
                 temp ./= sum(temp)
@@ -73,7 +79,10 @@ function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, ite
         end
 
         # Check convergence
-        converged = all([all(abs.(old_messages_ev[v] .- messages_ev[v]) .< tol) for v in keys(messages_ev)])
+        converged = all([
+            all(abs.(old_messages_ev[v] .- messages_ev[v]) .< tol) for
+            v in keys(messages_ev)
+        ])
     end
 
     beliefs = Dict()
@@ -83,7 +92,7 @@ function belief_propagation(cl_h::LabelledGraph{S, T}, beta::Real; tol=1e-6, ite
         for (n, pv, _) ∈ get_neighbors(cl_h, v)
             beliefs[v] .*= messages_ev[n, v][pv]
         end
-        beliefs[v] = -log.(beliefs[v])./beta
+        beliefs[v] = -log.(beliefs[v]) ./ beta
         beliefs[v] = beliefs[v] .- minimum(beliefs[v])
     end
 
@@ -109,7 +118,7 @@ This function retrieves the neighbors of a given vertex in a clustered Hamiltoni
 It iterates through the edges of the graph and identifies edges connected to the specified vertex. 
 For each neighboring edge, it extracts and returns the neighboring vertex, the associated projector, and the energy.
 """
-function get_neighbors(cl_h::LabelledGraph{S, T}, vertex::NTuple) where {S, T}
+function get_neighbors(cl_h::LabelledGraph{S,T}, vertex::NTuple) where {S,T}
     neighbors = []
     for edge in edges(cl_h)
         src_node, dst_node = src(edge), dst(edge)
@@ -146,7 +155,7 @@ Each field of the `MergedEnergy` struct stores energy values as an `AbstractMatr
 where `T` is a subtype of the `Real` abstract type. 
 The specific organization and interpretation of these energy values depend on the context in which this struct is used.    
 """
-struct MergedEnergy{T <: Real}
+struct MergedEnergy{T<:Real}
     e11::AbstractMatrix{T}
     e12::AbstractMatrix{T}
     e21::AbstractMatrix{T}
@@ -220,25 +229,25 @@ function update_message(E_bond::MergedEnergy, message::Vector, beta::Real)
         R = reshape(reshape(R, sl1 * sr1, sr2) * e22', sl1, sr1, sl2)  # [l1, r1, l2]
         R .*= reshape(e11, sl1, sr1, 1)  # [l1, r1, l2] .* [l1, r1, :]
         R .*= reshape(e21', 1, sr1, sl2)  # [l1, r1, l2] .* [:, r1, l2]
-        R = reshape(sum(R, dims=2), sl1 * sl2)
+        R = reshape(sum(R, dims = 2), sl1 * sl2)
     elseif sl1 <= sl2 && sr2 <= sr1
         R = reshape(e11', sr1, sl1, 1) .* reshape(message, sr1, 1, sr2)
         R = reshape(e21 * reshape(R, sr1, sl1 * sr2), sl2, sl1, sr2)
         R .*= reshape(e12, 1, sl1, sr2)  # [l2, l1, r2] .* [:, l1, r2]
         R .*= reshape(e22, sl2, 1, sr2)  # [l2, l1, r2] .* [l2, :, r2]
-        R = reshape(reshape(sum(R, dims=3), sl2, sl1)', sl1 * sl2)
+        R = reshape(reshape(sum(R, dims = 3), sl2, sl1)', sl1 * sl2)
     elseif sl2 <= sl1 && sr1 <= sr2
         R = reshape(e22, sl2, 1, sr2) .* reshape(message, 1, sr1, sr2)
         R = reshape(reshape(R, sl2 * sr1, sr2) * e12', sl2, sr1, sl1)  # [l2, r1, l1]
         R .*= reshape(e11', 1, sr1, sl1)  # [l2, r1, l1] .* [:, r1, l1]
         R .*= reshape(e21, sl2, sr1, 1)   # [l2, r1, l1] .* [l2, r1, :]
-        R = reshape(reshape(sum(R, dims=2), sl2, sl1)', sl1 * sl2)
+        R = reshape(reshape(sum(R, dims = 2), sl2, sl1)', sl1 * sl2)
     else # sl2 <= sl1 && sr2 <= sr1
         R = reshape(e21', sr1, sl2, 1) .* reshape(message, sr1, 1, sr2)
         R = reshape(e11 * reshape(R, sr1, sl2 * sr2), sl1, sl2, sr2)
         R .*= reshape(e12, sl1, 1, sr2)  # [l1, l2, r2] .* [l1, :, r2]
         R .*= reshape(e22, 1, sl2, sr2)  # [l1, l2, r2] .* [:, l2, r2]
-        R = reshape(sum(R, dims=3), sl1 * sl2)
+        R = reshape(sum(R, dims = 3), sl1 * sl2)
     end
     R
 end
@@ -262,7 +271,7 @@ The resulting `new_cl_h` graph represents the 2-site cluster Hamiltonian with si
 The energy values, projectors, and spectra associated with the new vertices and edges are computed based on 
 the provided temperature parameter `beta`.
 """
-function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) where {S, T}
+function clustered_hamiltonian_2site(cl_h::LabelledGraph{S,T}, beta::Real) where {S,T}
 
     unified_vertices = unique([vertex[1:2] for vertex in vertices(cl_h)])
     new_cl_h = LabelledGraph{MetaDiGraph}(unified_vertices)
@@ -271,7 +280,9 @@ function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) wher
     vertx = Set()
     for v in vertices(cl_h)
         i, j, _ = v
-        if (i, j) ∈ vertx continue end
+        if (i, j) ∈ vertx
+            continue
+        end
         E1 = local_energy(cl_h, (i, j, 1))
         E2 = local_energy(cl_h, (i, j, 2))
         E = energy_2site(cl_h, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
@@ -282,12 +293,16 @@ function clustered_hamiltonian_2site(cl_h::LabelledGraph{S, T}, beta::Real) wher
 
     edge_states = Set()
     for e ∈ edges(cl_h)
-        if e in edge_states continue end
+        if e in edge_states
+            continue
+        end
         v, w = src(e), dst(e)
         v1, v2, _ = v
         w1, w2, _ = w
 
-        if (v1, v2) == (w1, w2) continue end
+        if (v1, v2) == (w1, w2)
+            continue
+        end
 
         add_edge!(new_cl_h, (v1, v2), (w1, w2))
 
@@ -324,8 +339,12 @@ the provided temperature parameter `β`.
 The merged energy values, left projector `pl`, and right projector `pr` are computed based on the interactions 
 between the original vertices and their respective projectors.
 """
-function merge_vertices_cl_h(cl_h::LabelledGraph{S, T}, β::Real, node1::NTuple{3, Int64}, node2::NTuple{3, Int64}
-    ) where {S, T}
+function merge_vertices_cl_h(
+    cl_h::LabelledGraph{S,T},
+    β::Real,
+    node1::NTuple{3,Int64},
+    node2::NTuple{3,Int64},
+) where {S,T}
     i1, j1, _ = node1
     i2, j2, _ = node2
 
@@ -378,7 +397,7 @@ If the vertex exists in the graph and has associated energy values, it returns t
 
 The local energy values are typically obtained from the spectrum associated with the vertex.
 """
-function local_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}) where {S, T}
+function local_energy(cl_h::LabelledGraph{S,T}, v::NTuple{3,Int64}) where {S,T}
     has_vertex(cl_h, v) ? get_prop(cl_h, v, :spectrum).energies : zeros(1)
 end
 
@@ -401,7 +420,11 @@ if there is a directed edge from `v` to `w`, it returns the transpose of the ene
 otherwise, it returns a matrix of zeros.
 The interaction energy values represent the energy associated with the interaction or connection between the two vertices.
 """
-function interaction_energy(cl_h::LabelledGraph{S, T}, v::NTuple{3, Int64}, w::NTuple{3, Int64}) where {S, T}
+function interaction_energy(
+    cl_h::LabelledGraph{S,T},
+    v::NTuple{3,Int64},
+    w::NTuple{3,Int64},
+) where {S,T}
     if has_edge(cl_h, w, v)
         get_prop(cl_h, w, v, :en)'
     elseif has_edge(cl_h, v, w)
@@ -430,7 +453,11 @@ If there is a directed edge from `w` to `v`, it returns the index of right proje
 if there is a directed edge from `v` to `w`, it returns the index of left projector (`:ipl`). 
 If no edge exists between the vertices, it returns a vector of ones.
 """
-function projector(cl_h::LabelledGraph{S, T}, v::NTuple{N, Int64}, w::NTuple{N, Int64}) where {S, T, N}
+function projector(
+    cl_h::LabelledGraph{S,T},
+    v::NTuple{N,Int64},
+    w::NTuple{N,Int64},
+) where {S,T,N}
     if has_edge(cl_h, w, v)
         idx_p = get_prop(cl_h, w, v, :ipr)
         p = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_p, :CPU)
@@ -438,17 +465,20 @@ function projector(cl_h::LabelledGraph{S, T}, v::NTuple{N, Int64}, w::NTuple{N, 
         idx_p = get_prop(cl_h, v, w, :ipl)
         p = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_p, :CPU)
     else
-        p = ones(Int, v ∈ vertices(cl_h) ? length(get_prop(cl_h, v, :spectrum).energies) : 1)
+        p = ones(
+            Int,
+            v ∈ vertices(cl_h) ? length(get_prop(cl_h, v, :spectrum).energies) : 1,
+        )
     end
 end
 
-function fuse_projectors(projectors::NTuple{N, K}) where {N, K}
+function fuse_projectors(projectors::NTuple{N,K}) where {N,K}
     fused, transitions_matrix = rank_reveal(hcat(projectors...), :PE)
     transitions = Tuple(Array(t) for t ∈ eachcol(transitions_matrix))
     fused, transitions
 end
 
-function outer_projector(p1::Array{T, 1}, p2::Array{T, 1}) where T <: Number
+function outer_projector(p1::Array{T,1}, p2::Array{T,1}) where {T<:Number}
     reshape(reshape(p1, :, 1) .+ maximum(p1) .* reshape(p2 .- 1, 1, :), :)
 end
 
@@ -468,7 +498,7 @@ This constructor function creates a sparse column-compressed (CSC) matrix of ele
 column indices `p` and values. The resulting matrix has non-zero values at the specified column indices, while all other elements are zero.
 The `SparseCSC` constructor is useful for creating sparse matrices with specific column indices and values efficiently.
 """
-function SparseCSC(::Type{R}, p::Vector{Int64}) where R <: Real
+function SparseCSC(::Type{R}, p::Vector{Int64}) where {R<:Real}
     n = length(p)
     mp = maximum(p)
     cn = collect(1:n)

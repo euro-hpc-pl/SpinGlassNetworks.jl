@@ -1,5 +1,4 @@
-export
-    truncate_clustered_hamiltonian_2site_energy,
+export truncate_clustered_hamiltonian_2site_energy,
     truncate_clustered_hamiltonian_1site_BP,
     truncate_clustered_hamiltonian_2site_BP,
     select_numstate_best
@@ -23,14 +22,14 @@ associated with a single-site cluster. It then truncates the clustered Hamiltoni
 - `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
 """
 function truncate_clustered_hamiltonian_1site_BP(
-    cl_h::LabelledGraph{S, T}, 
-    num_states::Int; 
-    beta=1.0, 
-    tol=1e-10, 
-    iter=1
-    ) where {S, T}
+    cl_h::LabelledGraph{S,T},
+    num_states::Int;
+    beta = 1.0,
+    tol = 1e-10,
+    iter = 1,
+) where {S,T}
     states = Dict()
-    beliefs = belief_propagation(cl_h, beta; tol=tol, iter=iter)
+    beliefs = belief_propagation(cl_h, beta; tol = tol, iter = iter)
     for node in vertices(cl_h)
         indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])))
         push!(states, node => indices)
@@ -53,11 +52,16 @@ to keep. It computes the energies for all 2-site combinations and selects the st
 # Returns:
 - `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
 """
-function truncate_clustered_hamiltonian_2site_energy(cl_h::LabelledGraph{S, T}, num_states::Int) where {S, T}
+function truncate_clustered_hamiltonian_2site_energy(
+    cl_h::LabelledGraph{S,T},
+    num_states::Int,
+) where {S,T}
     # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
     for node in vertices(cl_h)
-        if node in keys(states) continue end
+        if node in keys(states)
+            continue
+        end
         i, j, _ = node
         E1 = copy(get_prop(cl_h, (i, j, 1), :spectrum).energies)
         E2 = copy(get_prop(cl_h, (i, j, 2), :spectrum).energies)
@@ -73,7 +77,7 @@ end
 
 function load_file(filename)
     if isfile(filename)
-        try 
+        try
             load_object(string(filename))
         catch e
             return nothing
@@ -101,20 +105,24 @@ to keep. It computes the beliefs for all 2-site combinations and selects the sta
 - `LabelledGraph{S, T}`: A truncated clustered Hamiltonian.
 """
 function truncate_clustered_hamiltonian_2site_BP(
-    cl_h::LabelledGraph{S, T}, 
-    beliefs::Dict, 
+    cl_h::LabelledGraph{S,T},
+    beliefs::Dict,
     num_states::Int,
     result_folder::String = "results_folder",
-    inst::String = "inst"; 
-    beta=1.0
-    ) where {S, T}
+    inst::String = "inst";
+    beta = 1.0,
+) where {S,T}
     states = Dict()
 
     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
     for node in vertices(cl_h)
-        if node in keys(states) continue end
+        if node in keys(states)
+            continue
+        end
         i, j, _ = node
-        sx = has_vertex(cl_h, (i, j, 1)) ? length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
+        sx =
+            has_vertex(cl_h, (i, j, 1)) ?
+            length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
         E = beliefs[(i, j)]
         ind1, ind2 = select_numstate_best(E, sx, num_states)
         push!(states, (i, j, 1) => ind1)
@@ -163,13 +171,28 @@ function select_numstate_best(E, sx, num_states)
     end
 end
 
-function truncate_clustered_hamiltonian(cl_h, β, cs, result_folder, inst; tol=1e-6, iter=iter)
+function truncate_clustered_hamiltonian(
+    cl_h,
+    β,
+    cs,
+    result_folder,
+    inst;
+    tol = 1e-6,
+    iter = iter,
+)
     states = Dict()
     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
     if saved_states == nothing
         new_cl_h = clustered_hamiltonian_2site(cl_h, β)
-        beliefs = belief_propagation(new_cl_h, β; tol=1e-6, iter=iter)
-        cl_h = truncate_clustered_hamiltonian_2site_BP(cl_h, beliefs, cs, result_folder, inst; beta=β)
+        beliefs = belief_propagation(new_cl_h, β; tol = 1e-6, iter = iter)
+        cl_h = truncate_clustered_hamiltonian_2site_BP(
+            cl_h,
+            beliefs,
+            cs,
+            result_folder,
+            inst;
+            beta = β,
+        )
     else
         states = saved_states
         cl_h = truncate_clustered_hamiltonian(cl_h, states)

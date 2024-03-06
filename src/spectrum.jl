@@ -1,5 +1,4 @@
-export
-    all_states,
+export all_states,
     local_basis,
     gibbs_tensor,
     brute_force,
@@ -12,7 +11,7 @@ export
 
 @inline idx(σ::Int) = (σ == -1) ? 1 : σ + 1
 @inline local_basis(d::Int) = union(-1, 1:d-1)
-all_states(rank::Union{Vector, NTuple}) = Iterators.product(local_basis.(rank)...)
+all_states(rank::Union{Vector,NTuple}) = Iterators.product(local_basis.(rank)...)
 
 const State = Vector{Int}
 
@@ -58,10 +57,10 @@ This function takes a matrix of binary vectors, where each row represents a bina
 # Returns:
 - `Vector{Int}`: An array of integer representations of the binary vectors.
 """
-function matrix_to_integers(matrix::Vector{Vector{T}}) where T
+function matrix_to_integers(matrix::Vector{Vector{T}}) where {T}
     nrows = length(matrix[1])
     multipliers = 2 .^ collect(0:nrows-1)
-    div.((hcat(matrix...)' .+ 1) , 2) * multipliers
+    div.((hcat(matrix...)' .+ 1), 2) * multipliers
 end
 
 """
@@ -99,15 +98,15 @@ The energy is calculated based on the interactions between spins and their assoc
 # Returns:
 - `T`: The energy of the state in the Ising graph.
 """
-function energy(ig::IsingGraph{T}, ig_state::Dict{Int, Int}) where T
+function energy(ig::IsingGraph{T}, ig_state::Dict{Int,Int}) where {T}
     en = zero(T)
     for (i, σ) ∈ ig_state
         en += get_prop(ig, i, :h) * σ
         for (j, η) ∈ ig_state
             if has_edge(ig, i, j)
-                en += T(1/2) * σ * get_prop(ig, i, j, :J) * η
+                en += T(1 / 2) * σ * get_prop(ig, i, j, :J) * η
             elseif has_edge(ig, j, i)
-                en += T(1/2) * σ * get_prop(ig, j, i, :J) * η
+                en += T(1 / 2) * σ * get_prop(ig, j, i, :J) * η
             end
         end
     end
@@ -128,7 +127,7 @@ The energy spectrum represents all possible energy levels and their associated s
 # Returns:
 - `Spectrum`: An instance of the `Spectrum` type containing the energy levels and states.    
 """
-function Spectrum(ig::IsingGraph{T}) where T
+function Spectrum(ig::IsingGraph{T}) where {T}
     L = nv(ig)
     N = 2^L
     energies = zeros(T, N)
@@ -136,7 +135,7 @@ function Spectrum(ig::IsingGraph{T}) where T
 
     J, h = couplings(ig), biases(ig)
     Threads.@threads for i = 0:N-1
-        σ = 2 .* digits(i, base=2, pad=L) .- 1
+        σ = 2 .* digits(i, base = 2, pad = L) .- 1
         @inbounds energies[i+1] = dot(σ, J, σ) + dot(h, σ)
         @inbounds states[i+1] = σ
     end
@@ -158,13 +157,13 @@ The Gibbs tensor represents the conditional probabilities of states given the in
 # Returns:
 - `Matrix{T}`: A matrix representing the Gibbs tensor with conditional probabilities.    
 """
-function gibbs_tensor(ig::IsingGraph{T}, β::T=1) where T
+function gibbs_tensor(ig::IsingGraph{T}, β::T = 1) where {T}
     σ = collect.(all_states(rank_vec(ig)))
     ρ = exp.(-β .* energy(σ, ig))
     ρ ./ sum(ρ)
 end
 
-function brute_force(ig::IsingGraph, s::Symbol=:CPU; num_states::Int=1)
+function brute_force(ig::IsingGraph, s::Symbol = :CPU; num_states::Int = 1)
     brute_force(ig, Val(s); num_states)
 end
 
@@ -186,7 +185,7 @@ The calculation is done using brute-force enumeration, making it feasible only f
 # Returns:
 - `Spectrum`: A `Spectrum` object containing the lowest-energy states and their energies.
 """
-function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
+function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int = 1) where {T}
     L = nv(ig)
     L == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[], zeros(T, 1))
     sp = Spectrum(ig)
@@ -195,7 +194,7 @@ function brute_force(ig::IsingGraph{T}, ::Val{:CPU}; num_states::Int=1) where T
     Spectrum(sp.energies[idx], sp.states[idx])
 end
 
-function full_spectrum(ig::IsingGraph{T}; num_states::Int=1) where T
+function full_spectrum(ig::IsingGraph{T}; num_states::Int = 1) where {T}
     nv(ig) == 0 && return Spectrum(zeros(T, 1), Vector{Vector{Int}}[], zeros(T, 1))
     ig_rank = rank_vec(ig)
     num_states = min(num_states, prod(ig_rank))
@@ -204,6 +203,10 @@ function full_spectrum(ig::IsingGraph{T}; num_states::Int=1) where T
     Spectrum(energies[begin:num_states], σ[begin:num_states])
 end
 
-function inter_cluster_energy(cl1_states::Vector{State}, J::Matrix{<:Real}, cl2_states::Vector{State})
+function inter_cluster_energy(
+    cl1_states::Vector{State},
+    J::Matrix{<:Real},
+    cl2_states::Vector{State},
+)
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end
