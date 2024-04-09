@@ -64,7 +64,7 @@ function matrix_to_integers(matrix::Vector{Vector{T}}) where {T}
 end
 
 """
-$(TYPEDSIGNATURES)
+    energy(σ::Vector, ig::IsingGraph)
 
 Calculates the energy of a state in an Ising graph.
 

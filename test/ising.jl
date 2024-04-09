@@ -64,7 +64,11 @@ end
 @testset "Ising graph created with additional parameters" begin
     expected_biases = [-0.1, -0.5, 0.0]
     expected_couplings = Dict(Edge(1, 2) => 0.3, Edge(1, 3) => 2.0, Edge(2, 3) => -1.0)
+    expected_couplings = Dict(Edge(1, 2) => 0.3, Edge(1, 3) => 2.0, Edge(2, 3) => -1.0)
     expected_J_matrix = [
+        [0 0.3 2.0]
+        [0 0 -1.0]
+        [0 0 0]
         [0 0.3 2.0]
         [0 0 -1.0]
         [0 0 0]
@@ -111,6 +115,7 @@ end
 
     @testset "Reading from Dict" begin
         instance_dict = Dict()
+        ising = CSV.File(instance, types = [Int, Int, Float64], header = 0, comment = "#")
         ising = CSV.File(instance, types = [Int, Int, Float64], header = 0, comment = "#")
 
         for (i, j, v) ∈ ising
