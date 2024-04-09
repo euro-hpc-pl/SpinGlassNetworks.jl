@@ -182,7 +182,7 @@ function truncate_clustered_hamiltonian(
 )
     states = Dict()
     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
-    if saved_states == nothing
+    if isnothing(saved_states)
         new_cl_h = clustered_hamiltonian_2site(cl_h, β)
         beliefs = belief_propagation(new_cl_h, β; tol = 1e-6, iter = iter)
         cl_h = truncate_clustered_hamiltonian_2site_BP(

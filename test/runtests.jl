@@ -5,7 +5,6 @@ using Graphs
 using MetaGraphs
 using Logging
 using Test
-using TensorCast
 using CUDA
 
 
