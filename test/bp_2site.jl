@@ -176,7 +176,7 @@ end
                 a22 = reshape(CuArray(E.e22), 1, size(E.e22, 1), 1, size(E.e22, 2))
                 E = @__dot__(a11 + a21 + a12 + a22)
                 E = reshape(E, size(E, 1) * size(E, 2), size(E, 3) * size(E, 4))
-                @test E == get_prop(cl_h1, src(e), dst(e), :en)
+                @test Array(E) == get_prop(cl_h1, src(e), dst(e), :en)
             end
             for e ∈ edges(new_cl_h1)
                 il1 = get_prop(new_cl_h1, src(e), dst(e), :ipl)
