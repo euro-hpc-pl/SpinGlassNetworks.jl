@@ -19,6 +19,7 @@ SpinGlassTensors = "7584fc6a-5a23-4eeb-8277-827aab0146ea"
 
 [compat]
 CSV = "0.8"
+CUDA = "4.4"
 DocStringExtensions = "0.9"
 Graphs = "1.9.0"
 HDF5 = "0.17"
