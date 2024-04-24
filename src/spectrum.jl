@@ -13,7 +13,7 @@ export all_states,
 @inline local_basis(d::Int) = union(-1, 1:d-1)
 all_states(rank::Union{Vector,NTuple}) = Iterators.product(local_basis.(rank)...)
 
-const State = Vector{Int}
+const State = Vector{<:Integer}
 
 """
 $(TYPEDSIGNATURES)
@@ -38,7 +38,11 @@ struct Spectrum
     function Spectrum(energies, states, states_int)
         new(energies, states, states_int)
     end
-    function Spectrum(energies, states)
+    function Spectrum(energies, states::Matrix)
+        states_int = matrix_to_integers(states)
+        new(energies, Vector{eltype(states)}[eachcol(states)...], states_int)
+    end
+    function Spectrum(energies, states::Vector{<:State})
         states_int = matrix_to_integers(states)
         new(energies, states, states_int)
     end
@@ -63,6 +67,12 @@ function matrix_to_integers(matrix::Vector{Vector{T}}) where {T}
     div.((hcat(matrix...)' .+ 1), 2) * multipliers
 end
 
+function matrix_to_integers(matrix::Matrix)
+    nrows = size(matrix, 1)
+    multipliers = 2 .^ collect(0:nrows-1)
+    div.(matrix' .+ 1, 2) * multipliers
+end
+
 """
     energy(σ::Vector, ig::IsingGraph)
 
@@ -78,7 +88,7 @@ The energy is computed based on the interactions between spins and their associa
 # Returns:
 - `Vector{Float64}`: An array of energy values for each state.
 """
-function energy(σ::AbstractArray{State}, ig::IsingGraph)
+function energy(σ::AbstractArray{<:State}, ig::IsingGraph)
     J, h = couplings(ig), biases(ig)
     dot.(σ, Ref(J), σ) + dot.(Ref(h), σ)
 end
@@ -204,9 +214,9 @@ function full_spectrum(ig::IsingGraph{T}; num_states::Int = 1) where {T}
 end
 
 function inter_cluster_energy(
-    cl1_states::Vector{State},
+    cl1_states::Vector{<:State},
     J::Matrix{<:Real},
-    cl2_states::Vector{State},
+    cl2_states::Vector{<:State},
 )
     hcat(collect.(cl1_states)...)' * J * hcat(collect.(cl2_states)...)
 end
