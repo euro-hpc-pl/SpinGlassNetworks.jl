@@ -61,7 +61,7 @@ This function takes a matrix of binary vectors, where each row represents a bina
 # Returns:
 - `Vector{Int}`: An array of integer representations of the binary vectors.
 """
-function matrix_to_integers(matrix::Vector{Vector{T}}) where {T}
+function matrix_to_integers(matrix::Vector{<:Vector{<:Integer}})
     nrows = length(matrix[1])
     multipliers = 2 .^ collect(0:nrows-1)
     div.((hcat(matrix...)' .+ 1), 2) * multipliers
