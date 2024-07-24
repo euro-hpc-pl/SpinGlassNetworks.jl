@@ -6,7 +6,7 @@ Instance below looks like this:
 56 -- 78
 
 """
-function create_larger_example_clustered_hamiltonian_tree_2site()
+function create_larger_example_potts_hamiltonian_tree_2site()
     instance = Dict(
         (1, 1) => 0.50,
         (2, 2) => -0.25,
@@ -49,14 +49,14 @@ function create_larger_example_clustered_hamiltonian_tree_2site()
         8 => (2, 2, 2),
     )
 
-    cl_h1 = clustered_hamiltonian(
+    cl_h1 = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule1,
     )
 
-    cl_h2 = clustered_hamiltonian(
+    cl_h2 = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
@@ -76,7 +76,7 @@ Instance below looks like this:
       10
 
 """
-function create_larger_example_clustered_hamiltonian_tree_2site_pathological()
+function create_larger_example_potts_hamiltonian_tree_2site_pathological()
     instance = Dict(
         (1, 1) => -0.50,
         (2, 2) => 0.25,
@@ -129,14 +129,14 @@ function create_larger_example_clustered_hamiltonian_tree_2site_pathological()
         10 => (3, 2, 2),
     )
 
-    cl_h1 = clustered_hamiltonian(
+    cl_h1 = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule1,
     )
 
-    cl_h2 = clustered_hamiltonian(
+    cl_h2 = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
@@ -150,15 +150,15 @@ end
 @testset "Belief propagation 2site" begin
 
     for (ig, cl_h1, cl_h2) ∈ [
-        create_larger_example_clustered_hamiltonian_tree_2site(),
-        create_larger_example_clustered_hamiltonian_tree_2site_pathological(),
+        create_larger_example_potts_hamiltonian_tree_2site(),
+        create_larger_example_potts_hamiltonian_tree_2site_pathological(),
     ]
         for beta ∈ [0.6, 1.1]
             tol = 1e-12
             iter = 16
             num_states = 10
 
-            new_cl_h1 = clustered_hamiltonian_2site(cl_h2, beta)
+            new_cl_h1 = potts_hamiltonian_2site(cl_h2, beta)
 
             @test vertices(new_cl_h1) == vertices(cl_h1)
             @test edges(new_cl_h1) == edges(cl_h1)

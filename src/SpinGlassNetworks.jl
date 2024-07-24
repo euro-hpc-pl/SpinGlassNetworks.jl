@@ -15,7 +15,7 @@ import Base.Prehashed
 include("ising.jl")
 include("spectrum.jl")
 include("lattice.jl")
-include("clustered_hamiltonian.jl")
+include("potts_hamiltonian.jl")
 include("bp.jl")
 include("truncate.jl")
 include("utils.jl")

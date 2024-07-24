@@ -15,7 +15,7 @@ enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
     for T ∈ [Float16, Float32, Float64]
         ig = ising_graph(T, instance)
 
-        cl_h = clustered_hamiltonian(
+        cl_h = potts_hamiltonian(
             ig,
             2,
             cluster_assignment_rule = super_square_lattice((m, n, 2 * t)),
@@ -96,7 +96,7 @@ end
         ig = ising_graph(T, instance)
         @test eltype(ig) == T
 
-        cl_h = clustered_hamiltonian(
+        cl_h = potts_hamiltonian(
             ig,
             spectrum = full_spectrum,
             cluster_assignment_rule = super_square_lattice((m, n, t)),
@@ -161,7 +161,7 @@ end
     end
 end
 
-function create_example_clustered_hamiltonian(::Type{T}) where {T}
+function create_example_potts_hamiltonian(::Type{T}) where {T}
     J12 = -1
     h1 = 1 / 2
     h2 = 0.75
@@ -169,7 +169,7 @@ function create_example_clustered_hamiltonian(::Type{T}) where {T}
     D = Dict((1, 2) => J12, (1, 1) => h1, (2, 2) => h2)
     ig = ising_graph(T, D)
 
-    clustered_hamiltonian(
+    potts_hamiltonian(
         ig,
         Dict((1, 1) => 2, (1, 2) => 2),
         spectrum = full_spectrum,
@@ -183,10 +183,10 @@ cl_h_state_to_spin =
 @testset "Decoding solution gives correct spin assignment" begin
 
     for T ∈ [Float16, Float32, Float64]
-        cl_h = create_example_clustered_hamiltonian(T)
+        cl_h = create_example_potts_hamiltonian(T)
         @test all(eltype(get_prop(cl_h, e, :en)) == T for e ∈ edges(cl_h))
         for (state, spin_values) ∈ cl_h_state_to_spin
-            d = decode_clustered_hamiltonian_state(cl_h, state)
+            d = decode_potts_hamiltonian_state(cl_h, state)
             states = collect(values(d))[collect(keys(d))]
             @test states == spin_values
         end
@@ -204,7 +204,7 @@ Instance below looks like this:
 
 And we group the following spins together: [1, 2, 4, 5], [3, 6], [7, 8], [9].
 """
-function create_larger_example_clustered_hamiltonian()
+function create_larger_example_potts_hamiltonian()
     instance = Dict(
         (1, 1) => 0.5,
         (2, 2) => 0.25,
@@ -242,7 +242,7 @@ function create_larger_example_clustered_hamiltonian()
         9 => (2, 2),
     )
 
-    cl_h = clustered_hamiltonian(
+    cl_h = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
@@ -252,7 +252,7 @@ function create_larger_example_clustered_hamiltonian()
     ig, cl_h
 end
 
-function clustered_hamiltonian_energy(cl_h, state)
+function potts_hamiltonian_energy(cl_h, state)
     # This is highly inefficient, but simple, which makes it suitable for testing.
     # If such a function is needed elsewhere, we need to implement it properly.
     total_en = 0
@@ -277,18 +277,18 @@ function clustered_hamiltonian_energy(cl_h, state)
 end
 
 @testset "Decoding solution gives spins configuration with corresponding energies" begin
-    ig, cl_h = create_larger_example_clustered_hamiltonian()
+    ig, cl_h = create_larger_example_potts_hamiltonian()
 
     # Corresponding bases sizes for each cluster are 16, 4, 4, 2.
     all_states = [[i, j, k, l] for i ∈ 1:16 for j ∈ 1:4 for k ∈ 1:4 for l ∈ 1:2]
 
     for state ∈ all_states
-        d = decode_clustered_hamiltonian_state(cl_h, state)
+        d = decode_potts_hamiltonian_state(cl_h, state)
         spins = zeros(length(d))
         for (k, v) ∈ d
             spins[k] = v
         end
         σ = [Int.(spins)]
-        @test clustered_hamiltonian_energy(cl_h, state) ≈ energy(σ, ig)[]
+        @test potts_hamiltonian_energy(cl_h, state) ≈ energy(σ, ig)[]
     end
 end

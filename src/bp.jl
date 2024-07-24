@@ -1,6 +1,6 @@
 
 export belief_propagation,
-    clustered_hamiltonian_2site,
+    potts_hamiltonian_2site,
     projector,
     get_neighbors,
     MergedEnergy,
@@ -12,20 +12,20 @@ export belief_propagation,
 
 """
 $(TYPEDSIGNATURES)
-Perform loopy belief propagation on a given clustered Hamiltonian.
+Perform loopy belief propagation on a given Potts Hamiltonian.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
 - `beta::Real`: The inverse temperature parameter for the belief propagation algorithm.
 - `tol::Real (optional, default=1e-6)`: The convergence tolerance. The algorithm stops when the message updates between iterations are smaller than this value.
 - `iter::Int (optional, default=1)`: The maximum number of iterations to perform.
 
 # Returns:
-- `beliefs::Dict`: A dictionary where keys are vertices of clustered hamiltonian, and values are the 
+- `beliefs::Dict`: A dictionary where keys are vertices of Potts Hamiltonian, and values are the 
 resulting beliefs after belief propagation.
 
-The function implements loopy belief propagation on the given clustered hamiltonian `cl_h` to calculate beliefs for each vertex.
-Belief propagation is an iterative algorithm that computes beliefs by passing messages between vertices and edges of the clustered hamiltonian. 
+The function implements loopy belief propagation on the given Potts Hamiltonian `cl_h` to calculate beliefs for each vertex.
+Belief propagation is an iterative algorithm that computes beliefs by passing messages between vertices and edges of the Potts Hamiltonian. 
 The algorithm continues until convergence or until the specified maximum number of iterations is reached.
 The beliefs are computed based on the inverse temperature parameter `beta`, which controls the influence of energy values on the beliefs.
 """
@@ -101,10 +101,10 @@ end
 
 """
 $(TYPEDSIGNATURES)
-Returns the neighbors of a given vertex in a clustered Hamiltonian.
+Returns the neighbors of a given vertex in a Potts Hamiltonian.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `vertex::NTuple`: The vertex for which neighbors are to be retrieved.
 
 # Returns:
@@ -114,7 +114,7 @@ Each tuple contains the following information:
 - `pv::Matrix`: The projector associated with the edge connecting the vertex and its neighbor.
 - `en::Real`: The energy associated with the edge connecting the vertex and its neighbor.
 
-This function retrieves the neighbors of a given vertex in a clustered Hamiltonian graph.
+This function retrieves the neighbors of a given vertex in a Potts Hamiltonian graph.
 It iterates through the edges of the graph and identifies edges connected to the specified vertex. 
 For each neighboring edge, it extracts and returns the neighboring vertex, the associated projector, and the energy.
 """
@@ -255,23 +255,23 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Constructs a clustered Hamiltonian for a given clustered Hamiltonian with a 2-site cluster approximation used in Pegasus graph.
+Constructs a Potts Hamiltonian for a given Potts Hamiltonian with a 2-site cluster approximation used in Pegasus graph.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labelled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
 - `beta::Real`: The inverse temperature parameter for the 2-site cluster Hamiltonian construction.
     
 # Returns:
 - `new_cl_h::LabelledGraph{MetaDiGraph}`: A new labelled graph representing the 2-site cluster Hamiltonian.
     
-This function constructs a clustered Hamiltonian `cl_h` by applying a 2-site cluster approximation. 
+This function constructs a Potts Hamiltonian `cl_h` by applying a 2-site cluster approximation. 
 It combines and merges vertices and edges of the original graph to create a simplified representation of the Hamiltonian.
     
 The resulting `new_cl_h` graph represents the 2-site cluster Hamiltonian with simplified interactions between clusters. 
 The energy values, projectors, and spectra associated with the new vertices and edges are computed based on 
 the provided temperature parameter `beta`.
 """
-function clustered_hamiltonian_2site(cl_h::LabelledGraph{S,T}, beta::Real) where {S,T}
+function potts_hamiltonian_2site(cl_h::LabelledGraph{S,T}, beta::Real) where {S,T}
 
     unified_vertices = unique([vertex[1:2] for vertex in vertices(cl_h)])
     new_cl_h = LabelledGraph{MetaDiGraph}(unified_vertices)
@@ -319,10 +319,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Merge two vertices in a clustered Hamiltonian to create a single merged vertex.
+Merge two vertices in a Potts Hamiltonian to create a single merged vertex.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `β::Real`: The temperature parameter controlling the influence of energy values.
 - `node1::NTuple{3, Int64}`: The coordinates of the first vertex to merge.
 - `node2::NTuple{3, Int64}`: The coordinates of the second vertex to merge.
@@ -332,7 +332,7 @@ Merge two vertices in a clustered Hamiltonian to create a single merged vertex.
 - `pl::AbstractVector`: The merged left projector.
 - `pr::AbstractVector`: The merged right projector.
 
-This function merges two vertices in a clustered Hamiltonian graph `cl_h` to create a single merged vertex. 
+This function merges two vertices in a Potts Hamiltonian graph `cl_h` to create a single merged vertex. 
 The merging process combines projectors and energy values associated with the original vertices based on 
 the provided temperature parameter `β`.
 
@@ -383,16 +383,16 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Get the local energy associated with a vertex in a clustered Hamiltonian.
+Get the local energy associated with a vertex in a Potts Hamiltonian.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `v::NTuple{3, Int64}`: The coordinates of the vertex for which the local energy is requested.
 
 # Returns:
 - `local_energy::AbstractVector`: An abstract vector containing the local energy values associated with the specified vertex.
 
-This function retrieves the local energy values associated with a given vertex `v` in a clustered Hamiltonian graph `cl_h`. 
+This function retrieves the local energy values associated with a given vertex `v` in a Potts Hamiltonian graph `cl_h`. 
 If the vertex exists in the graph and has associated energy values, it returns those values; otherwise, it returns a vector of zeros.
 
 The local energy values are typically obtained from the spectrum associated with the vertex.
@@ -404,17 +404,17 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Get the interaction energy between two vertices in a clustered Hamiltonian.
+Get the interaction energy between two vertices in a Potts Hamiltonian.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `v::NTuple{3, Int64}`: The coordinates of the first vertex.
 - `w::NTuple{3, Int64}`: The coordinates of the second vertex.
 
 # Returns:
 - `interaction_energy::AbstractMatrix`: An abstract matrix containing the interaction energy values between the specified vertices.
 
-This function retrieves the interaction energy values between two vertices, `v` and `w`, in a clustered Hamiltonian graph `cl_h`. 
+This function retrieves the interaction energy values between two vertices, `v` and `w`, in a Potts Hamiltonian graph `cl_h`. 
 If there is a directed edge from `w` to `v`, it returns the corresponding energy values; 
 if there is a directed edge from `v` to `w`, it returns the transpose of the energy values; 
 otherwise, it returns a matrix of zeros.
@@ -437,10 +437,10 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Get the projector associated with an edge between two vertices in a clustered Hamiltonian.
+Get the projector associated with an edge between two vertices in a Potts Hamiltonian.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The clustered Hamiltonian represented as a labeled graph.
+- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `v::NTuple{N, Int64}`: The coordinates of one of the two vertices connected by the edge.
 - `w::NTuple{N, Int64}`: The coordinates of the other vertex connected by the edge.
 
@@ -448,7 +448,7 @@ Get the projector associated with an edge between two vertices in a clustered Ha
 - `p::AbstractVector`: An abstract vector representing the projector associated with the specified edge.
 
 This function retrieves the projector associated with an edge between two vertices, `v` and `w`, 
-in a clustered Hamiltonian graph `cl_h`. 
+in a Potts Hamiltonian graph `cl_h`. 
 If there is a directed edge from `w` to `v`, it returns the index of right projector (`:ipr`); 
 if there is a directed edge from `v` to `w`, it returns the index of left projector (`:ipl`). 
 If no edge exists between the vertices, it returns a vector of ones.

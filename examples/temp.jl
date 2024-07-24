@@ -81,7 +81,7 @@ function load_openGM(fname::String, Nx::Integer, Ny::Integer)
     result
 end
 
-function clustered_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
+function potts_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
     loaded_rmf = load_openGM(fname, Nx, Ny)
     functions = loaded_rmf["fun"]
     factors = loaded_rmf["fac"]
@@ -135,4 +135,4 @@ x, y = 240, 320
 filename = "/home/tsmierzchalski/.julia/dev/SpinGlassNetworks/examples/penguin-small.h5"
 
 
-cf = clustered_hamiltonian(filename, x, y)
+cf = potts_hamiltonian(filename, x, y)

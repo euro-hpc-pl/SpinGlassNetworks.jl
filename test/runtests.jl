@@ -29,7 +29,7 @@ end
 
 my_tests = [
     "ising.jl",
-    "clustered_hamiltonian.jl",
+    "potts_hamiltonian.jl",
     "bp_1site.jl",
     "bp_2site.jl",
     "utils.jl",

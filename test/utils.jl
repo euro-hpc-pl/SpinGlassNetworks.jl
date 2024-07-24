@@ -1,7 +1,7 @@
 instance_dir = "$(@__DIR__)/instances/pegasus/"
 instances = ["P2"] #, "P4", "P8", "P16"]
 
-@testset verbose = true "Renumerated instances generate correct clustered Hamiltonian" begin
+@testset verbose = true "Renumerated instances generate correct Potts Hamiltonian" begin
     size = [2, 4, 8, 16]
 
     @testset "$instance" for (i, instance) ∈ enumerate(instances)
@@ -11,7 +11,7 @@ instances = ["P2"] #, "P4", "P8", "P16"]
         max_cl_states = 2
 
         ig = ising_graph(joinpath(instance_dir, instance))
-        cl_h = clustered_hamiltonian(
+        cl_h = potts_hamiltonian(
             ig,
             max_cl_states,
             spectrum = brute_force,

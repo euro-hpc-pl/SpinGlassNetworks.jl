@@ -13,7 +13,7 @@ Instance below looks like this:
 |
 7 -- 8 -- 9
 """
-function create_larger_example_clustered_hamiltonian_tree()
+function create_larger_example_potts_hamiltonian_tree()
     instance = Dict(
         (1, 1) => 0.5,
         (2, 2) => 0.25,
@@ -48,7 +48,7 @@ function create_larger_example_clustered_hamiltonian_tree()
         9 => (3, 3, 1),
     )
 
-    cl_h = clustered_hamiltonian(
+    cl_h = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
@@ -58,7 +58,7 @@ function create_larger_example_clustered_hamiltonian_tree()
     ig, cl_h
 end
 
-ig, cl_h = create_larger_example_clustered_hamiltonian_tree()
+ig, cl_h = create_larger_example_potts_hamiltonian_tree()
 beta = 0.1
 iter = 0
 beliefs = belief_propagation(cl_h, beta; iter = iter)
