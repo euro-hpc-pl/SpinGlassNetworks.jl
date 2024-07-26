@@ -6,7 +6,7 @@ Instance below looks like this:
 56 -- 78
 
 """
-function create_larger_example_clustered_hamiltonian_tree_2site()
+function create_larger_example_potts_hamiltonian_tree_2site()
     instance = Dict(
         (1, 1) => 0.50,
         (2, 2) => -0.25,
@@ -49,21 +49,21 @@ function create_larger_example_clustered_hamiltonian_tree_2site()
         8 => (2, 2, 2),
     )
 
-    cl_h1 = clustered_hamiltonian(
+    potts_h1 = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule1,
     )
 
-    cl_h2 = clustered_hamiltonian(
+    potts_h2 = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule2,
     )
 
-    ig, cl_h1, cl_h2
+    ig, potts_h1, potts_h2
 end
 
 """
@@ -76,7 +76,7 @@ Instance below looks like this:
       10
 
 """
-function create_larger_example_clustered_hamiltonian_tree_2site_pathological()
+function create_larger_example_potts_hamiltonian_tree_2site_pathological()
     instance = Dict(
         (1, 1) => -0.50,
         (2, 2) => 0.25,
@@ -129,45 +129,45 @@ function create_larger_example_clustered_hamiltonian_tree_2site_pathological()
         10 => (3, 2, 2),
     )
 
-    cl_h1 = clustered_hamiltonian(
+    potts_h1 = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule1,
     )
 
-    cl_h2 = clustered_hamiltonian(
+    potts_h2 = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule2,
     )
 
-    ig, cl_h1, cl_h2
+    ig, potts_h1, potts_h2
 end
 
 
 @testset "Belief propagation 2site" begin
 
-    for (ig, cl_h1, cl_h2) ∈ [
-        create_larger_example_clustered_hamiltonian_tree_2site(),
-        create_larger_example_clustered_hamiltonian_tree_2site_pathological(),
+    for (ig, potts_h1, potts_h2) ∈ [
+        create_larger_example_potts_hamiltonian_tree_2site(),
+        create_larger_example_potts_hamiltonian_tree_2site_pathological(),
     ]
         for beta ∈ [0.6, 1.1]
             tol = 1e-12
             iter = 16
             num_states = 10
 
-            new_cl_h1 = clustered_hamiltonian_2site(cl_h2, beta)
+            new_potts_h1 = potts_hamiltonian_2site(potts_h2, beta)
 
-            @test vertices(new_cl_h1) == vertices(cl_h1)
-            @test edges(new_cl_h1) == edges(cl_h1)
-            for e ∈ vertices(new_cl_h1)
-                @test get_prop(new_cl_h1, e, :spectrum).energies ≈
-                      get_prop(cl_h1, e, :spectrum).energies
+            @test vertices(new_potts_h1) == vertices(potts_h1)
+            @test edges(new_potts_h1) == edges(potts_h1)
+            for e ∈ vertices(new_potts_h1)
+                @test get_prop(new_potts_h1, e, :spectrum).energies ≈
+                      get_prop(potts_h1, e, :spectrum).energies
             end
-            for e ∈ edges(new_cl_h1)
-                E = get_prop(new_cl_h1, src(e), dst(e), :en)
+            for e ∈ edges(new_potts_h1)
+                E = get_prop(new_potts_h1, src(e), dst(e), :en)
                 # @cast E[(l1, l2), (r1, r2)] :=
                 #     E.e11[l1, r1] + E.e21[l2, r1] + E.e12[l1, r2] + E.e22[l2, r2]
                 a11 = reshape(CuArray(E.e11), size(E.e11, 1), :, size(E.e11, 2))
@@ -176,30 +176,30 @@ end
                 a22 = reshape(CuArray(E.e22), 1, size(E.e22, 1), 1, size(E.e22, 2))
                 E = @__dot__(a11 + a21 + a12 + a22)
                 E = reshape(E, size(E, 1) * size(E, 2), size(E, 3) * size(E, 4))
-                @test Array(E) == get_prop(cl_h1, src(e), dst(e), :en)
+                @test Array(E) == get_prop(potts_h1, src(e), dst(e), :en)
             end
-            for e ∈ edges(new_cl_h1)
-                il1 = get_prop(new_cl_h1, src(e), dst(e), :ipl)
-                il2 = get_prop(cl_h1, src(e), dst(e), :ipl)
-                ir1 = get_prop(new_cl_h1, src(e), dst(e), :ipr)
-                ir2 = get_prop(cl_h1, src(e), dst(e), :ipr)
+            for e ∈ edges(new_potts_h1)
+                il1 = get_prop(new_potts_h1, src(e), dst(e), :ipl)
+                il2 = get_prop(potts_h1, src(e), dst(e), :ipl)
+                ir1 = get_prop(new_potts_h1, src(e), dst(e), :ipr)
+                ir2 = get_prop(potts_h1, src(e), dst(e), :ipr)
 
-                pl1 = get_projector!(get_prop(new_cl_h1, :pool_of_projectors), il1, :CPU)
-                pl2 = get_projector!(get_prop(cl_h1, :pool_of_projectors), il2, :CPU)
-                pr1 = get_projector!(get_prop(new_cl_h1, :pool_of_projectors), ir1, :CPU)
-                pr2 = get_projector!(get_prop(cl_h1, :pool_of_projectors), ir2, :CPU)
+                pl1 = get_projector!(get_prop(new_potts_h1, :pool_of_projectors), il1, :CPU)
+                pl2 = get_projector!(get_prop(potts_h1, :pool_of_projectors), il2, :CPU)
+                pr1 = get_projector!(get_prop(new_potts_h1, :pool_of_projectors), ir1, :CPU)
+                pr2 = get_projector!(get_prop(potts_h1, :pool_of_projectors), ir2, :CPU)
                 @test pl1 == pl2
                 @test pr1 == pr2
             end
 
-            beliefs = belief_propagation(new_cl_h1, beta; iter = iter, tol = tol)
+            beliefs = belief_propagation(new_potts_h1, beta; iter = iter, tol = tol)
 
             exact_marginal = Dict()
             for k in keys(beliefs)
                 temp =
                     -1 / beta .*
                     log.([
-                        exact_cond_prob(cl_h1, beta, Dict(k => a)) for
+                        exact_cond_prob(potts_h1, beta, Dict(k => a)) for
                         a = 1:length(beliefs[k])
                     ])
                 push!(exact_marginal, k => temp .- minimum(temp))
