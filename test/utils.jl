@@ -11,16 +11,16 @@ instances = ["P2"] #, "P4", "P8", "P16"]
         max_cl_states = 2
 
         ig = ising_graph(joinpath(instance_dir, instance))
-        cl_h = potts_hamiltonian(
+        potts_h = potts_hamiltonian(
             ig,
             max_cl_states,
             spectrum = brute_force,
             cluster_assignment_rule = super_square_lattice((m, n, t)),
         )
-        @test nv(cl_h) == s^2
+        @test nv(potts_h) == s^2
 
         if s > 1
-            @test all(has_edge(cl_h, (l, k), (l + 1, k - 1)) for l ∈ 1:s-1, k ∈ 2:s)
+            @test all(has_edge(potts_h, (l, k), (l + 1, k - 1)) for l ∈ 1:s-1, k ∈ 2:s)
         end
     end
 end

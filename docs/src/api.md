@@ -31,7 +31,7 @@ interaction_energy
 get_neighbors
 MergedEnergy
 update_message
-merge_vertices_cl_h
+merge_vertices_potts_h
 projector
 SparseCSC
 ```

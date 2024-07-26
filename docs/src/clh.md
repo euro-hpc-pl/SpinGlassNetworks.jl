@@ -17,7 +17,7 @@ instance = "$(@__DIR__)/../../src/instances/square_diagonal/5x5/diagonal.txt"
 ig = ising_graph(instance)
 
 # Create Potts Hamiltonian
-cl_h = potts_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = super_square_lattice((5,5,4))
 )

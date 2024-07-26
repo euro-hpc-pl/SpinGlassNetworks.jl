@@ -27,12 +27,12 @@ m = 5
 n = 5
 t = 4
 
-cl_h = potts_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = super_square_lattice((m, n, t))
 )
 
-println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in Potts Hamiltonian: ", length(LabelledGraphs.vertices(cl_h)))
+println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in Potts Hamiltonian: ", length(LabelledGraphs.vertices(potts_h)))
 ```
 
 ## Pegasus graphs
@@ -61,12 +61,12 @@ m = 3
 n = 3
 t = 3
 
-cl_h = potts_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = pegasus_lattice((m, n, t))
 )
 
-println("Number of nodes in original instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in Potts Hamiltonian: ", length(LabelledGraphs.vertices(cl_h))/2)
+println("Number of nodes in original instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in Potts Hamiltonian: ", length(LabelledGraphs.vertices(potts_h))/2)
 ```
 
 
@@ -96,7 +96,7 @@ m = 6
 n = 6
 t = 4
 
-cl_h = potts_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = zephyr_lattice((m, n, t))
 )

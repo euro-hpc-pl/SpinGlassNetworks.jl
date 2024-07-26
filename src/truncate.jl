@@ -12,7 +12,7 @@ This function employs belief propagation (BP) to approximate the most probable s
 associated with a single-site cluster. It then truncates the Potts Hamiltonian based on the most probable states.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `num_states::Int`: The maximum number of most probable states to keep.
 - `beta::Real (optional)`: The inverse temperature parameter for the BP algorithm. Default is 1.0.
 - `tol::Real (optional)`: The tolerance value for convergence in BP. Default is 1e-10.
@@ -22,19 +22,19 @@ associated with a single-site cluster. It then truncates the Potts Hamiltonian b
 - `LabelledGraph{S, T}`: A truncated Potts Hamiltonian.
 """
 function truncate_potts_hamiltonian_1site_BP(
-    cl_h::LabelledGraph{S,T},
+    potts_h::LabelledGraph{S,T},
     num_states::Int;
     beta = 1.0,
     tol = 1e-10,
     iter = 1,
 ) where {S,T}
     states = Dict()
-    beliefs = belief_propagation(cl_h, beta; tol = tol, iter = iter)
-    for node in vertices(cl_h)
+    beliefs = belief_propagation(potts_h, beta; tol = tol, iter = iter)
+    for node in vertices(potts_h)
         indices = partialsortperm(beliefs[node], 1:min(num_states, length(beliefs[node])))
         push!(states, node => indices)
     end
-    truncate_potts_hamiltonian(cl_h, states)
+    truncate_potts_hamiltonian(potts_h, states)
 end
 
 """
@@ -46,33 +46,33 @@ This function truncates a Potts Hamiltonian by considering 2-site energy states 
 to keep. It computes the energies for all 2-site combinations and selects the states that maximize the probability.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `num_states::Int`: The maximum number of most probable states to keep.
 
 # Returns:
 - `LabelledGraph{S, T}`: A truncated Potts Hamiltonian.
 """
 function truncate_potts_hamiltonian_2site_energy(
-    cl_h::LabelledGraph{S,T},
+    potts_h::LabelledGraph{S,T},
     num_states::Int,
 ) where {S,T}
     # TODO: name to be clean to make it consistent with square2 and squarestar2
     states = Dict()
-    for node in vertices(cl_h)
+    for node in vertices(potts_h)
         if node in keys(states)
             continue
         end
         i, j, _ = node
-        E1 = copy(get_prop(cl_h, (i, j, 1), :spectrum).energies)
-        E2 = copy(get_prop(cl_h, (i, j, 2), :spectrum).energies)
-        E = energy_2site(cl_h, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
+        E1 = copy(get_prop(potts_h, (i, j, 1), :spectrum).energies)
+        E2 = copy(get_prop(potts_h, (i, j, 2), :spectrum).energies)
+        E = energy_2site(potts_h, i, j) .+ reshape(E1, :, 1) .+ reshape(E2, 1, :)
         sx, sy = size(E)
         E = reshape(E, sx * sy)
         ind1, ind2 = select_numstate_best(E, sx, num_states)
         push!(states, (i, j, 1) => ind1)
         push!(states, (i, j, 2) => ind2)
     end
-    truncate_potts_hamiltonian(cl_h, states)
+    truncate_potts_hamiltonian(potts_h, states)
 end
 
 function load_file(filename)
@@ -96,7 +96,7 @@ This function truncates a Potts Hamiltonian by considering 2-site belief propaga
 to keep. It computes the beliefs for all 2-site combinations and selects the states that maximize the probability.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
 - `beliefs::Dict`: A dictionary containing belief values for 2-site interactions.
 - `num_states::Int`: The maximum number of most probable states to keep.
 - `beta::Real (optional)`: The inverse temperature parameter (default is 1.0).
@@ -105,7 +105,7 @@ to keep. It computes the beliefs for all 2-site combinations and selects the sta
 - `LabelledGraph{S, T}`: A truncated Potts Hamiltonian.
 """
 function truncate_potts_hamiltonian_2site_BP(
-    cl_h::LabelledGraph{S,T},
+    potts_h::LabelledGraph{S,T},
     beliefs::Dict,
     num_states::Int,
     result_folder::String = "results_folder",
@@ -115,14 +115,14 @@ function truncate_potts_hamiltonian_2site_BP(
     states = Dict()
 
     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
-    for node in vertices(cl_h)
+    for node in vertices(potts_h)
         if node in keys(states)
             continue
         end
         i, j, _ = node
         sx =
-            has_vertex(cl_h, (i, j, 1)) ?
-            length(get_prop(cl_h, (i, j, 1), :spectrum).energies) : 1
+            has_vertex(potts_h, (i, j, 1)) ?
+            length(get_prop(potts_h, (i, j, 1), :spectrum).energies) : 1
         E = beliefs[(i, j)]
         ind1, ind2 = select_numstate_best(E, sx, num_states)
         push!(states, (i, j, 1) => ind1)
@@ -130,7 +130,7 @@ function truncate_potts_hamiltonian_2site_BP(
     end
     path = joinpath(result_folder, "$(inst).jld2")
     save_object(string(path), states)
-    truncate_potts_hamiltonian(cl_h, states)
+    truncate_potts_hamiltonian(potts_h, states)
 end
 
 """
@@ -172,7 +172,7 @@ function select_numstate_best(E, sx, num_states)
 end
 
 function truncate_potts_hamiltonian(
-    cl_h,
+    potts_h,
     β,
     cs,
     result_folder,
@@ -183,10 +183,10 @@ function truncate_potts_hamiltonian(
     states = Dict()
     saved_states = load_file(joinpath(result_folder, "$(inst).jld2"))
     if isnothing(saved_states)
-        new_cl_h = potts_hamiltonian_2site(cl_h, β)
-        beliefs = belief_propagation(new_cl_h, β; tol = 1e-6, iter = iter)
-        cl_h = truncate_potts_hamiltonian_2site_BP(
-            cl_h,
+        new_potts_h = potts_hamiltonian_2site(potts_h, β)
+        beliefs = belief_propagation(new_potts_h, β; tol = 1e-6, iter = iter)
+        potts_h = truncate_potts_hamiltonian_2site_BP(
+            potts_h,
             beliefs,
             cs,
             result_folder,
@@ -195,7 +195,7 @@ function truncate_potts_hamiltonian(
         )
     else
         states = saved_states
-        cl_h = truncate_potts_hamiltonian(cl_h, states)
+        potts_h = truncate_potts_hamiltonian(potts_h, states)
     end
-    cl_h
+    potts_h
 end

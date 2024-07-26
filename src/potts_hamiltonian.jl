@@ -52,7 +52,7 @@ This function constructs a Potts Hamiltonian from an Ising graph by introducing 
 - `cluster_assignment_rule::Dict{Int, L}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
 
 # Returns:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
 
 The `potts_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a Potts Hamiltonian by 
 introducing a natural order in Potts Hamiltonian coordinates. 
@@ -88,7 +88,7 @@ This function constructs a Potts Hamiltonian from an Ising graph by introducing 
 - `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
 
 # Returns:
-- `cl_h::LabelledGraph{MetaDiGraph}`: The Potts Hamiltonian represented as a labelled graph.
+- `potts_h::LabelledGraph{MetaDiGraph}`: The Potts Hamiltonian represented as a labelled graph.
 
 The `potts_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a Potts Hamiltonian 
 by introducing a natural order in Potts Hamiltonian coordinates. It allows you to specify the number of 
@@ -102,17 +102,17 @@ function potts_hamiltonian(
     spectrum::Function = full_spectrum,
     cluster_assignment_rule::Dict{Int,T},
 ) where {T}
-    cl_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
+    potts_h = LabelledGraph{MetaDiGraph}(sort(unique(values(cluster_assignment_rule))))
 
     lp = PoolOfProjectors{Int}()
 
     for (v, cl) ∈ split_into_clusters(ig, cluster_assignment_rule)
         sp = spectrum(cl, num_states = get(num_states_cl, v, basis_size(cl)))
-        set_props!(cl_h, v, Dict(:cluster => cl, :spectrum => sp))
+        set_props!(potts_h, v, Dict(:cluster => cl, :spectrum => sp))
     end
 
-    for (i, v) ∈ enumerate(vertices(cl_h)), w ∈ vertices(cl_h)[i+1:end]
-        cl1, cl2 = get_prop(cl_h, v, :cluster), get_prop(cl_h, w, :cluster)
+    for (i, v) ∈ enumerate(vertices(potts_h)), w ∈ vertices(potts_h)[i+1:end]
+        cl1, cl2 = get_prop(potts_h, v, :cluster), get_prop(potts_h, w, :cluster)
         outer_edges, J = inter_cluster_edges(ig, cl1, cl2)
 
         if !isempty(outer_edges)
@@ -122,8 +122,8 @@ function potts_hamiltonian(
             ind2 = reshape(ind2, length(ind2))
             JJ = J[ind1, ind2]
 
-            states_v = get_prop(cl_h, v, :spectrum).states
-            states_w = get_prop(cl_h, w, :spectrum).states
+            states_v = get_prop(potts_h, v, :spectrum).states
+            states_w = get_prop(potts_h, w, :spectrum).states
 
             pl, unique_states_v = rank_reveal([s[ind1] for s ∈ states_v], :PE)
             pr, unique_states_w = rank_reveal([s[ind2] for s ∈ states_w], :PE)
@@ -131,17 +131,17 @@ function potts_hamiltonian(
             ipl = add_projector!(lp, pl)
             ipr = add_projector!(lp, pr)
 
-            add_edge!(cl_h, v, w)
+            add_edge!(potts_h, v, w)
             set_props!(
-                cl_h,
+                potts_h,
                 v,
                 w,
                 Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr),
             )
         end
     end
-    set_props!(cl_h, Dict(:pool_of_projectors => lp))
-    cl_h
+    set_props!(potts_h, Dict(:pool_of_projectors => lp))
+    potts_h
 end
 
 """
@@ -157,7 +157,7 @@ This function constructs a Potts Hamiltonian from an Ising graph by introducing 
 - `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
 
 # Returns:
-- `cl_h::LabelledGraph{MetaDiGraph}`: The Potts Hamiltonian represented as a labelled graph.
+- `potts_h::LabelledGraph{MetaDiGraph}`: The Potts Hamiltonian represented as a labelled graph.
 
 The `potts_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a Potts Hamiltonian 
 by introducing a natural order in Potts Hamiltonian coordinates. 
@@ -219,7 +219,7 @@ This function decodes a state from a Potts Hamiltonian into Ising graph spin val
 returns a dictionary mapping each Ising graph vertex to its corresponding spin value.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `state::Vector{Int}`: The state to be decoded, represented as an array of state indices for each vertex in the Potts Hamiltonian.
 
 # Returns:
@@ -229,13 +229,13 @@ This function assumes that the state has the same order as the vertices in the P
 It decodes the state consistently based on the cluster assignments and spectra of the Potts Hamiltonian.
 """
 function decode_potts_hamiltonian_state(
-    cl_h::LabelledGraph{S,T},
+    potts_h::LabelledGraph{S,T},
     state::Vector{Int},
 ) where {S,T}
     ret = Dict{Int,Int}()
-    for (i, vert) ∈ zip(state, vertices(cl_h))
-        spins = get_prop(cl_h, vert, :cluster).labels
-        states = get_prop(cl_h, vert, :spectrum).states
+    for (i, vert) ∈ zip(state, vertices(potts_h))
+        spins = get_prop(potts_h, vert, :cluster).labels
+        states = get_prop(potts_h, vert, :spectrum).states
         if length(states) > 0
             curr_state = states[i]
             merge!(ret, Dict(k => v for (k, v) ∈ zip(spins, curr_state)))
@@ -253,30 +253,30 @@ This function calculates the energy of a given state in a Potts Hamiltonian.
 The state is represented as a dictionary mapping each Ising graph vertex to its corresponding spin value.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `σ::Dict{T, Int}`: A dictionary mapping Ising graph vertices to their spin values.
 
 # Returns:
-- `en_cl_h::Float64`: The energy of the state in the Potts Hamiltonian.
+- `en_potts_h::Float64`: The energy of the state in the Potts Hamiltonian.
 
 This function computes the energy by summing the energies associated with individual 
 clusters and the interaction energies between clusters. 
 It takes into account the cluster spectra and projectors stored in the Potts Hamiltonian.
 """
-function energy(cl_h::LabelledGraph{S,T}, σ::Dict{T,Int}) where {S,T}
-    en_cl_h = 0.0
-    for v ∈ vertices(cl_h)
-        en_cl_h += get_prop(cl_h, v, :spectrum).energies[σ[v]]
+function energy(potts_h::LabelledGraph{S,T}, σ::Dict{T,Int}) where {S,T}
+    en_potts_h = 0.0
+    for v ∈ vertices(potts_h)
+        en_potts_h += get_prop(potts_h, v, :spectrum).energies[σ[v]]
     end
-    for edge ∈ edges(cl_h)
-        idx_pl = get_prop(cl_h, edge, :ipl)
-        pl = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU)
-        idx_pr = get_prop(cl_h, edge, :ipr)
-        pr = get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU)
-        en = get_prop(cl_h, edge, :en)
-        en_cl_h += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
+    for edge ∈ edges(potts_h)
+        idx_pl = get_prop(potts_h, edge, :ipl)
+        pl = get_projector!(get_prop(potts_h, :pool_of_projectors), idx_pl, :CPU)
+        idx_pr = get_prop(potts_h, edge, :ipr)
+        pr = get_projector!(get_prop(potts_h, :pool_of_projectors), idx_pr, :CPU)
+        en = get_prop(potts_h, edge, :en)
+        en_potts_h += en[pl[σ[src(edge)]], pr[σ[dst(edge)]]]
     end
-    en_cl_h
+    en_potts_h
 end
 
 """
@@ -287,7 +287,7 @@ Calculate the interaction energy between two nodes in a Potts Hamiltonian.
 This function computes the interaction energy between two specified nodes in a Potts Hamiltonian, represented as a labeled graph.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `i::Int`: The index of the first site.
 - `j::Int`: The index of the second site.
 
@@ -298,21 +298,21 @@ The function checks if there is an interaction edge between the two sites (i, j)
 If such edges exist, it retrieves the interaction energy matrix, projectors, and calculates the interaction energy. 
 If no interaction edge is found, it returns a zero matrix.
 """
-function energy_2site(cl_h::LabelledGraph{S,T}, i::Int, j::Int) where {S,T}
+function energy_2site(potts_h::LabelledGraph{S,T}, i::Int, j::Int) where {S,T}
     # matrix of interaction energies between two nodes
-    if has_edge(cl_h, (i, j, 1), (i, j, 2))
-        en12 = copy(get_prop(cl_h, (i, j, 1), (i, j, 2), :en))
-        idx_pl = get_prop(cl_h, (i, j, 1), (i, j, 2), :ipl)
-        pl = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU))
-        idx_pr = get_prop(cl_h, (i, j, 1), (i, j, 2), :ipr)
-        pr = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU))
+    if has_edge(potts_h, (i, j, 1), (i, j, 2))
+        en12 = copy(get_prop(potts_h, (i, j, 1), (i, j, 2), :en))
+        idx_pl = get_prop(potts_h, (i, j, 1), (i, j, 2), :ipl)
+        pl = copy(get_projector!(get_prop(potts_h, :pool_of_projectors), idx_pl, :CPU))
+        idx_pr = get_prop(potts_h, (i, j, 1), (i, j, 2), :ipr)
+        pr = copy(get_projector!(get_prop(potts_h, :pool_of_projectors), idx_pr, :CPU))
         int_eng = en12[pl, pr]
-    elseif has_edge(cl_h, (i, j, 2), (i, j, 1))
-        en21 = copy(get_prop(cl_h, (i, j, 2), (i, j, 1), :en))
-        idx_pl = get_prop(cl_h, (i, j, 2), (i, j, 1), :ipl)
-        pl = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pl, :CPU))
-        idx_pr = get_prop(cl_h, (i, j, 2), (i, j, 1), :ipr)
-        pr = copy(get_projector!(get_prop(cl_h, :pool_of_projectors), idx_pr, :CPU))
+    elseif has_edge(potts_h, (i, j, 2), (i, j, 1))
+        en21 = copy(get_prop(potts_h, (i, j, 2), (i, j, 1), :en))
+        idx_pl = get_prop(potts_h, (i, j, 2), (i, j, 1), :ipl)
+        pl = copy(get_projector!(get_prop(potts_h, :pool_of_projectors), idx_pl, :CPU))
+        idx_pr = get_prop(potts_h, (i, j, 2), (i, j, 1), :ipr)
+        pr = copy(get_projector!(get_prop(potts_h, :pool_of_projectors), idx_pr, :CPU))
         int_eng = en21[pl, pr]'
     else
         int_eng = zeros(1, 1)
@@ -328,9 +328,9 @@ Calculate the bond energy between two clusters in a Potts Hamiltonian.
 This function computes the bond energy between two specified clusters (cluster nodes) in a Potts Hamiltonian, represented as a labeled graph.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
-- `cl_h_u::NTuple{N, Int64}`: The coordinates of the first cluster.
-- `cl_h_v::NTuple{N, Int64}`: The coordinates of the second cluster.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h_u::NTuple{N, Int64}`: The coordinates of the first cluster.
+- `potts_h_v::NTuple{N, Int64}`: The coordinates of the second cluster.
 - `σ::Int`: Index for which the bond energy is calculated.
 
 # Returns:
@@ -341,23 +341,23 @@ If such edges exist, it retrieves the bond energy matrix and projectors and calc
 If no bond edge is found, it returns a zero vector.
 """
 function bond_energy(
-    cl_h::LabelledGraph{S,T},
-    cl_h_u::NTuple{N,Int64},
-    cl_h_v::NTuple{N,Int64},
+    potts_h::LabelledGraph{S,T},
+    potts_h_u::NTuple{N,Int64},
+    potts_h_v::NTuple{N,Int64},
     σ::Int,
 ) where {S,T,N}
-    if has_edge(cl_h, cl_h_u, cl_h_v)
-        ipu, en, ipv = get_prop.(Ref(cl_h), Ref(cl_h_u), Ref(cl_h_v), (:ipl, :en, :ipr))
-        pu = get_projector!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
-        pv = get_projector!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
+    if has_edge(potts_h, potts_h_u, potts_h_v)
+        ipu, en, ipv = get_prop.(Ref(potts_h), Ref(potts_h_u), Ref(potts_h_v), (:ipl, :en, :ipr))
+        pu = get_projector!(get_prop(potts_h, :pool_of_projectors), ipu, :CPU)
+        pv = get_projector!(get_prop(potts_h, :pool_of_projectors), ipv, :CPU)
         @inbounds energies = en[pu, pv[σ]]
-    elseif has_edge(cl_h, cl_h_v, cl_h_u)
-        ipv, en, ipu = get_prop.(Ref(cl_h), Ref(cl_h_v), Ref(cl_h_u), (:ipl, :en, :ipr))
-        pu = get_projector!(get_prop(cl_h, :pool_of_projectors), ipu, :CPU)
-        pv = get_projector!(get_prop(cl_h, :pool_of_projectors), ipv, :CPU)
+    elseif has_edge(potts_h, potts_h_v, potts_h_u)
+        ipv, en, ipu = get_prop.(Ref(potts_h), Ref(potts_h_v), Ref(potts_h_u), (:ipl, :en, :ipr))
+        pu = get_projector!(get_prop(potts_h, :pool_of_projectors), ipu, :CPU)
+        pv = get_projector!(get_prop(potts_h, :pool_of_projectors), ipv, :CPU)
         @inbounds energies = en[pv[σ], pu]
     else
-        energies = zeros(cluster_size(cl_h, cl_h_u))
+        energies = zeros(cluster_size(potts_h, potts_h_u))
     end
 end
 
@@ -424,42 +424,42 @@ This function truncates a given Potts Hamiltonian by selecting a subset of state
 The resulting truncated Hamiltonian contains only the selected states for each cluster.
 
 # Arguments:
-- `cl_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
+- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
 - `states::Dict`: A dictionary specifying the states to be retained for each cluster.
 
 # Returns:
-- `new_cl_h::LabelledGraph{MetaDiGraph}`: The truncated Potts Hamiltonian with reduced states.
+- `new_potts_h::LabelledGraph{MetaDiGraph}`: The truncated Potts Hamiltonian with reduced states.
 
-The function creates a new Potts Hamiltonian `new_cl_h` with the same structure as the input `cl_h`. 
-It then updates the spectrum of each cluster in `new_cl_h` by selecting the specified states from the original spectrum. 
+The function creates a new Potts Hamiltonian `new_potts_h` with the same structure as the input `potts_h`. 
+It then updates the spectrum of each cluster in `new_potts_h` by selecting the specified states from the original spectrum. 
 Additionally, it updates the interactions and projectors between clusters based on the retained states. 
-The resulting `new_cl_h` represents a truncated version of the original Hamiltonian.
+The resulting `new_potts_h` represents a truncated version of the original Hamiltonian.
 """
-function truncate_potts_hamiltonian(cl_h::LabelledGraph{S,T}, states::Dict) where {S,T}
+function truncate_potts_hamiltonian(potts_h::LabelledGraph{S,T}, states::Dict) where {S,T}
 
-    new_cl_h = LabelledGraph{MetaDiGraph}(vertices(cl_h))
+    new_potts_h = LabelledGraph{MetaDiGraph}(vertices(potts_h))
     new_lp = PoolOfProjectors{Int}()
 
-    for v ∈ vertices(new_cl_h)
-        cl = get_prop(cl_h, v, :cluster)
-        sp = get_prop(cl_h, v, :spectrum)
+    for v ∈ vertices(new_potts_h)
+        cl = get_prop(potts_h, v, :cluster)
+        sp = get_prop(potts_h, v, :spectrum)
         if sp.states == Vector{Int64}[]
             sp = Spectrum(sp.energies[states[v]], sp.states, [1])
         else
             sp = Spectrum(sp.energies[states[v]], sp.states[states[v]])
         end
-        set_props!(new_cl_h, v, Dict(:cluster => cl, :spectrum => sp))
+        set_props!(new_potts_h, v, Dict(:cluster => cl, :spectrum => sp))
     end
 
-    for e ∈ edges(cl_h)
+    for e ∈ edges(potts_h)
         v, w = src(e), dst(e)
-        add_edge!(new_cl_h, v, w)
-        outer_edges = get_prop(cl_h, v, w, :outer_edges)
-        ipl = get_prop(cl_h, v, w, :ipl)
-        pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
-        ipr = get_prop(cl_h, v, w, :ipr)
-        pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
-        en = get_prop(cl_h, v, w, :en)
+        add_edge!(new_potts_h, v, w)
+        outer_edges = get_prop(potts_h, v, w, :outer_edges)
+        ipl = get_prop(potts_h, v, w, :ipl)
+        pl = get_projector!(get_prop(potts_h, :pool_of_projectors), ipl, :CPU)
+        ipr = get_prop(potts_h, v, w, :ipr)
+        pr = get_projector!(get_prop(potts_h, :pool_of_projectors), ipr, :CPU)
+        en = get_prop(potts_h, v, w, :en)
         pl = pl[states[v]]
         pr = pr[states[w]]
         pl_transition, pl_unique = rank_reveal(pl, :PE)
@@ -468,15 +468,15 @@ function truncate_potts_hamiltonian(cl_h::LabelledGraph{S,T}, states::Dict) wher
         ipl = add_projector!(new_lp, pl_transition)
         ipr = add_projector!(new_lp, pr_transition)
         set_props!(
-            new_cl_h,
+            new_potts_h,
             v,
             w,
             Dict(:outer_edges => outer_edges, :ipl => ipl, :en => en, :ipr => ipr),
         )
     end
-    set_props!(new_cl_h, Dict(:pool_of_projectors => new_lp))
+    set_props!(new_potts_h, Dict(:pool_of_projectors => new_lp))
 
-    new_cl_h
+    new_potts_h
 end
 
 function potts_hamiltonian(
@@ -493,25 +493,25 @@ function potts_hamiltonian(
     X, Y = loaded_rmf["Nx"], loaded_rmf["Ny"]
 
     clusters = super_square_lattice((X, Y, 1))
-    cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
+    potts_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
     lp = PoolOfProjectors{Int}()
-    for v ∈ cl_h.labels
-        set_props!(cl_h, v, Dict(:cluster => v))
+    for v ∈ potts_h.labels
+        set_props!(potts_h, v, Dict(:cluster => v))
     end
     for (index, value) in factors
         if length(index) == 2
             y, x = index
             Eng = functions[value]'
             sp = Spectrum(collect(Eng), Vector{Vector{Int}}[], zeros(Int, N[y+1, x+1]))
-            set_props!(cl_h, (x + 1, y + 1), Dict(:spectrum => sp))
+            set_props!(potts_h, (x + 1, y + 1), Dict(:spectrum => sp))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
-            add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
+            add_edge!(potts_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
             Eng = functions[value]
             ipl = add_projector!(lp, collect(1:N[y1+1, x1+1]))
             ipr = add_projector!(lp, collect(1:N[y2+1, x2+1]))
             set_props!(
-                cl_h,
+                potts_h,
                 (x1 + 1, y1 + 1),
                 (x2 + 1, y2 + 1),
                 Dict(
@@ -530,6 +530,6 @@ function potts_hamiltonian(
         end
     end
 
-    set_props!(cl_h, Dict(:pool_of_projectors => lp, :Nx => X, :Ny => Y))
-    cl_h
+    set_props!(potts_h, Dict(:pool_of_projectors => lp, :Nx => X, :Ny => Y))
+    potts_h
 end

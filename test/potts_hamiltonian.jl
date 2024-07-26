@@ -15,20 +15,20 @@ enum(vec) = Dict(v => i for (i, v) ∈ enumerate(vec))
     for T ∈ [Float16, Float32, Float64]
         ig = ising_graph(T, instance)
 
-        cl_h = potts_hamiltonian(
+        potts_h = potts_hamiltonian(
             ig,
             2,
             cluster_assignment_rule = super_square_lattice((m, n, 2 * t)),
         )
 
-        @test collect(vertices(cl_h)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
+        @test collect(vertices(potts_h)) == [(i, j) for i ∈ 1:m for j ∈ 1:n]
 
         clv = []
         cle = []
         rank = rank_vec(ig)
 
-        for v ∈ vertices(cl_h)
-            cl = get_prop(cl_h, v, :cluster)
+        for v ∈ vertices(potts_h)
+            cl = get_prop(potts_h, v, :cluster)
             push!(clv, vertices(cl))
             push!(cle, collect(edges(cl)))
 
@@ -96,17 +96,17 @@ end
         ig = ising_graph(T, instance)
         @test eltype(ig) == T
 
-        cl_h = potts_hamiltonian(
+        potts_h = potts_hamiltonian(
             ig,
             spectrum = full_spectrum,
             cluster_assignment_rule = super_square_lattice((m, n, t)),
         )
 
-        for (bd, e) in zip(bond_dimensions, edges(cl_h))
+        for (bd, e) in zip(bond_dimensions, edges(potts_h))
             ipl, en, ipr =
-                get_prop(cl_h, e, :ipl), get_prop(cl_h, e, :en), get_prop(cl_h, e, :ipr)
-            pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
-            pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+                get_prop(potts_h, e, :ipl), get_prop(potts_h, e, :en), get_prop(potts_h, e, :ipr)
+            pl = get_projector!(get_prop(potts_h, :pool_of_projectors), ipl, :CPU)
+            pr = get_projector!(get_prop(potts_h, :pool_of_projectors), ipr, :CPU)
 
             @test minimum(size(en)) == bd
             @test maximum(pl) == size(en, 1)
@@ -114,11 +114,11 @@ end
         end
 
         for ((i, j), cedge) ∈ cedges
-            ipl, en, ipr = get_prop(cl_h, i, j, :ipl),
-            get_prop(cl_h, i, j, :en),
-            get_prop(cl_h, i, j, :ipr)
-            pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
-            pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+            ipl, en, ipr = get_prop(potts_h, i, j, :ipl),
+            get_prop(potts_h, i, j, :en),
+            get_prop(potts_h, i, j, :ipr)
+            pl = get_projector!(get_prop(potts_h, :pool_of_projectors), ipl, :CPU)
+            pr = get_projector!(get_prop(potts_h, :pool_of_projectors), ipr, :CPU)
             base_i = all_states(rank[i])
             base_j = all_states(rank[j])
 
@@ -144,14 +144,14 @@ end
             @test energy ≈ en[pl, pr]
         end
         @testset "each cluster comprises expected cells" begin
-            for v ∈ vertices(cl_h)
-                cl = get_prop(cl_h, v, :cluster)
+            for v ∈ vertices(potts_h)
+                cl = get_prop(potts_h, v, :cluster)
                 @test issetequal(vertices(cl), cells[v])
             end
         end
         @testset "each edge comprises expected bunch of edges from source Ising graph" begin
-            for e ∈ edges(cl_h)
-                outer_edges = get_prop(cl_h, e, :outer_edges)
+            for e ∈ edges(potts_h)
+                outer_edges = get_prop(potts_h, e, :outer_edges)
                 @test issetequal(
                     cedges[(src(e), dst(e))],
                     [(src(oe), dst(oe)) for oe ∈ outer_edges],
@@ -177,16 +177,16 @@ function create_example_potts_hamiltonian(::Type{T}) where {T}
     )
 end
 
-cl_h_state_to_spin =
+potts_h_state_to_spin =
     [([1, 1], [-1, -1]), ([1, 2], [-1, 1]), ([2, 1], [1, -1]), ([2, 2], [1, 1])]
 
 @testset "Decoding solution gives correct spin assignment" begin
 
     for T ∈ [Float16, Float32, Float64]
-        cl_h = create_example_potts_hamiltonian(T)
-        @test all(eltype(get_prop(cl_h, e, :en)) == T for e ∈ edges(cl_h))
-        for (state, spin_values) ∈ cl_h_state_to_spin
-            d = decode_potts_hamiltonian_state(cl_h, state)
+        potts_h = create_example_potts_hamiltonian(T)
+        @test all(eltype(get_prop(potts_h, e, :en)) == T for e ∈ edges(potts_h))
+        for (state, spin_values) ∈ potts_h_state_to_spin
+            d = decode_potts_hamiltonian_state(potts_h, state)
             states = collect(values(d))[collect(keys(d))]
             @test states == spin_values
         end
@@ -242,34 +242,34 @@ function create_larger_example_potts_hamiltonian()
         9 => (2, 2),
     )
 
-    cl_h = potts_hamiltonian(
+    potts_h = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule,
     )
 
-    ig, cl_h
+    ig, potts_h
 end
 
-function potts_hamiltonian_energy(cl_h, state)
+function potts_hamiltonian_energy(potts_h, state)
     # This is highly inefficient, but simple, which makes it suitable for testing.
     # If such a function is needed elsewhere, we need to implement it properly.
     total_en = 0
 
     # Collect local terms from each cluster
-    for (s, v) ∈ zip(state, vertices(cl_h))
-        total_en += get_prop(cl_h, v, :spectrum).energies[s]
+    for (s, v) ∈ zip(state, vertices(potts_h))
+        total_en += get_prop(potts_h, v, :spectrum).energies[s]
     end
 
     # Collect inter-cluster terms
-    for edge ∈ edges(cl_h)
-        i, j = cl_h.reverse_label_map[src(edge)], cl_h.reverse_label_map[dst(edge)]
-        ipl, en, ipr = get_prop(cl_h, edge, :ipl),
-        get_prop(cl_h, edge, :en),
-        get_prop(cl_h, edge, :ipr)
-        pl = get_projector!(get_prop(cl_h, :pool_of_projectors), ipl, :CPU)
-        pr = get_projector!(get_prop(cl_h, :pool_of_projectors), ipr, :CPU)
+    for edge ∈ edges(potts_h)
+        i, j = potts_h.reverse_label_map[src(edge)], potts_h.reverse_label_map[dst(edge)]
+        ipl, en, ipr = get_prop(potts_h, edge, :ipl),
+        get_prop(potts_h, edge, :en),
+        get_prop(potts_h, edge, :ipr)
+        pl = get_projector!(get_prop(potts_h, :pool_of_projectors), ipl, :CPU)
+        pr = get_projector!(get_prop(potts_h, :pool_of_projectors), ipr, :CPU)
         edge_energy = en[pl, pr]
         total_en += edge_energy[state[i], state[j]]
     end
@@ -277,18 +277,18 @@ function potts_hamiltonian_energy(cl_h, state)
 end
 
 @testset "Decoding solution gives spins configuration with corresponding energies" begin
-    ig, cl_h = create_larger_example_potts_hamiltonian()
+    ig, potts_h = create_larger_example_potts_hamiltonian()
 
     # Corresponding bases sizes for each cluster are 16, 4, 4, 2.
     all_states = [[i, j, k, l] for i ∈ 1:16 for j ∈ 1:4 for k ∈ 1:4 for l ∈ 1:2]
 
     for state ∈ all_states
-        d = decode_potts_hamiltonian_state(cl_h, state)
+        d = decode_potts_hamiltonian_state(potts_h, state)
         spins = zeros(length(d))
         for (k, v) ∈ d
             spins[k] = v
         end
         σ = [Int.(spins)]
-        @test potts_hamiltonian_energy(cl_h, state) ≈ energy(σ, ig)[]
+        @test potts_hamiltonian_energy(potts_h, state) ≈ energy(σ, ig)[]
     end
 end

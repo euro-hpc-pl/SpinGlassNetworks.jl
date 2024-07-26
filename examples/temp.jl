@@ -88,27 +88,27 @@ function potts_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
     N = loaded_rmf["N"]
 
     clusters = super_square_lattice((Nx, Ny, 1))
-    cl_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
-    for v ∈ cl_h.labels
+    potts_h = LabelledGraph{MetaDiGraph}(sort(collect(values(clusters))))
+    for v ∈ potts_h.labels
         x, y = v
         sp = Spectrum(
             Vector{Real}(undef, 1),
             Array{Vector{Int}}(undef, 1, 1),
             Vector{Int}(undef, 1),
         )
-        set_props!(cl_h, v, Dict(:cluster => v, :spectrum => sp))
+        set_props!(potts_h, v, Dict(:cluster => v, :spectrum => sp))
     end
     for (index, value) in factors
         if length(index) == 2
             y, x = index
             Eng = sum(functions[value])
-            set_props!(cl_h, (x + 1, y + 1), Dict(:eng => Eng))
+            set_props!(potts_h, (x + 1, y + 1), Dict(:eng => Eng))
         elseif length(index) == 4
             y1, x1, y2, x2 = index
-            add_edge!(cl_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
+            add_edge!(potts_h, (x1 + 1, y1 + 1), (x2 + 1, y2 + 1))
             Eng = sum(functions[value], dims = 2)
             set_props!(
-                cl_h,
+                potts_h,
                 (x1 + 1, y1 + 1),
                 (x2 + 1, y2 + 1),
                 Dict(
@@ -127,7 +127,7 @@ function potts_hamiltonian(fname::String, Nx::Integer = 240, Ny::Integer = 320)
         end
     end
 
-    cl_h
+    potts_h
 end
 
 

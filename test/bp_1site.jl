@@ -21,14 +21,14 @@ function create_larger_example_potts_hamiltonian_tree_basic()
 
     assignment_rule = Dict(1 => (1, 1, 1), 2 => (1, 2, 1), 3 => (2, 1, 1), 4 => (2, 2, 2))
 
-    cl_h = potts_hamiltonian(
+    potts_h = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule,
     )
 
-    ig, cl_h
+    ig, potts_h
 end
 
 """
@@ -74,14 +74,14 @@ function create_larger_example_potts_hamiltonian_tree()
         9 => (3, 3, 1),
     )
 
-    cl_h = potts_hamiltonian(
+    potts_h = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule,
     )
 
-    ig, cl_h
+    ig, potts_h
 end
 
 """
@@ -125,31 +125,31 @@ function create_larger_example_potts_hamiltonian_tree_pathological()
         8 => (2, 2),
     )
 
-    cl_h = potts_hamiltonian(
+    potts_h = potts_hamiltonian(
         ig,
         Dict{NTuple{2,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule,
     )
 
-    ig, cl_h
+    ig, potts_h
 end
 
 @testset "Belief propagation" begin
-    for (ig, cl_h) ∈ [
+    for (ig, potts_h) ∈ [
         create_larger_example_potts_hamiltonian_tree_basic(),
         create_larger_example_potts_hamiltonian_tree(),
         create_larger_example_potts_hamiltonian_tree_pathological(),
     ]
         for beta ∈ [0.5, 1]
             iter = 16
-            beliefs = belief_propagation(cl_h, beta; iter = iter)
+            beliefs = belief_propagation(potts_h, beta; iter = iter)
             exact_marginal = Dict()
             for k in keys(beliefs)
                 push!(
                     exact_marginal,
                     k => [
-                        exact_cond_prob(cl_h, beta, Dict(k => a)) for
+                        exact_cond_prob(potts_h, beta, Dict(k => a)) for
                         a = 1:length(beliefs[k])
                     ],
                 )
