@@ -7,6 +7,9 @@ using Logging
 using Test
 using CUDA
 
+user_onGPU = true  # or false, based on user's preference
+gpu_available = CUDA.functional()
+onGPU = user_onGPU && gpu_available
 
 function _energy(config::Dict, couplings::Dict, cedges::Dict, n::Int)
     eng = zeros(1, n)
