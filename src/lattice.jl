@@ -43,7 +43,7 @@ The simplified super square lattice is defined by the size of three dimensions: 
 n is the number of rows and t denotes the number of spins stored in the cluster.
 
 # Arguments:
-- `size::NTuple{3, Int}`: A tuple specifying the size of the simplified super square lattice in three dimensions: `(m, n, t)`, where `m` is number of columns, `n` number of rows and `t` denotes numberr of spins in cluster.
+- `size::NTuple{3, Int}`: A tuple specifying the size of the simplified super square lattice in three dimensions: `(m, n, t)`, where `m` is number of columns, `n` number of rows and `t` denotes number of spins in cluster.
 
 # Returns:
 - `coord_map::Dict`: A dictionary that maps Ising graph coordinates to the corresponding lattice coordinates.
@@ -67,7 +67,7 @@ This function generates a mapping that relates Ising graph coordinates to Pegasu
 based on the specified size of the Pegasus lattice in three dimensions: `(m, n, t)`.
 
 # Arguments:
-- `size::NTuple{3, Int}`: A tuple specifying the size of the Pegasus lattice in three dimensions: `(m, n, t)`, where `m` is number of columns, `n` number of rows and `t` denotes number of spins in cluster. Convention: `t` is already divided by 8, so `t`=3 for Pegasus lattice.
+- `size::NTuple{3, Int}`: A tuple specifying the size of the Pegasus lattice in three dimensions: `(m, n, t)`, where `m` is number of columns, `n` number of rows and `t` denotes number of spins in the cluster. One Pegasus cluster consists of 24 spins. Convention: `t` is already divided by 8, so `t`=3 for Pegasus lattice.
 
 # Returns:
 - `coord_map::Dict`: A dictionary that maps Ising graph coordinates to the corresponding Pegasus lattice coordinates.
@@ -160,7 +160,7 @@ This function generates a mapping that relates Ising graph coordinates to Zephyr
 coordinates based on the specified size of the Zephyr lattice in three dimensions: `(m, n, t)`.
 
 # Arguments:
-- `size::NTuple{3, Int}`: A tuple specifying the size of the Zephyr lattice in three dimensions: `(m, n, t)`, where `m` is double number of columns, `n` double number of rows and `t` denotes number of spins in cluster. Convention: `t` is already divided by 4, so `t`=4 for Zephyr lattice. E.g. to create 3x3x16 Zephyr lattice, you should use `m`=6, `n`=6, `t`=4.
+- `size::NTuple{3, Int}`: A tuple specifying the size of the Zephyr lattice in three dimensions: `(m, n, t)`, where `m` is double number of columns, `n` double number of rows and `t` denotes number of spins in cluster. One full Zephyr cluster consists of 16 spins. Convention: `t` is already divided by 4, so `t`=4 for Zephyr lattice. E.g. to create 3x3x16 Zephyr lattice, you should use `m`=6, `n`=6, `t`=4.
 
 # Returns:
 - `coord_map::Dict`: A dictionary that maps Ising graph coordinates to the corresponding Zephyr lattice coordinates.
