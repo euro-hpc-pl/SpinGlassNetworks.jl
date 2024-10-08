@@ -6,8 +6,9 @@ _pages = [
     "Lattice geometries" => "lattice.md",
     "Potts hamiltonian" => "clh.md",
     "Local dimensional reduction" => "bp.md",
-    "API Reference for auxiliary functions" => "api.md",
 ]
+#     "API Reference for auxiliary functions" => "api.md",
+# ]
 
 # ============================
 format =
