@@ -11,7 +11,7 @@ prune
 couplings
 ```
 
-## Clustered Hamiltonian
+## Potts Hamiltonian
 ```@docs
 split_into_clusters
 decode_potts_hamiltonian_state
