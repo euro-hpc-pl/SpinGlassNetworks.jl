@@ -1,5 +1,5 @@
 # Lattice geometries
-The Ising graph allowed for loading instances directly from a file and translating them into a graph. The next step towards constructing the tensor network is to build a lattice, based on which we will transform the Ising graph into a clustered Hamiltonian.
+The Ising graph allowed for loading instances directly from a file and translating them into a graph. The next step towards constructing the tensor network is to build a lattice, based on which we will transform the Ising graph into a Potts Hamiltonian.
 Within the `SpinGlassNetworks.jl` package, users have the flexibility to construct three types of lattice geometries, each tailored to specific needs. 
 
 ## Super square lattice
@@ -27,12 +27,12 @@ m = 5
 n = 5
 t = 4
 
-cl_h = clustered_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = super_square_lattice((m, n, t))
 )
 
-println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in clustered Hamiltonian: ", length(LabelledGraphs.vertices(cl_h)))
+println("Number of nodes in original instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in Potts Hamiltonian: ", length(LabelledGraphs.vertices(potts_h)))
 ```
 
 ## Pegasus graphs
@@ -52,21 +52,21 @@ Below you find simple example of usage `pegasus_latttice` function.
 ```@example
 using SpinGlassEngine, SpinGlassNetworks, LabelledGraphs
 
-# load Chimera instance and create Ising graph
+# load Pegasus instance and create Ising graph
 instance = "$(@__DIR__)/../../src/instances/pegasus_random/P4/RAU/001_sg.txt"
 ig = ising_graph(instance)
 
-# Loaded instance is pegasus graph
+# Loaded instance is compatible with Pegasus geometry. Next we create Potts hamiltonian based on Pegasus geometry. 
 m = 3
 n = 3
 t = 3
 
-cl_h = clustered_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = pegasus_lattice((m, n, t))
 )
 
-println("Number of nodes in original instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in clustered Hamiltonian: ", length(LabelledGraphs.vertices(cl_h))/2)
+println("Number of nodes in original instance: ", length(LabelledGraphs.vertices(ig)), "\n", " Number of nodes in Potts Hamiltonian: ", length(LabelledGraphs.vertices(potts_h))/2)
 ```
 
 
@@ -87,19 +87,19 @@ Below you find simple example of usage `zephyr_latttice` function.
 ```@example
 using SpinGlassEngine, SpinGlassNetworks, LabelledGraphs
 
-# load Chimera instance and create Ising graph
+# load instance and create Ising graph
 instance = "$(@__DIR__)/../../src/instances/zephyr_random/Z3/RAU/001_sg.txt"
 ig = ising_graph(instance)
 
-# Loaded instance is zephyr graph
+# Loaded instance is compatible with Zephyr geometry. Next we create Potts hamiltonian based on Zephyr geometry. 
 m = 6
 n = 6
 t = 4
 
-cl_h = clustered_hamiltonian(
+potts_h = potts_hamiltonian(
     ig,
     cluster_assignment_rule = zephyr_lattice((m, n, t))
 )
 
-println("Number of nodes in oryginal instance: ", length(LabelledGraphs.vertices(ig)))
+println("Number of nodes in original instance: ", length(LabelledGraphs.vertices(ig)))
 ```

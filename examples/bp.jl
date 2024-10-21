@@ -13,7 +13,7 @@ Instance below looks like this:
 |
 7 -- 8 -- 9
 """
-function create_larger_example_clustered_hamiltonian_tree()
+function create_larger_example_potts_hamiltonian_tree()
     instance = Dict(
         (1, 1) => 0.5,
         (2, 2) => 0.25,
@@ -48,22 +48,22 @@ function create_larger_example_clustered_hamiltonian_tree()
         9 => (3, 3, 1),
     )
 
-    cl_h = clustered_hamiltonian(
+    potts_h = potts_hamiltonian(
         ig,
         Dict{NTuple{3,Int},Int}(),
         spectrum = full_spectrum,
         cluster_assignment_rule = assignment_rule,
     )
 
-    ig, cl_h
+    ig, potts_h
 end
 
-ig, cl_h = create_larger_example_clustered_hamiltonian_tree()
+ig, potts_h = create_larger_example_potts_hamiltonian_tree()
 beta = 0.1
 iter = 0
-beliefs = belief_propagation(cl_h, beta; iter = iter)
+beliefs = belief_propagation(potts_h, beta; iter = iter)
 
-for v in vertices(cl_h)
-    en = get_prop(cl_h, v, :spectrum).energies
+for v in vertices(potts_h)
+    en = get_prop(potts_h, v, :spectrum).energies
     println("vertex ", v, " energy = ", en .- minimum(en), " bp = ", beliefs[v])
 end

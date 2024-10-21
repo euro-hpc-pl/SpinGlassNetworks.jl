@@ -20,7 +20,7 @@ function unique_nodes(ising_tuples)
 end
 
 """
-    ising_graph(instance, sgn::Number = 1.0, rank_override::Dict{Int,Int} = Dict{Int,Int}())
+$(TYPEDSIGNATURES)
 
 Create an Ising graph from interaction data.
 
