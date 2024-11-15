@@ -9,6 +9,7 @@ using Base.Cartesian
 using SparseArrays
 using CUDA, CUDA.CUSPARSE
 using SpinGlassTensors
+using JLD2
 import Base.Prehashed
 
 
