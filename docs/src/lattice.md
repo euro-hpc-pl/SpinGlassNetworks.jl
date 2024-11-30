@@ -1,10 +1,11 @@
 # Lattice geometries
-The Ising graph serves as the starting point, allowing users to load instances directly from a file and translate them into a graph with vertices numerated using linear indices. To group spins into clusters for the Potts Hamiltonian, it is necessary to map these linear spin coordinates onto the corresponding coordinates of a clusters in a specific lattice geometry.
+The Ising graph serves as the starting point, allowing users to load instances directly from a file and translate them into a graph with vertices numerated using linear indices. To group spins into clusters for the Potts Hamiltonian, it is necessary to map these linear spin coordinates onto the corresponding coordinates of a Potts clusters in a specific lattice geometry. 
 
-The `SpinGlassNetworks.jl` package provides tools for creating three types of lattice geometries, enabling users to adapt the mapping process to the structure of the problem being analyzed. These geometries include super square lattice, Pegasus lattice, and Zephyr lattice, each optimized for specific topologies and applications.
+The `SpinGlassNetworks.jl` package provides tools for mapping linear indices into three types of lattice geometries, enabling users to adapt the mapping process to the structure of the problem being analyzed. These geometries include super square lattice, Pegasus lattice, and Zephyr lattice, each optimized for specific topologies and applications. For example, in the Pegasus lattice, groups of 24 binary spins are clustered into a single Potts variable, while in the Zephyr lattice, clusters consist of 16 binary spins. 
 
 ## Super square lattice
-The `super_square_lattice` geometry defines a square lattice with interactions between nearest neighbors (horizontal and vertical connections between unit cells) and next-nearest neighbors (diagonal connections). In this function, linear indices from the Ising graph are mapped onto a 2D square lattice with diagonals (King's lattice). Unit cells, represented as red ellipses in the schematic below, consist of groups of spins, allowing clustering into higher-dimensional Potts variables. 
+The `super_square_lattice` geometry defines a square lattice with interactions between nearest neighbors (horizontal and vertical connections between unit cells) and next-nearest neighbors (diagonal connections). In `super_square_lattice` function, linear indices of spins from the Ising graph are mapped onto a 2D super square lattice coordinate system (King's lattice). 
+Spins (denoted as black dots in the figure below) are grouped into clusters represented as red ellipses. Every spin in this cluster is indexed coresponding to the square lattice coordinate in the new graph with reduced number of variables of higher dimensions (shown on the right).
 ```@raw html
 <img src="../images/sd.png" width="200%" class="center"/>
 ```
