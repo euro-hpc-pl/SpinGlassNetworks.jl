@@ -14,7 +14,6 @@ couplings
 ## Potts Hamiltonian
 ```@docs
 split_into_clusters
-decode_potts_hamiltonian_state
 rank_reveal
 energy
 energy_2site

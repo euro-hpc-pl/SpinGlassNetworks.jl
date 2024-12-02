@@ -217,12 +217,9 @@ end
 
 """
 $(TYPEDSIGNATURES)
+Decode a Potts Hamiltonian clustered states into Ising spin states.
 
-TODO: check the order consistency over external packages.
-
-Decode a Potts Hamiltonian state into Ising graph spin values.
-
-This function decodes a state from a Potts Hamiltonian into Ising graph spin values and 
+This function decodes a state encoded in a Potts Hamiltonian language into states compatible with binary Ising graph and 
 returns a dictionary mapping each Ising graph vertex to its corresponding spin value.
 
 # Arguments:
@@ -466,6 +463,25 @@ function truncate_potts_hamiltonian(potts_h::LabelledGraph{S,T}, states::Dict) w
     new_potts_h
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+Construct a Potts Hamiltonian for a Random Markov Field (RMF) model.
+
+This function creates a Potts Hamiltonian from a Random Markov Field specified in an OpenGM-compatible file. 
+It maps the RMF variables and their pairwise interactions onto a 2D grid structure, constructing the corresponding Potts Hamiltonian using a super square lattice representation. 
+The function supports optional resizing of the grid dimensions.
+
+# Arguments
+- `fname::String`: Path to the OpenGM-compatible file containing the RMF definition. This file includes functions, factors, and variable dimensions.
+- `Nx::Union{Integer, Nothing}`: (Optional) Number of columns in the 2D grid. If `nothing`, the dimensions are inferred from the file.
+- `Ny::Union{Integer, Nothing}`: (Optional) Number of rows in the 2D grid. If `nothing`, the dimensions are inferred from the file.
+
+# Returns
+- `potts_h::LabelledGraph{MetaDiGraph}`: A labelled graph representing the Potts Hamiltonian, where:
+  - Vertices correspond to individual clusters in the super square lattice.
+  - Edges represent interactions between clusters, annotated with energy and projector information.
+"""
 function potts_hamiltonian(
     fname::String,
     Nx::Union{Integer,Nothing} = nothing,
