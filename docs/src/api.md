@@ -21,7 +21,6 @@ energy_2site
 cluster_size
 bond_energy
 exact_cond_prob
-truncate_potts_hamiltonian
 ```
 
 ## Belief propagation

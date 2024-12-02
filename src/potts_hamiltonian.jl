@@ -422,26 +422,6 @@ function exact_cond_prob(
     sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
 end
 
-"""
-$(TYPEDSIGNATURES)
-
-Truncate a Potts Hamiltonian based on specified states.
-
-This function truncates a given Potts Hamiltonian by selecting a subset of states for each cluster based on the provided `states` dictionary. 
-The resulting truncated Hamiltonian contains only the selected states for each cluster.
-
-# Arguments:
-- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
-- `states::Dict`: A dictionary specifying the states to be retained for each cluster.
-
-# Returns:
-- `new_potts_h::LabelledGraph{MetaDiGraph}`: The truncated Potts Hamiltonian with reduced states.
-
-The function creates a new Potts Hamiltonian `new_potts_h` with the same structure as the input `potts_h`. 
-It then updates the spectrum of each cluster in `new_potts_h` by selecting the specified states from the original spectrum. 
-Additionally, it updates the interactions and projectors between clusters based on the retained states. 
-The resulting `new_potts_h` represents a truncated version of the original Hamiltonian.
-"""
 function truncate_potts_hamiltonian(potts_h::LabelledGraph{S,T}, states::Dict) where {S,T}
 
     new_potts_h = LabelledGraph{MetaDiGraph}(vertices(potts_h))

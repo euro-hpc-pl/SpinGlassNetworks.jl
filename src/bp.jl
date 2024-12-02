@@ -21,8 +21,7 @@ Perform loopy belief propagation on a given Potts Hamiltonian.
 - `iter::Int (optional, default=1)`: The maximum number of iterations to perform.
 
 # Returns:
-- `beliefs::Dict`: A dictionary where keys are vertices of Potts Hamiltonian, and values are the 
-resulting beliefs after belief propagation.
+- `beliefs::Dict`: A dictionary mapping the vertices of the Potts Hamiltonian to the computed belief distributions of states within each cluster.
 
 The function implements loopy belief propagation on the given Potts Hamiltonian `potts_h` to calculate beliefs for each vertex.
 Belief propagation is an iterative algorithm that computes beliefs by passing messages between vertices and edges of the Potts Hamiltonian. 
@@ -255,21 +254,20 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Constructs a Potts Hamiltonian for a given Potts Hamiltonian with a 2-site cluster approximation used in Pegasus graph.
+Construct a 2-site cluster approximation of a Potts Hamiltonian.
+
+This function generates a new Potts Hamiltonian using a 2-site cluster approximation, specifically designed for geometries like Pegasus and Zephyr. 
+In these geometries, clusters in the original Potts Hamiltonian are subdivided into smaller sub-clusters, which are then merged into unified 2-site clusters. 
 
 # Arguments:
-- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
-- `beta::Real`: The inverse temperature parameter for the 2-site cluster Hamiltonian construction.
-    
+- `potts_h::LabelledGraph{S, T}`: The input Potts Hamiltonian represented as a labelled graph, where vertices correspond to individual sub-clusters and edges define interactions between them.
+- `beta::Real`: The inverse temperature parameter, used for computing the energy values and spectra of the 2-site clusters.
+
 # Returns:
-- `new_potts_h::LabelledGraph{MetaDiGraph}`: A new labelled graph representing the 2-site cluster Hamiltonian.
-    
-This function constructs a Potts Hamiltonian `potts_h` by applying a 2-site cluster approximation. 
-It combines and merges vertices and edges of the original graph to create a simplified representation of the Hamiltonian.
-    
-The resulting `new_potts_h` graph represents the 2-site cluster Hamiltonian with simplified interactions between clusters. 
-The energy values, projectors, and spectra associated with the new vertices and edges are computed based on 
-the provided temperature parameter `beta`.
+- `new_potts_h::LabelledGraph{MetaDiGraph}`: A labelled graph representing the new Potts Hamiltonian, where:
+  - Vertices: Represent unified 2-site clusters.
+  - Edges: Capture interactions between these clusters, including energy values and associated projectors.
+
 """
 function potts_hamiltonian_2site(potts_h::LabelledGraph{S,T}, beta::Real) where {S,T}
 
