@@ -92,17 +92,20 @@ $(TYPEDSIGNATURES)
 
 Truncate a Potts Hamiltonian based on 2-site belief propagation states.
 
-This function truncates a Potts Hamiltonian by considering 2-site belief propagation states and selecting the most probable states 
-to keep. It computes the beliefs for all 2-site combinations and selects the states that maximize the probability.
+This function truncates the state space of a Potts Hamiltonian by leveraging 2-site belief propagation. 
+In certain geometries, such as Pegasus or Zephyr, clusters in the Potts Hamiltonian are further divided into smaller sub-clusters. 
+This function computes beliefs for the entire 2-site cluster and selects states that maximize the overall probability in a cluster.
 
 # Arguments:
 - `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
-- `beliefs::Dict`: A dictionary containing belief values for 2-site interactions.
-- `num_states::Int`: The maximum number of most probable states to keep.
-- `beta::Real (optional)`: The inverse temperature parameter (default is 1.0).
+- `beliefs::Dict`: A dictionary where keys are clusters (vertices) and values are the beliefs.
+- `num_states::Int`: The maximum number of most probable states to retain for each cluster.
+- `result_folder::String (optional)`: Path to the folder where truncated states will be saved. Default is `"results_folder"`.
+- `inst::String (optional)`: Instance name for saving or loading results. Default is `"inst"`.
+- `beta::Real (optional)`: The inverse temperature parameter. Default is `1.0`.
 
 # Returns:
-- `LabelledGraph{S, T}`: A truncated Potts Hamiltonian.
+- `LabelledGraph{S, T}`: A Potts Hamiltonian with reduced state space, preserving only the most probable states.
 """
 function truncate_potts_hamiltonian_2site_BP(
     potts_h::LabelledGraph{S,T},
@@ -171,6 +174,26 @@ function select_numstate_best(E, sx, num_states)
     end
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+Truncate the Potts Hamiltonian using belief propagation or precomputed states.
+
+This function reduces the dimensionality of a given Potts Hamiltonian by truncating its states. 
+The process is guided by the Loopy Belief Propagation (LBP) algorithm, which estimates the marginal probabilities of states in the Potts model. If precomputed states are available, they are loaded from the specified result folder to skip recomputation.
+
+# Arguments:
+- `potts_h`: The input Potts Hamiltonian, represented as a labelled graph.
+- `β::Float64`: The inverse temperature parameter controlling the distribution of states.
+- `cs::Int`: The maximum number of states retained per cluster after truncation.
+- `result_folder::String`: The folder path where results are stored or loaded.
+- `inst::String`: The instance name used to identify stored results.
+- `tol::Float64`: (Optional) Convergence tolerance for the belief propagation algorithm. Default is `1e-6`.
+- `iter::Int`: The maximum number of iterations for the belief propagation algorithm.
+
+# Returns:
+- `potts_h`: A truncated Potts Hamiltonian with reduced state space, preserving the most relevant states per cluster.
+"""
 function truncate_potts_hamiltonian(
     potts_h,
     β,

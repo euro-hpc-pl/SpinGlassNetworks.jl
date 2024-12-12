@@ -41,23 +41,25 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Create a Potts Hamiltonian.
+Construct a Potts Hamiltonian.
 
-This function constructs a Potts Hamiltonian from an Ising graph by introducing a natural order in Potts Hamiltonian coordinates.
+This function converts an Ising graph into a Potts Hamiltonian by clustering spins into groups defined by a given lattice geometry. Each cluster is assigned a fixed number of states.
 
 # Arguments:
-- `ig::IsingGraph`: The Ising graph representing the spin system.
-- `num_states_cl::Int`: The number of states per cluster taken into account when calculating the spectrum. In every cluster the number of states is constant.
-- `spectrum::Function`: A function for calculating the spectrum of the Potts Hamiltonian. It can be `full_spectrum` or `brute_force`.
-- `cluster_assignment_rule::Dict{Int, L}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
+- `ig::IsingGraph`: The input Ising graph, representing the spin system as a set of vertices (spins) and edges (interactions).
+- `num_states_cl::Int`: The number of states assigned to each cluster. All clusters are assigned the same number of states.
+- `spectrum::Function`: A function for computing the spectrum of the Potts Hamiltonian. Options include:
+  - `full_spectrum`
+  - `brute_force`: A direct approach for spectrum calculation, suitable for smaller systems.
+- `cluster_assignment_rule::Dict{Int, L}`: A dictionary mapping Ising graph vertices to clusters. Supported lattice geometries include:
+  - `super_square_lattice`: Maps linear indices to a 2D square lattice with nearest and next-nearest neighbor interactions.
+  - `pegasus_lattice`: Supports the Pegasus topology used in quantum annealing systems.
+  - `zephyr_lattice`: Supports the Zephyr topology used in quantum annealing systems.
 
 # Returns:
-- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labelled graph.
-
-The `potts_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a Potts Hamiltonian by 
-introducing a natural order in Potts Hamiltonian coordinates. 
-It allows you to specify the number of states per cluster, a spectrum calculation function, 
-and a cluster assignment rule, which maps Ising graph vertices to clusters.
+- `potts_h::LabelledGraph{S, T}`: A labelled graph representing the Potts Hamiltonian, where:
+  - Nodes correspond to clusters of spins.
+  - Edges represent interactions between clusters.
 """
 function potts_hamiltonian(
     ig::IsingGraph,
@@ -77,23 +79,25 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Create a Potts Hamiltonian.
+Construct a Potts Hamiltonian.
 
-This function constructs a Potts Hamiltonian from an Ising graph by introducing a natural order in Potts Hamiltonian coordinates.
+This function converts an Ising graph into a Potts Hamiltonian by clustering Ising spins into groups defined by a specified lattice geometry. Each cluster is assigned a fixed number of states, and inter-cluster interactions are computed based on the structure of the Ising graph. 
 
 # Arguments:
-- `ig::IsingGraph`: The Ising graph representing the spin system.
-- `num_states_cl::Dict{T, Int}`: A dictionary specifying the number of states per cluster for different clusters. Number of states are considered when calculating the spectrum.
-- `spectrum::Function`: A function for calculating the spectrum of the Potts Hamiltonian. It can be `full_spectrum` or `brute_force`.
-- `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
+- `ig::IsingGraph`: The input Ising graph, where vertices represent spins and edges represent interactions between them.
+- `num_states_cl::Dict{T, Int}`: A dictionary mapping cluster indices to the number of states for each cluster. 
+  If a cluster is not explicitly listed, the function uses the cluster's default basis size.
+- `spectrum::Function`: A function for calculating the spectrum of the Potts Hamiltonian for each cluster.
+  Defaults to `full_spectrum`. Alternatives, such as `brute_force`, may also be provided.
+- `cluster_assignment_rule::Dict{Int, T}`: A dictionary mapping Ising graph vertices to clusters. Supported cluster geometries include:
+  - `super_square_lattice`
+  - `pegasus_lattice`
+  - `zephyr_lattice`
 
 # Returns:
-- `potts_h::LabelledGraph{MetaDiGraph}`: The Potts Hamiltonian represented as a labelled graph.
-
-The `potts_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a Potts Hamiltonian 
-by introducing a natural order in Potts Hamiltonian coordinates. It allows you to specify the number of 
-states per cluster which can vary for different clusters, a spectrum calculation function, 
-and a cluster assignment rule, which maps Ising graph vertices to clusters.
+- `potts_h::LabelledGraph{S, T}`: A labelled graph representing the Potts Hamiltonian, with:
+  - Nodes: Corresponding to spin clusters, including their spectrum and configuration data.
+  - Edges: Representing inter-cluster interactions.
 
 """
 function potts_hamiltonian(
@@ -147,24 +151,27 @@ end
 """
 $(TYPEDSIGNATURES)
 
-Create a Potts Hamiltonian with optional cluster sizes.
+Construct a Potts Hamiltonian with default cluster sizes.
 
-This function constructs a Potts Hamiltonian from an Ising graph by introducing a natural order in Potts Hamiltonian coordinates.
+This function converts an Ising graph into a Potts Hamiltonian using a specified cluster assignment rule. 
+By default, this version of the function does not truncate cluster states, as it assigns the full basis size for each cluster during spectrum calculation. 
+It is useful when no custom cluster sizes are required.
 
 # Arguments:
-- `ig::IsingGraph`: The Ising graph representing the spin system.
-- `spectrum::Function`: A function for calculating the spectrum of the Potts Hamiltonian. It can be `full_spectrum` or `brute_force`. Default is `full_spectrum`.
-- `cluster_assignment_rule::Dict{Int, T}`: A dictionary specifying the assignment rule that maps Ising graph vertices to clusters. It can be `super_square_lattice`, `pegasus_lattice` or `zephyr_lattice`.
+- `ig::IsingGraph`: The input Ising graph, where vertices represent spins and edges represent interactions.
+- `spectrum::Function`: A function for calculating the spectrum of the Potts Hamiltonian. Options include:
+  - `full_spectrum` (default): Computes the complete spectrum for all cluster configurations.
+  - `brute_force`: Suitable for smaller systems, uses direct enumeration to calculate the spectrum.
+- `cluster_assignment_rule::Dict{Int, T}`: A dictionary mapping Ising graph vertices to clusters. Supported cluster geometries include:
+  - `super_square_lattice`
+  - `pegasus_lattice`
+  - `zephyr_lattice`
 
 # Returns:
-- `potts_h::LabelledGraph{MetaDiGraph}`: The Potts Hamiltonian represented as a labelled graph.
+- `potts_h::LabelledGraph{MetaDiGraph}`: A labelled graph representing the Potts Hamiltonian, where:
+  - Nodes: Correspond to clusters of spins, with properties such as the spectrum and configuration details.
+  - Edges: Capture inter-cluster interactions, including coupling strengths and energy terms.
 
-The `potts_hamiltonian` function takes an Ising graph (`ig`) as input and constructs a Potts Hamiltonian 
-by introducing a natural order in Potts Hamiltonian coordinates. 
-You can optionally specify a spectrum calculation function and a cluster assignment rule, which maps Ising graph vertices to clusters.
-This version of `potts_hamiltonian` function does not truncate states in the cluster while calculating the spectrum.
-If you want to specify custom cluster sizes, use the alternative version of this function by 
-passing a `Dict{T, Int}` containing the number of states per cluster as `num_states_cl`.
 """
 function potts_hamiltonian(
     ig::IsingGraph;
@@ -210,12 +217,9 @@ end
 
 """
 $(TYPEDSIGNATURES)
+Decode a Potts Hamiltonian clustered states into Ising spin states.
 
-TODO: check the order consistency over external packages.
-
-Decode a Potts Hamiltonian state into Ising graph spin values.
-
-This function decodes a state from a Potts Hamiltonian into Ising graph spin values and 
+This function decodes a state encoded in a Potts Hamiltonian language into states compatible with binary Ising graph and 
 returns a dictionary mapping each Ising graph vertex to its corresponding spin value.
 
 # Arguments:
@@ -415,26 +419,6 @@ function exact_cond_prob(
     sum(prob[findall([all(s[k] == v for (k, v) ∈ target_state) for s ∈ states])])
 end
 
-"""
-$(TYPEDSIGNATURES)
-
-Truncate a Potts Hamiltonian based on specified states.
-
-This function truncates a given Potts Hamiltonian by selecting a subset of states for each cluster based on the provided `states` dictionary. 
-The resulting truncated Hamiltonian contains only the selected states for each cluster.
-
-# Arguments:
-- `potts_h::LabelledGraph{S, T}`: The Potts Hamiltonian represented as a labeled graph.
-- `states::Dict`: A dictionary specifying the states to be retained for each cluster.
-
-# Returns:
-- `new_potts_h::LabelledGraph{MetaDiGraph}`: The truncated Potts Hamiltonian with reduced states.
-
-The function creates a new Potts Hamiltonian `new_potts_h` with the same structure as the input `potts_h`. 
-It then updates the spectrum of each cluster in `new_potts_h` by selecting the specified states from the original spectrum. 
-Additionally, it updates the interactions and projectors between clusters based on the retained states. 
-The resulting `new_potts_h` represents a truncated version of the original Hamiltonian.
-"""
 function truncate_potts_hamiltonian(potts_h::LabelledGraph{S,T}, states::Dict) where {S,T}
 
     new_potts_h = LabelledGraph{MetaDiGraph}(vertices(potts_h))
@@ -479,6 +463,25 @@ function truncate_potts_hamiltonian(potts_h::LabelledGraph{S,T}, states::Dict) w
     new_potts_h
 end
 
+"""
+$(TYPEDSIGNATURES)
+
+Construct a Potts Hamiltonian for a Random Markov Field (RMF) model.
+
+This function creates a Potts Hamiltonian from a Random Markov Field specified in an OpenGM-compatible file. 
+It maps the RMF variables and their pairwise interactions onto a 2D grid structure, constructing the corresponding Potts Hamiltonian using a super square lattice representation. 
+The function supports optional resizing of the grid dimensions.
+
+# Arguments
+- `fname::String`: Path to the OpenGM-compatible file containing the RMF definition. This file includes functions, factors, and variable dimensions.
+- `Nx::Union{Integer, Nothing}`: (Optional) Number of columns in the 2D grid. If `nothing`, the dimensions are inferred from the file.
+- `Ny::Union{Integer, Nothing}`: (Optional) Number of rows in the 2D grid. If `nothing`, the dimensions are inferred from the file.
+
+# Returns
+- `potts_h::LabelledGraph{MetaDiGraph}`: A labelled graph representing the Potts Hamiltonian, where:
+  - Vertices correspond to individual clusters in the super square lattice.
+  - Edges represent interactions between clusters, annotated with energy and projector information.
+"""
 function potts_hamiltonian(
     fname::String,
     Nx::Union{Integer,Nothing} = nothing,
