@@ -164,11 +164,24 @@ magnetic field (`h`) that is not approximately equal to zero within the specifie
 The function returns a pruned version of the input Ising graph, where non-existing spins and their associated properties are removed.
 """
 function prune(ig::IsingGraph; atol::Real = 1e-14)
+    prune_couplings!(ig; atol = atol)
+    return prune_biases(ig; atol = atol)
+end
+
+function prune_couplings!(ig::IsingGraph; atol::Real = 1e-14)
+    for e in edges(ig)
+        if isapprox(get_prop(ig, e, :J), 0, atol = atol)
+            rem_edge!(ig, e)
+        end
+    end
+end
+
+function prune_biases(ig::IsingGraph; atol::Real = 1e-14)
     to_keep = vcat(
         findall(!iszero, degree(ig)),
         findall(
             x ->
-                iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol = atol),
+            iszero(degree(ig, x)) && !isapprox(get_prop(ig, x, :h), 0, atol = atol),
             vertices(ig),
         ),
     )
@@ -176,4 +189,14 @@ function prune(ig::IsingGraph; atol::Real = 1e-14)
     labels = collect(vertices(gg.inner_graph))
     reverse_label_map = Dict(i => i for i = 1:nv(gg.inner_graph))
     LabelledGraph(labels, gg.inner_graph, reverse_label_map)
+end
+
+function Graphs.rem_edge!(lg::LabelledGraph, s, d)
+    if has_edge(lg, s, d)
+        rem_edge!(lg.inner_graph, lg.reverse_label_map[s], lg.reverse_label_map[d])
+    end
+end
+
+function Graphs.rem_edge!(lg::LabelledGraph, e::LabelledEdge)
+    rem_edge!(lg, src(e), dst(e))
 end
